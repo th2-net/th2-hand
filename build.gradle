@@ -1,0 +1,155 @@
+plugins {
+	id 'java'
+	id 'application'
+	id 'distribution'
+	id 'com.palantir.docker' version '0.25.0'
+//	id 'com.palantir.docker-run' version '0.25.0'
+	// ASSUMES GRADLE 2.12 OR HIGHER. Use plugin version 0.7.5 with earlier gradle versions
+	id 'com.google.protobuf' version '0.8.8'
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_1_8
+	targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+group 'com.exactpro.th2'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'distribution'
+apply plugin: 'com.google.protobuf'
+
+ext {
+	commonVersion = '1.1-SNAPSHOT'
+	version_slf4j = '1.7.30'
+	grpcVersion = '1.30.0' // CURRENT_GRPC_VERSION
+	protobufVersion = '3.12.0'
+	protocVersion = protobufVersion
+	cth_core_version = '1.0.10452'
+	remoteRhUrl = "https://bf.exactpro.com/view/ClearTH/job/ClearTH%20RemoteHand/lastStableBuild/artifact/build/distributions/remotehand-20200617-1.204.zip"
+	localRhPath = "${buildDir}/tmp/remotehand.zip"
+	
+	mainRsrcDir = 'src/main/resources'
+
+	genDir = file("${projectDir}/src/gen")
+}
+
+repositories {
+    mavenCentral()
+	maven {
+		name 'Artifactory'
+		url 'http://arti.exactpro.com/libs-release'
+	}
+
+	maven {
+		name 'Artifactory snapshot'
+		url 'http://artifactory5.exp.exactpro.com/artifactory/libs-snapshot'
+	}
+}
+
+dependencies {
+	implementation "org.slf4j:slf4j-api:${version_slf4j}"
+	implementation "org.slf4j:slf4j-log4j12:${version_slf4j}"
+
+	implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+	implementation "io.grpc:grpc-stub:${grpcVersion}"
+	runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
+
+	implementation 'org.apache.commons:commons-lang3:3.4'
+//	implementation 'commons-cli:commons-cli:1.4'
+	
+	//RH
+	implementation (group: 'com.exactprosystems.clearth', name: 'clearth-rhdata', version: '1.0.10452') {
+		exclude group: 'com.exactprosystems.clearth', module: 'clearth-core'
+	}
+	implementation (group: 'com.exactprosystems.clearth', name: 'clearth-rh', version: '1.0.10452') {
+		exclude group: 'com.exactprosystems.clearth', module: 'clearth-core'
+	}
+
+	//for support jdk 11
+	implementation "javax.annotation:javax.annotation-api:1.3.2"
+
+	testImplementation 'junit:junit:4.12'
+	testImplementation "io.grpc:grpc-testing:${grpcVersion}"
+}
+
+// Inform IDEs like IntelliJ IDEA, Eclipse or NetBeans about the generated code.
+sourceSets {
+	main {
+		java {
+			srcDir "${genDir}/main/grpc"
+			srcDir "${genDir}/main/java"
+			srcDir "src/main/proto"
+		}
+		resources {
+			srcDir "${mainRsrcDir}"
+		}
+	}
+}
+
+protobuf {
+	
+	protoc {
+		artifact = "com.google.protobuf:protoc:3.12.0"
+	}
+	plugins {
+		grpc {
+			artifact = 'io.grpc:protoc-gen-grpc-java:1.30.0'
+		}
+	}
+	generateProtoTasks.generatedFilesBaseDir = genDir
+	generateProtoTasks {
+		all()*.plugins {
+			grpc {}
+		}
+	}
+}
+
+compileJava.dependsOn.add('generateProto')
+
+distributions {
+	main {
+		contents {
+			from ('cfg') {
+				into 'cfg'
+			}                          
+		}
+	}
+}
+
+distTar {
+	archiveName "${rootProject.name}.tar"
+}
+
+dockerPrepare {
+	dependsOn 'distTar'
+	dependsOn 'downloadRh'
+}
+
+docker {
+//	name "${target_docker_repository}/${docker_image_name}:${dockerImageVersion}"
+	name "local/${rootProject.name}:${commonVersion}"
+	tag 'local-version', "${rootProject.name}:${commonVersion}"
+
+	files("${mainRsrcDir}/log4j.properties", "${localRhPath}", tasks.distTar.outputs)
+	copySpec.from("cfg_rh").into(".")
+}
+
+clean {
+	delete genDir
+}
+
+application {
+	mainClassName = "com.exactpro.th2.hand.Application"
+}
+
+task downloadRh {
+	doLast {
+		def f = new File("${localRhPath}")
+		new URL("${remoteRhUrl}").withInputStream{ i -> f.withOutputStream{ it << i }}
+	}
+}
+
+
