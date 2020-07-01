@@ -9,7 +9,7 @@ pipeline {
 //                             returnStdout: true,
 //                             script: 'git rev-list --count VERSION-1.1..HEAD'
 //                             ).trim()}""" //TODO: Calculate revision from a specific tag instead of a root commit
-		VERSION_MAINTENANCE = ${CHANGE_ID}
+		VERSION_MAINTENANCE = "${CHANGE_ID}"
         TH2_REGISTRY = credentials('TH2_REGISTRY_USER')
         TH2_REGISTRY_URL = credentials('TH2_REGISTRY')
         GRADLE_SWITCHES = " -Pversion_build=${BUILD_NUMBER} -Pversion_maintenance=${VERSION_MAINTENANCE}"
