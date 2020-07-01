@@ -40,9 +40,9 @@ public class Application
 			handServer.start();
 			handServer.blockUntilShutdown();
 		}
-		catch (Throwable th)
+		catch (IOException | InterruptedException e)
 		{
-			LOGGER.error(th.getMessage(), th);
+			LOGGER.error("Unable to start 'HandServer'", e);
 			closeApp();
 		}
 	}
@@ -50,10 +50,9 @@ public class Application
 	protected static RhClient initRhConnection(Config config)
 	{
 		LOGGER.debug("Creating Remote hand connection...");
-		RhClient rhClient = null;
-		try
+        try
 		{
-			rhClient = RhUtils.createRhConnection(config.getRhUrl());
+            return RhUtils.createRhConnection(config.getRhUrl());
 		}
 		catch (IOException | RhException e)
 		{
@@ -61,7 +60,7 @@ public class Application
 			closeApp();
 		}
 
-		return rhClient;
+		return null;
 	}
 
 	private static void closeApp()
