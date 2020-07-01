@@ -3,9 +3,8 @@ plugins {
 	id 'application'
 	id 'distribution'
 	id 'com.palantir.docker' version '0.25.0'
-//	id 'com.palantir.docker-run' version '0.25.0'
-	// ASSUMES GRADLE 2.12 OR HIGHER. Use plugin version 0.7.5 with earlier gradle versions
 	id 'com.google.protobuf' version '0.8.8'
+	id 'com.jfrog.artifactory' version '4.15.1'
 }
 
 java {
@@ -14,30 +13,40 @@ java {
 }
 
 group 'com.exactpro.th2'
-version '1.0-SNAPSHOT'
+version = "${version_major}.${version_minor}-SNAPSHOT"
 
 apply plugin: 'java'
 apply plugin: 'application'
 apply plugin: 'distribution'
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.artifactory'
 apply plugin: 'com.google.protobuf'
 
 ext {
-	commonVersion = '1.1-SNAPSHOT'
 	version_slf4j = '1.7.30'
 	grpcVersion = '1.30.0' // CURRENT_GRPC_VERSION
 	protobufVersion = '3.12.0'
 	protocVersion = protobufVersion
 	cth_core_version = '1.0.10452'
+	
 	remoteRhUrl = "https://bf.exactpro.com/view/ClearTH/job/ClearTH%20RemoteHand/lastStableBuild/artifact/build/distributions/remotehand-20200617-1.204.zip"
-	localRhPath = "${buildDir}/tmp/remotehand.zip"
+	localRhPath	= "${buildDir}/tmp/remotehand.zip"
+
+	dockerImageVersion = "${version_major}.${version_minor}.${version_maintenance}.${version_build}"
 	
 	mainRsrcDir = 'src/main/resources'
-
+	sharedDir = file("${projectDir}/shared")
 	genDir = file("${projectDir}/src/gen")
 }
 
 repositories {
+	maven {
+		name 'MavenLocal'
+		url sharedDir
+	}
+	
     mavenCentral()
+	
 	maven {
 		name 'Artifactory'
 		url 'http://arti.exactpro.com/libs-release'
@@ -129,9 +138,8 @@ dockerPrepare {
 }
 
 docker {
-//	name "${target_docker_repository}/${docker_image_name}:${dockerImageVersion}"
-	name "local/${rootProject.name}:${commonVersion}"
-	tag 'local-version', "${rootProject.name}:${commonVersion}"
+	name "${target_docker_repository}/${docker_image_name}:${dockerImageVersion}"
+	tag 'local-version', "${docker_image_name}:${dockerImageVersion}"
 
 	files("${mainRsrcDir}/log4j.properties", "${localRhPath}", tasks.distTar.outputs)
 	copySpec.from("cfg_rh").into(".")
@@ -149,6 +157,38 @@ task downloadRh {
 	doLast {
 		def f = new File("${localRhPath}")
 		new URL("${remoteRhUrl}").withInputStream{ i -> f.withOutputStream{ it << i }}
+	}
+}
+
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			from components.java
+		}
+	}
+
+	repositories {
+		maven {
+			name = 'localRepo'
+			url = sharedDir
+		}
+	}
+}
+
+artifactoryPublish.skip = true
+
+artifactory {
+	publish {
+		defaults {
+			// Reference to Gradle publications defined in the build script.
+			// This is how we tell the Artifactory Plugin which artifacts should be
+			// published to Artifactory.
+			publications('mavenJava')
+			publishArtifacts = true
+			publishBuildInfo = true
+			// Properties to be attached to the published artifacts.
+			publishPom = true
+		}
 	}
 }
 
