@@ -2,7 +2,6 @@ plugins {
 	id 'java'
 	id 'application'
 	id 'distribution'
-	id 'com.palantir.docker' version '0.25.0'
 	id 'com.google.protobuf' version '0.8.8'
 	id 'com.jfrog.artifactory' version '4.15.1'
 }
@@ -26,14 +25,9 @@ ext {
 	version_slf4j = '1.7.30'
 	grpcVersion = '1.30.0' // CURRENT_GRPC_VERSION
 	protobufVersion = '3.12.0'
-	protocVersion = protobufVersion
+	protocVersion = "${protobufVersion}"
 	cth_core_version = '1.0.10452'
-	
-	remoteRhUrl = "https://bf.exactpro.com/view/ClearTH/job/ClearTH%20RemoteHand/lastStableBuild/artifact/build/distributions/remotehand-20200617-1.204.zip"
-	localRhPath	= "${buildDir}/tmp/remotehand.zip"
 
-	dockerImageVersion = "${version_major}.${version_minor}.${version_maintenance}.${version_build}"
-	
 	mainRsrcDir = 'src/main/resources'
 	sharedDir = file("${projectDir}/shared")
 	genDir = file("${projectDir}/src/gen")
@@ -123,31 +117,8 @@ protobuf {
 
 compileJava.dependsOn.add('generateProto')
 
-distributions {
-	main {
-		contents {
-			from ('cfg') {
-				into 'cfg'
-			}                          
-		}
-	}
-}
-
 distTar {
 	archiveName "${rootProject.name}.tar"
-}
-
-dockerPrepare {
-	dependsOn 'distTar'
-	dependsOn 'downloadRh'
-}
-
-docker {
-	name "${target_docker_repository}/${docker_image_name}:${dockerImageVersion}"
-	tag 'local-version', "${docker_image_name}:${dockerImageVersion}"
-
-	files("${mainRsrcDir}/log4j.properties", "${localRhPath}", tasks.distTar.outputs)
-	copySpec.from("cfg_rh").into(".")
 }
 
 clean {
@@ -156,13 +127,6 @@ clean {
 
 application {
 	mainClassName = "com.exactpro.th2.hand.Application"
-}
-
-task downloadRh {
-	doLast {
-		def f = new File("${localRhPath}")
-		new URL("${remoteRhUrl}").withInputStream{ i -> f.withOutputStream{ it << i }}
-	}
 }
 
 publishing {

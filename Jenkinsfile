@@ -58,20 +58,11 @@ pipeline {
                 )
             }
         }
-        stage('Docker publish') {
-            steps {
-                sh """
-                    docker login -u ${TH2_REGISTRY_USR} -p ${TH2_REGISTRY_PSW} ${TH2_REGISTRY_URL}
-                    ./gradlew dockerPush ${GRADLE_SWITCHES} \
-                     -Ptarget_docker_repository=${TH2_REGISTRY_URL}
-                """ // TODO: Exec from root repository
-            }
-        }
         stage('Publish report') {
             steps {
                 script {
                     def gradleProperties = readProperties  file: 'gradle.properties'
-                    def dockerImageVersion = "${gradleProperties['version_major']}.${gradleProperties['version_minor']}.${VERSION_MAINTENANCE}.${BUILD_NUMBER}"
+//                    def dockerImageVersion = "${gradleProperties['version_major']}.${gradleProperties['version_minor']}.${VERSION_MAINTENANCE}.${BUILD_NUMBER}"
 
                     def changeLogs = ""
                     try {
@@ -89,7 +80,7 @@ pipeline {
 
                     def fields = [
                         "*Job:* <${BUILD_URL}|${JOB_NAME}>",
-                        "*Docker image version:* ${dockerImageVersion}",
+//                        "*Docker image version:* ${dockerImageVersion}",
                         "*Changes:*${changeLogs}"
                     ]
                     writeJSON file: 'result.json', json: [text: fields.join('\n'), thread: [name: GCHAT_THREAD_NAME]]
@@ -99,7 +90,7 @@ pipeline {
                         println "Exception occurred: ${e}"
                     }
 
-                    currentBuild.description = "docker-image-version = ${dockerImageVersion}<br>"
+//                    currentBuild.description = "docker-image-version = ${dockerImageVersion}<br>"
                 }
             }
         }
