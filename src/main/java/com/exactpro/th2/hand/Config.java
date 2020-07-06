@@ -1,20 +1,18 @@
-/******************************************************************************
- * Copyright 2009-2020 Exactpro Systems Limited
- * https://www.exactpro.com
- * Build Software to Test Software
+/*
+ * Copyright 2009-2020 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- ******************************************************************************/
+ */
 
 package com.exactpro.th2.hand;
 
@@ -30,7 +28,6 @@ public class Config
 	public static final int DEFAULT_GRPC_PORT = 8080;
 	public static final String RH_URL_ARG = "RH_URL";
 	public static final String DEFAULT_RH_URL = "http://localhost:8008";
-	public static final String TH2_HAND_DIR_ARG = "TH2_HAND_DIR";
 
 	protected final int grpcPort;
 	protected final String rhUrl;
@@ -47,8 +44,7 @@ public class Config
 
 	protected Path getEnvTh2CfgDir()
 	{
-		String dir = ObjectUtils.defaultIfNull(System.getenv(TH2_HAND_DIR_ARG), "user.dir");
-		return Paths.get(dir).resolve("cfg");
+		return Paths.get(System.getProperty("user.dir")).resolve("cfg");
 	}
 
 	protected String getEnvTh2RhUrl()
