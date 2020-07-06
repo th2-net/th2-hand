@@ -25,12 +25,14 @@ import java.nio.file.Paths;
 public class Config
 {
 	public static final String GRPC_PORT_ARG = "GRPC_PORT";
+	public static final String PROJECT_DIR_ARG = "PROJECT_DIR";
 	public static final int DEFAULT_GRPC_PORT = 8080;
 	public static final String RH_URL_ARG = "RH_URL";
 	public static final String DEFAULT_RH_URL = "http://localhost:8008";
 
 	protected final int grpcPort;
 	protected final String rhUrl;
+	protected final Path rootDir;
 	protected final Path cfgDir;
 	protected final Path scriptsDir;
 			
@@ -38,13 +40,18 @@ public class Config
 	{
 		grpcPort = getEnvTh2GrpcPort();
 		rhUrl = getEnvTh2RhUrl();
+		rootDir = getRootDir();
 		cfgDir = getEnvTh2CfgDir();
 		scriptsDir = cfgDir.resolve("scripts");
 	}
 
+    protected Path getRootDir() {
+	    return Paths.get(ObjectUtils.defaultIfNull(System.getenv(PROJECT_DIR_ARG), System.getProperty("user.dir")));
+    }
+
 	protected Path getEnvTh2CfgDir()
 	{
-		return Paths.get(System.getProperty("user.dir")).resolve("cfg");
+		return rootDir.resolve("cfg");
 	}
 
 	protected String getEnvTh2RhUrl()
