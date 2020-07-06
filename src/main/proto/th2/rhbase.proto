@@ -9,11 +9,17 @@ option java_package = "com.exactpro.th2.hand.grpc";
 service HandBase {
   // Sends a query
   rpc getRhInfo (google.protobuf.Empty) returns (RhInfo) {}
+  rpc runScript (BaseRequest) returns (BaseResponse) {}
+}
+
+message BaseRequest {
+  string scriptName = 1;
+  map<string, string> params = 2;
 }
 
 // The response message
-message BaseRhResponse {
-  int32 scriptResult = 1;
+message BaseResponse {
+  string scriptResult = 1;
   string errorMessage = 2;
   repeated string textOut = 3;
   string sessionId = 4;

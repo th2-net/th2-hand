@@ -1,13 +1,11 @@
-/******************************************************************************
- * Copyright 2009-2020 Exactpro Systems Limited
- * https://www.exactpro.com
- * Build Software to Test Software
+/*******************************************************************************
+ * Copyright 2009-2020 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,42 +16,81 @@
 
 package com.exactpro.th2.hand.services;
 
-import com.exactpro.th2.hand.Config;
-import com.exactpro.th2.hand.IHandService;
-import com.exactpro.th2.hand.grpc.HandBaseGrpc;
-import com.exactpro.th2.hand.grpc.RhInfo;
-import com.exactprosystems.clearth.connectivity.remotehand.RhClient;
-import com.google.protobuf.Empty;
-import io.grpc.stub.StreamObserver;
+import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+
+import java.io.IOException;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.stream.Collectors;
+import com.exactpro.th2.hand.Config;
+import com.exactpro.th2.hand.IHandService;
+import com.exactpro.th2.hand.grpc.BaseRequest;
+import com.exactpro.th2.hand.grpc.BaseResponse;
+import com.exactpro.th2.hand.grpc.HandBaseGrpc.HandBaseImplBase;
+import com.exactpro.th2.hand.grpc.RhInfo;
+import com.exactprosystems.clearth.connectivity.data.rhdata.RhResponseCode;
+import com.exactprosystems.clearth.connectivity.data.rhdata.RhScriptResult;
+import com.exactprosystems.clearth.connectivity.remotehand.RhClient;
+import com.exactprosystems.clearth.connectivity.remotehand.RhException;
+import com.google.protobuf.Empty;
 
-public class HandBaseService extends HandBaseGrpc.HandBaseImplBase implements IHandService
+import io.grpc.stub.StreamObserver;
+
+public class HandBaseService extends HandBaseImplBase implements IHandService
 {
-	private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+	private final Logger logger = LoggerFactory.getLogger(getClass().getName());
 	
 	private Config config;
 	private RhClient rhConnection;
 
 	@Override
-	public void getRhInfo(Empty request, StreamObserver<RhInfo> responseObserver)
-	{
+	public void getRhInfo(Empty request, StreamObserver<RhInfo> responseObserver) {
 		logger.info("Action: '{}'", "getRhInfo");
-		RhClient connection = rhConnection;
-		RhInfo response = RhInfo.newBuilder().setSessionId(connection.getSessionId())
-				.setUserBrowser(connection.getUsedBrowser()).build();
+		RhInfo response = RhInfo.newBuilder().setSessionId(rhConnection.getSessionId())
+				.setUserBrowser(rhConnection.getUsedBrowser()).build();
 		responseObserver.onNext(response);
 		responseObserver.onCompleted();
 	}
 
-	@Override
-	public void init(Config config, RhClient rhConnection)
-	{
+    @Override
+    public void runScript(BaseRequest request, StreamObserver<BaseResponse> responseObserver) {
+        String scriptFile = config.getScriptsDir().resolve(request.getScriptName()).toString();
+        Map<String, String> params = request.getParamsMap();
+
+        logger.info("Action: '{}', Script name: '{}', Parameters:", "runScript", request.getScriptName(), params);
+        
+        RhScriptResult scriptResult = new RhScriptResult();
+        String errMsg = "";
+        try {
+            scriptResult = rhConnection.executeScript(scriptFile, params, 10);
+        } 
+        catch (RhException e ) {
+            scriptResult.setCode(RhResponseCode.UNKNOWN.getCode());
+            errMsg = "Error occured while fetching data from Remotehand";
+            logger.warn(errMsg, e);
+        } 
+        catch (IOException e) {
+            scriptResult.setCode(RhResponseCode.UNKNOWN.getCode());
+            errMsg = String.format("Error occured while reading script file '%s'", scriptFile);
+            logger.warn(errMsg, scriptFile, e);
+        }
+        
+        BaseResponse response = BaseResponse.newBuilder()
+                .setScriptResult(RhResponseCode.byCode(scriptResult.getCode()).toString())
+                .setErrorMessage(isEmpty(errMsg) ? defaultIfEmpty(scriptResult.getErrorMessage(), "") : errMsg)
+                .setSessionId(rhConnection.getSessionId())
+                .addAllTextOut(scriptResult.getTextOutput())
+                .build();
+
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+    }
+
+    @Override
+	public void init(Config config, RhClient rhConnection) {
 		this.config = config;
 		this.rhConnection = rhConnection;
 	}
