@@ -59,13 +59,14 @@ public class HandBaseService extends HandBaseImplBase implements IHandService
     public void runScript(BaseRequest request, StreamObserver<BaseResponse> responseObserver) {
         String scriptFile = config.getScriptsDir().resolve(request.getScriptName()).toString();
         Map<String, String> params = request.getParamsMap();
+        int waitInSeconds = request.getWaitInSeconds();
 
-        logger.info("Action: '{}', Script name: '{}', Parameters:", "runScript", request.getScriptName(), params);
+        logger.info("Action: '{}', Script name: '{}', Parameters:'{}'", "runScript", request.getScriptName(), params);
         
         RhScriptResult scriptResult = new RhScriptResult();
         String errMsg = "";
         try {
-            scriptResult = rhConnection.executeScript(scriptFile, params, 10);
+            scriptResult = rhConnection.executeScript(scriptFile, params, waitInSeconds == 0 ? 10 : waitInSeconds);
         } 
         catch (RhException e ) {
             scriptResult.setCode(RhResponseCode.UNKNOWN.getCode());

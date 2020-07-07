@@ -15,6 +15,7 @@ service HandBase {
 message BaseRequest {
   string scriptName = 1;
   map<string, string> params = 2;
+  int32 waitInSeconds = 3;
 }
 
 // The response message

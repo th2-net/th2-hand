@@ -26,6 +26,7 @@ public class Config
 {
 	public static final String GRPC_PORT_ARG = "GRPC_PORT";
 	public static final String PROJECT_DIR_ARG = "PROJECT_DIR";
+	public static final String PROJECT_NAME_ARG = "PROJECT_NAME";
 	public static final int DEFAULT_GRPC_PORT = 8080;
 	public static final String RH_URL_ARG = "RH_URL";
 	public static final String DEFAULT_RH_URL = "http://localhost:8008";
@@ -42,45 +43,42 @@ public class Config
 		rhUrl = getEnvTh2RhUrl();
 		rootDir = getRootDir();
 		cfgDir = getEnvTh2CfgDir();
-		scriptsDir = cfgDir.resolve("scripts");
+		scriptsDir = getEnvTh2ScriptsDir();
 	}
 
     protected Path getRootDir() {
 	    return Paths.get(ObjectUtils.defaultIfNull(System.getenv(PROJECT_DIR_ARG), System.getProperty("user.dir")));
     }
 
-	protected Path getEnvTh2CfgDir()
-	{
+	protected Path getEnvTh2CfgDir() {
 		return rootDir.resolve("cfg");
 	}
 
-	protected String getEnvTh2RhUrl()
-	{
+    protected Path getEnvTh2ScriptsDir() {
+	    return cfgDir.resolve("scripts");      
+    }
+
+	protected String getEnvTh2RhUrl() {
 		return ObjectUtils.defaultIfNull(System.getenv(RH_URL_ARG), DEFAULT_RH_URL);
 	}
 
-	protected int getEnvTh2GrpcPort()
-	{
+	protected int getEnvTh2GrpcPort() {
 		return NumberUtils.toInt(System.getenv(GRPC_PORT_ARG), DEFAULT_GRPC_PORT);		
 	}
 
-	public int getGrpcPort()
-	{
+	public int getGrpcPort() {
 		return grpcPort;
 	}
 
-	public String getRhUrl()
-	{
+	public String getRhUrl() {
 		return rhUrl;
 	}
 
-	public Path getCfgDir()
-	{
+	public Path getCfgDir() {
 		return cfgDir;
 	}
 
-	public Path getScriptsDir()
-	{
+	public Path getScriptsDir() {
 		return scriptsDir;
 	}
 }
