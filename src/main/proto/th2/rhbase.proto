@@ -2,6 +2,7 @@ syntax = "proto3";
 package th2;
 
 import "google/protobuf/empty.proto";
+import "th2/infra.proto";
 option java_multiple_files = true;
 option java_package = "com.exactpro.th2.hand.grpc";
 
@@ -16,7 +17,7 @@ message BaseRequest {
   string scriptName = 1;
   map<string, string> params = 2;
   int32 waitInSeconds = 3;
-  string parentEventId = 4;
+  EventID parentEventId = 4;
 }
 
 // The response message
@@ -31,5 +32,3 @@ message RhInfo {
   string sessionId = 1;
   string userBrowser = 2;
 }
-
-    
