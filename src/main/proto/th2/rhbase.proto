@@ -16,6 +16,7 @@ message BaseRequest {
   string scriptName = 1;
   map<string, string> params = 2;
   int32 waitInSeconds = 3;
+  string parentEventId = 4;
 }
 
 // The response message
