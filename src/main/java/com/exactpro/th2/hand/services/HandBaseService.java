@@ -41,7 +41,7 @@ import io.grpc.stub.StreamObserver;
 
 public class HandBaseService extends HandBaseImplBase implements IHandService
 {
-	private final Logger logger = LoggerFactory.getLogger(getClass().getName());
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
 	private Config config;
 	private RhClient rhConnection;

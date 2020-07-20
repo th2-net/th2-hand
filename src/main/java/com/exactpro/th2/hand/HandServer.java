@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 public class HandServer
 {
-	private final Logger logger = LoggerFactory.getLogger(HandServer.class.getName());
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	private final Config config;
 	private final RhClient rhConnection;
