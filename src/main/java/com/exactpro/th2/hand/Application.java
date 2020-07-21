@@ -30,22 +30,30 @@ public class Application
 
 	public static void main(String[] args)
 	{
-		Config config = new Config();
-		RhClient rhConnection = initRhConnection(config);
-		HandServer handServer = new HandServer(config, rhConnection);
-		try
-		{
-			handServer.start();
-			handServer.blockUntilShutdown();
-		}
-		catch (IOException | InterruptedException e)
-		{
-			LOGGER.error("Unable to start 'HandServer'", e);
-			closeApp();
-		}
+        new Application().run(args);
 	}
 	
-	protected static RhClient initRhConnection(Config config)
+	public void run(String[] args) {
+        Config config = getConfig();
+        RhClient rhConnection = initRhConnection(config);
+        HandServer handServer = new HandServer(config, rhConnection);
+        try
+        {
+            handServer.start();
+            handServer.blockUntilShutdown();
+        }
+        catch (IOException | InterruptedException e)
+        {
+            LOGGER.error("Unable to start 'HandServer'", e);
+            closeApp();
+        }
+    }
+    
+    protected Config getConfig() {
+        return new Config();
+    }
+	
+	protected RhClient initRhConnection(Config config)
 	{
 		LOGGER.debug("Creating Remote hand connection...");
         try
