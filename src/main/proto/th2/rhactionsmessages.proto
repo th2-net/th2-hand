@@ -38,8 +38,8 @@ message Click {
   string matcher = 3;
   string webId = 4;
   Button button = 5;
-  int32 xoffset = 6;
-  int32 yoffset = 7;
+  int32 xOffset = 6;
+  int32 yOffset = 7;
   ModifiersList modifiers = 8;
 }
 
@@ -61,10 +61,10 @@ message SendKeys {
   Locator locator2 = 7;
   string matcher2 = 8;
   string text2 = 9;
-  bool CanBeDisabled = 10;
-  bool Clear = 11;
-  bool CheckInput = 12;
-  bool NeedClick = 13;
+  bool canBeDisabled = 10;
+  bool clear = 11;
+  bool checkInput = 12;
+  bool needClick = 13;
 }
 
 message WaitForElement {
@@ -76,7 +76,7 @@ message WaitForElement {
 
 message WaitForNew {
   int32 seconds = 1;
-  int32 checkmillis = 2;
+  int32 checkMillis = 2;
   Locator locator = 3;
   string matcher = 4;
   string webId = 5;
@@ -139,7 +139,7 @@ message ScrollDivTo {
   int32 wait2 = 5;
   Locator locator2 = 6;
   string matcher2 = 7;
-  int32 yoffset = 8;
+  int32 yOffset = 8;
 }
 
 message ScrollDivUntil {
@@ -155,10 +155,10 @@ message ScrollDivUntil {
   int32 wait2 = 5;
   Locator locator2 = 6;
   string matcher2 = 7;
-  Direction searchdir = 8;
-  int32 searchoffset = 9;
-  bool doscrollto = 10;
-  int32 yoffset = 11;
+  Direction searchDir = 8;
+  int32 searchOffset = 9;
+  bool doScrollTo = 10;
+  int32 yOffset = 11;
 }
 
 message PageSource {}
@@ -172,7 +172,7 @@ message Select {
   string webId = 4;
   string text = 5;
   string default = 6;
-  bool nooptionalfail = 7;
+  bool noOptionalFail = 7;
 }
 
 message ClearElement {
@@ -201,7 +201,7 @@ message KeyAction {
     DOWN = 2;
   }
   string key = 1;
-  ActionType keyaction = 2;
+  ActionType keyAction = 2;
 }
 
 message PressKey {
@@ -218,7 +218,7 @@ message UploadFile {
   Locator locator = 2;
   string matcher = 3;
   string webId = 4;
-  string absolutepath = 5;
+  string absolutePath = 5;
 }
 
 message DownloadFile {
@@ -227,8 +227,8 @@ message DownloadFile {
     DOWNLOAD = 1;
   }
   int32 wait = 1;
-  DownloadActionType actiontype = 2;
-  bool localpath = 3;
+  DownloadActionType actionType = 2;
+  bool localPath = 3;
 }
 
 message SwitchWindow {
@@ -248,8 +248,8 @@ message DurationStart {
 }
 
 message GetDuration {
-  string StartId = 1;
-  string Name = 2;
+  string startId = 1;
+  string name = 2;
 }
 
 message GetElementScreenshot {
@@ -262,7 +262,7 @@ message GetElementScreenshot {
 
 message WaitForChanges {
   int32 seconds = 1;
-  int32 checkmillis = 2;
+  int32 checkMillis = 2;
   Locator locator = 3;
   string matcher = 4;
   string webId = 5;

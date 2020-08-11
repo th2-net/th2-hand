@@ -8,10 +8,10 @@ import "th2/rhactionsmessages.proto";
 package th2;
 
 service RhBatch {
-  rpc executeRhActionsBatch(RhActionsList) returns (ResponseStab) {}
+  rpc executeRhActionsBatch(RhActionsList) returns (ResponseStub) {}
 }
 
-message ResponseStab {}
+message ResponseStub {}
 
 // Represents list of RhActions which need to be executed to perform some operation user wants to
 message RhActionsList {
