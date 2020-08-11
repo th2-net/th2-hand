@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.exactpro.th2.hand.grpc.rhbatch";
+
+import "th2/rhactionsmessages.proto";
+
+package th2;
+
+service RhBatch {
+  rpc executeRhActionsBatch(RhActionsList) returns (ResponseStab) {}
+}
+
+message ResponseStab {}
+
+// Represents list of RhActions which need to be executed to perform some operation user wants to
+message RhActionsList {
+  repeated RhAction rhAction = 1;
+}
+
+message RhAction {
+  oneof action {
+      Open open = 1;
+      Click click = 2;
+      SetCheckbox setCheckbox = 3;
+      SendKeys sendKeys = 4;
+      WaitForElement waitForElement = 5;
+      WaitForNew waitForNew = 6;
+      Wait wait = 7;
+      GetElement getElement = 8;
+      GetElementInnerHtml getElementInnerHtml = 9;
+      GetElementValue getElementValue = 10;
+      GetElementAttribute getElementAttribute = 11;
+      GetDynamicTable getDynamicTable = 12;
+      ScrollTo scrollTo = 13;
+      ScrollDivTo scrollDivTo = 14;
+      ScrollDivUntil scrollDivUntil = 15;
+      PageSource pageSource = 16;
+      Refresh refresh = 17;
+      Select select = 18;
+      ClearElement clearElement = 19;
+      Output output = 20;
+      FindElement findElement = 21;
+      KeyAction keyAction = 22;
+      PressKey pressKey = 23;
+      SendKeysToActive sendKeysToActive = 24;
+      UploadFile uploadFile = 25;
+      DownloadFile downloadFile = 26;
+      SwitchWindow switchWindow = 27;
+      CloseWindow closeWindow = 28;
+      GetCurrentURL getCurrentURL = 29;
+      SetZoom setZoom = 30;
+      DurationStart durationStart = 31;
+      GetDuration getDuration = 32;
+      GetElementScreenshot getElementScreenshot = 33;
+      WaitForChanges waitForChanges = 34;
+      AcceptAlert acceptAlert = 35;
+      DismissAlert dismissAlert = 36;
+      CheckImageAvailability checkImageAvailability = 37;
+  }
+}

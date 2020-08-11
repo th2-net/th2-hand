@@ -1,0 +1,285 @@
+syntax = "proto3";
+
+option java_multiple_files = false;
+option java_package = "com.exactpro.th2.hand.grpc.rhbatch.rhactions";
+option java_outer_classname = "RhActionsMessages";
+
+package th2;
+
+message Open {
+  string url = 1;
+}
+
+enum Locator {
+  NOT_SET = 0;
+  CSS_SELECTOR = 1;
+  TAG_NAME = 2;
+  ID = 3;
+  XPATH = 4;
+}
+
+message Click {
+  enum Button {
+    LEFT = 0;
+    RIGHT = 1;
+    MIDDLE = 2;
+    DOUBLE = 3;
+  }
+  message ModifiersList {
+    enum Modifier {
+      CTRL = 0;
+      SHIFT = 1;
+      ALT = 2;
+    }
+    repeated Modifier modifier = 1;
+  }
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+  Button button = 5;
+  int32 xoffset = 6;
+  int32 yoffset = 7;
+  ModifiersList modifiers = 8;
+}
+
+message SetCheckbox {
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+  bool checked = 5;
+}
+
+message SendKeys {
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+  string text = 5;
+  int32 wait2 = 6;
+  Locator locator2 = 7;
+  string matcher2 = 8;
+  string text2 = 9;
+  bool CanBeDisabled = 10;
+  bool Clear = 11;
+  bool CheckInput = 12;
+  bool NeedClick = 13;
+}
+
+message WaitForElement {
+  int32 seconds = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+}
+
+message WaitForNew {
+  int32 seconds = 1;
+  int32 checkmillis = 2;
+  Locator locator = 3;
+  string matcher = 4;
+  string webId = 5;
+}
+
+message Wait {
+  int32 seconds = 1;
+}
+
+message GetElement {
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+  string id = 5;
+}
+
+message GetElementInnerHtml {
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+  string id = 5;
+}
+
+message GetElementValue {
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+}
+
+message GetElementAttribute {
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+  string attribute = 5;
+}
+
+message GetDynamicTable {
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+}
+
+message ScrollTo {
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+}
+
+message ScrollDivTo {
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+  int32 wait2 = 5;
+  Locator locator2 = 6;
+  string matcher2 = 7;
+  int32 yoffset = 8;
+}
+
+message ScrollDivUntil {
+  enum Direction {
+    BOTH = 0;
+    UP = 1;
+    DOWN = 2;
+  }
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+  int32 wait2 = 5;
+  Locator locator2 = 6;
+  string matcher2 = 7;
+  Direction searchdir = 8;
+  int32 searchoffset = 9;
+  bool doscrollto = 10;
+  int32 yoffset = 11;
+}
+
+message PageSource {}
+
+message Refresh {}
+
+message Select {
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+  string text = 5;
+  string default = 6;
+  bool nooptionalfail = 7;
+}
+
+message ClearElement {
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+}
+
+message Output {
+  string text = 1;
+}
+
+message FindElement {
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+  string id = 5;
+}
+
+message KeyAction {
+  enum ActionType {
+    PRESS = 0;
+    UP = 1;
+    DOWN = 2;
+  }
+  string key = 1;
+  ActionType keyaction = 2;
+}
+
+message PressKey {
+  string key = 1;
+}
+
+message SendKeysToActive {
+  string text = 1;
+  string text2 = 2;
+}
+
+message UploadFile {
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+  string absolutepath = 5;
+}
+
+message DownloadFile {
+  enum DownloadActionType {
+    SNAPSHOT = 0;
+    DOWNLOAD = 1;
+  }
+  int32 wait = 1;
+  DownloadActionType actiontype = 2;
+  bool localpath = 3;
+}
+
+message SwitchWindow {
+  int32 window = 1;
+}
+
+message CloseWindow {}
+
+message GetCurrentURL {}
+
+message SetZoom {
+  string value = 1;
+}
+
+message DurationStart {
+  string id = 1;
+}
+
+message GetDuration {
+  string StartId = 1;
+  string Name = 2;
+}
+
+message GetElementScreenshot {
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+  string id = 5;
+}
+
+message WaitForChanges {
+  int32 seconds = 1;
+  int32 checkmillis = 2;
+  Locator locator = 3;
+  string matcher = 4;
+  string webId = 5;
+  string screenshotId = 6;
+}
+
+message AcceptAlert {
+  int32 wait = 1;
+}
+
+message DismissAlert {
+  int32 wait = 1;
+}
+
+message CheckImageAvailability {
+  int32 wait = 1;
+  Locator locator = 2;
+  string matcher = 3;
+  string webId = 4;
+}
