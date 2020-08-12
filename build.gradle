@@ -79,7 +79,8 @@ dependencies {
 	compile "io.grpc:grpc-protobuf:${grpcVersion}"
 	compile "io.grpc:grpc-stub:${grpcVersion}"
 	runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
-	
+
+	compile "com.rabbitmq:amqp-client:5.8.0"
 	compile "com.exactpro.th2:th2-grpc-infra:+"
 
 	compile 'org.apache.commons:commons-lang3:3.4'

@@ -14,10 +14,11 @@ service HandBase {
 }
 
 message BaseRequest {
-  string scriptName = 1;
-  map<string, string> params = 2;
-  int32 waitInSeconds = 3;
-  EventID parentEventId = 4;
+  string scriptText = 1;
+  string scriptName = 2;
+  map<string, string> params = 3;
+  int32 waitInSeconds = 4;
+  EventID parentEventId = 5;
 }
 
 // The response message

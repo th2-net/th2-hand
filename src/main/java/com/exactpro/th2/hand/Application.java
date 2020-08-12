@@ -36,17 +36,22 @@ public class Application
 	public void run(String[] args) {
         Config config = getConfig();
         RhClient rhConnection = initRhConnection(config);
-        HandServer handServer = new HandServer(config, rhConnection);
+		HandServer handServer = null;
         try
         {
+			handServer = new HandServer(config, rhConnection);
             handServer.start();
             handServer.blockUntilShutdown();
         }
-        catch (IOException | InterruptedException e)
+        catch (Exception e)
         {
             LOGGER.error("Unable to start 'HandServer'", e);
             closeApp();
-        }
+        } finally {
+        	if (handServer != null) {
+        		handServer.dispose();
+			}
+		}
     }
     
     protected Config getConfig() {

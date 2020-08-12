@@ -19,7 +19,6 @@ package com.exactpro.th2.hand.services;
 import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
-import java.io.IOException;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -34,7 +33,6 @@ import com.exactpro.th2.hand.grpc.RhInfo;
 import com.exactprosystems.clearth.connectivity.data.rhdata.RhResponseCode;
 import com.exactprosystems.clearth.connectivity.data.rhdata.RhScriptResult;
 import com.exactprosystems.clearth.connectivity.remotehand.RhClient;
-import com.exactprosystems.clearth.connectivity.remotehand.RhException;
 import com.google.protobuf.Empty;
 
 import io.grpc.stub.StreamObserver;
@@ -45,7 +43,9 @@ public class HandBaseService extends HandBaseImplBase implements IHandService
 	
 	private Config config;
 	private RhClient rhConnection;
-
+	
+	private MessageHandler messageHandler;
+	
 	@Override
 	public void getRhInfo(Empty request, StreamObserver<RhInfo> responseObserver) {
 		logger.info("Action: '{}'", "getRhInfo");
@@ -57,27 +57,29 @@ public class HandBaseService extends HandBaseImplBase implements IHandService
 
     @Override
     public void runScript(BaseRequest request, StreamObserver<BaseResponse> responseObserver) {
-        String scriptFile = config.getScriptsDir().resolve(request.getScriptName()).toString();
+        String scriptText = request.getScriptText();
         Map<String, String> params = request.getParamsMap();
         int waitInSeconds = request.getWaitInSeconds();
 
         logger.info("Action: '{}', Script name: '{}', Parameters:'{}'", "runScript", request.getScriptName(), params);
+        if (logger.isTraceEnabled()) {
+        	logger.trace("Script: {}", scriptText);
+		}
+
+		messageHandler.onRequest(request, "");
         
         RhScriptResult scriptResult = new RhScriptResult();
         String errMsg = "";
         try {
-            scriptResult = rhConnection.executeScript(scriptFile, params, waitInSeconds == 0 ? 10 : waitInSeconds);
+            scriptResult = rhConnection.executeScriptFromString(scriptText, params, waitInSeconds == 0 ? 10 : waitInSeconds);
         } 
-        catch (RhException e ) {
+        catch (Exception e) {
             scriptResult.setCode(RhResponseCode.UNKNOWN.getCode());
-            errMsg = "Error occured while fetching data from Remotehand";
+            errMsg = "Error occurred while fetching data from RemoteHand";
             logger.warn(errMsg, e);
-        } 
-        catch (IOException e) {
-            scriptResult.setCode(RhResponseCode.UNKNOWN.getCode());
-            errMsg = String.format("Error occured while reading script file '%s'", scriptFile);
-            logger.warn(errMsg, scriptFile, e);
         }
+
+		messageHandler.onResponse(scriptResult, "" ,rhConnection.getSessionId());
         
         BaseResponse response = BaseResponse.newBuilder()
                 .setScriptResult(RhResponseCode.byCode(scriptResult.getCode()).toString())
@@ -91,8 +93,18 @@ public class HandBaseService extends HandBaseImplBase implements IHandService
     }
 
     @Override
-	public void init(Config config, RhClient rhConnection) {
+	public void init(Config config, RhClient rhConnection) throws Exception {
 		this.config = config;
 		this.rhConnection = rhConnection;
+		this.messageHandler = new MessageHandler(config.getRabbitMqConfiguration());
+	}
+
+	@Override
+	public void dispose() {
+		try {
+			this.messageHandler.close();
+		} catch (Exception e) {
+			logger.error("Error disposing message handler", e);
+		}
 	}
 }
