@@ -24,10 +24,13 @@ import "th2/rhactionsmessages.proto";
 package th2;
 
 service RhBatch {
-  rpc executeRhActionsBatch(RhActionsList) returns (ResponseStub) {}
+  rpc executeRhActionsBatch(RhActionsList) returns (RhBatchResponse) {}
 }
 
-message ResponseStub {}
+message RhBatchResponse {
+    int32 code = 1;
+    bytes data = 2;
+}
 
 // Represents list of RhActions which need to be executed to perform some operation user wants to
 message RhActionsList {
