@@ -29,7 +29,7 @@ service RhBatch {
 
 message RhBatchResponse {
     int32 code = 1;
-    bytes data = 2;
+    string data = 2;
 }
 
 // Represents list of RhActions which need to be executed to perform some operation user wants to
