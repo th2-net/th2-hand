@@ -17,6 +17,7 @@
 package com.exactpro.th2.hand.services;
 
 import static com.google.protobuf.TextFormat.shortDebugString;
+import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 
 import java.io.IOException;
 import java.util.List;
@@ -28,6 +29,8 @@ import com.exactpro.th2.hand.grpc.rhbatch.RhBatchGrpc.RhBatchImplBase;
 import com.exactpro.th2.hand.grpc.rhbatch.RhBatchResponse;
 import com.exactpro.th2.hand.grpc.rhbatch.rhactions.RhActionsMessages.*;
 import com.exactpro.th2.hand.grpc.rhbatch.rhactions.RhActionsMessages.Click.ModifiersList;
+import com.exactprosystems.clearth.connectivity.data.rhdata.RhResponseCode;
+import com.exactprosystems.clearth.connectivity.data.rhdata.RhScriptResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,19 +52,23 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
     public void executeRhActionsBatch(RhActionsList request, StreamObserver<RhBatchResponse> responseObserver) {
         logger.info("Action: '{}', request: '{}'", "executeRhActionsBatch", shortDebugString(request));
 
-        int code = 200;
-        String dataString = null;
+		RhScriptResult scriptResult = new RhScriptResult();
         try {
-			dataString = rhConnection.send(buildScript(request));
+			rhConnection.send(buildScript(request));
+			scriptResult = rhConnection.waitAndGet(120);
         } 
         catch (RhException | IOException e ) {
-            code = 500; // FIXME RhClient has no public methods returning RhResponse, so code is lost
-            logger.warn("Error occurred while fetching data from Remotehand", e);
+			scriptResult.setCode(RhResponseCode.UNKNOWN.getCode());
+			String errMsg = "Error occurred while fetching data from RemoteHand";
+			scriptResult.setErrorMessage(errMsg);
+			logger.warn(errMsg, e);
         }
-        RhBatchResponse response = RhBatchResponse.newBuilder()
-                .setCode(code)
-                .setData(dataString)
-                .build();
+		RhBatchResponse response = RhBatchResponse.newBuilder()
+				.setScriptResult(RhResponseCode.byCode(scriptResult.getCode()).toString())
+				.setErrorMessage(defaultIfEmpty(scriptResult.getErrorMessage(), ""))
+				.setSessionId(rhConnection.getSessionId())
+				.addAllTextOut(scriptResult.getTextOutput())
+				.build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();

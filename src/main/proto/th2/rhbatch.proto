@@ -28,8 +28,10 @@ service RhBatch {
 }
 
 message RhBatchResponse {
-    int32 code = 1;
-    string data = 2;
+    string scriptResult = 1;
+    string errorMessage = 2;
+    repeated string textOut = 3;
+    string sessionId = 4;
 }
 
 // Represents list of RhActions which need to be executed to perform some operation user wants to
