@@ -14,13 +14,37 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.hand;
+package com.exactpro.th2.hand.remotehand;
 
-import com.exactpro.th2.hand.remotehand.RhClient;
-
-import io.grpc.BindableService;
-
-public interface IHandService extends BindableService
+public enum RhResponseCode
 {
-	void init(Config config, RhClient rhConnection);
+	SUCCESS(0),
+	COMPILE_ERROR(1),
+	EXECUTION_ERROR(2),
+	TOOL_BUSY(3),
+	INCORRECT_REQUEST(4),
+	RH_ERROR(5),
+	UNKNOWN(-1);
+	
+	private final int code;
+	
+	RhResponseCode(int code)
+	{
+		this.code = code;
+	}
+	
+	public int getCode()
+	{
+		return code;
+	}
+	
+	public static RhResponseCode byCode(int code)
+	{
+		for (RhResponseCode error : values())
+		{
+			if (code == error.code)
+				return error;
+		}
+		return UNKNOWN;
+	}
 }
