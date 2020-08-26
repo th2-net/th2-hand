@@ -20,6 +20,7 @@ option java_multiple_files = true;
 option java_package = "com.exactpro.th2.act.grpc.hand";
 
 import "th2/rhactionsmessages.proto";
+import "th2/rhactionsmessages_win.proto";
 
 package th2;
 
@@ -78,5 +79,16 @@ message RhAction {
       AcceptAlert acceptAlert = 35;
       DismissAlert dismissAlert = 36;
       CheckImageAvailability checkImageAvailability = 37;
+      
+      
+      //windows actions
+      WinOpen winOpen = 100;
+      WinClick winClick = 101;
+      WinSendText winSendText = 102;
+      WinGetActiveWindow winGetActiveWindow = 103;
+      WinGetElementAttribute winGetElementAttribute = 104;
+      WinWait winWait= 105;
+      WinToggleCheckBox winToggleCheckBox = 106;
+      WinClickContextMenu winClickContextMenu = 107;
   }
 }

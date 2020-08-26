@@ -98,27 +98,53 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 			{
 				switch (action.getActionCase())
 				{
-				case OPEN:
-					addOpen(printer, action.getOpen());
-					break;
-				case SENDKEYS:
-					addSendKeys(printer, action.getSendKeys());
-					break;
-				case FINDELEMENT:
-					addFindElement(printer, action.getFindElement());
-					break;
-				case CLICK:
-					addClick(printer, action.getClick());
-					break;
-				case SENDKEYSTOACTIVE:
-					addSendKeysToActive(printer, action.getSendKeysToActive());
-					break;
-				case SWITCHWINDOW:
-					addSwitchWindow(printer, action.getSwitchWindow());
-					break;
-				default:
-					logger.warn("Unsupported action: " + action.getActionCase());
-					break;
+					case OPEN:
+						addOpen(printer, action.getOpen());
+						break;
+					case SENDKEYS:
+						addSendKeys(printer, action.getSendKeys());
+						break;
+					case FINDELEMENT:
+						addFindElement(printer, action.getFindElement());
+						break;
+					case CLICK:
+						addClick(printer, action.getClick());
+						break;
+					case SENDKEYSTOACTIVE:
+						addSendKeysToActive(printer, action.getSendKeysToActive());
+						break;
+					case SWITCHWINDOW:
+						addSwitchWindow(printer, action.getSwitchWindow());
+						break;
+					
+					case WINOPEN:
+						WinActionsBuilder.addOpen(printer, action.getWinOpen());
+						break;
+					case WINCLICK:
+						WinActionsBuilder.addClick(printer, action.getWinClick());
+						break;
+					case WINSENDTEXT:
+						WinActionsBuilder.addSendText(printer, action.getWinSendText());
+						break;
+					case WINGETACTIVEWINDOW:
+						WinActionsBuilder.addActiveWindow(printer, action.getWinGetActiveWindow());
+						break;
+					case WINGETELEMENTATTRIBUTE:
+						WinActionsBuilder.addGetElementAttribute(printer, action.getWinGetElementAttribute());
+						break;
+					case WINWAIT:
+						WinActionsBuilder.addWait(printer, action.getWinWait());
+						break;
+					case WINTOGGLECHECKBOX:
+						WinActionsBuilder.addToggleCheckBox(printer, action.getWinToggleCheckBox());
+						break;
+					case WINCLICKCONTEXTMENU:
+						WinActionsBuilder.addClickContextMenu(printer, action.getWinClickContextMenu());
+						break;
+					
+					default:
+						logger.warn("Unsupported action: " + action.getActionCase());
+						break;
 				}
 			}
 		}
