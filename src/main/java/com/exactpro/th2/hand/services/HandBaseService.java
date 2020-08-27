@@ -19,6 +19,7 @@ package com.exactpro.th2.hand.services;
 import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,7 @@ import com.exactpro.th2.hand.remotehand.RhException;
 import com.exactpro.th2.hand.remotehand.RhResponseCode;
 import com.exactpro.th2.hand.remotehand.RhScriptResult;
 
+import com.exactpro.th2.infra.grpc.MessageID;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.slf4j.Logger;
@@ -53,6 +55,8 @@ import io.grpc.stub.StreamObserver;
 public class HandBaseService extends RhBatchImplBase implements IHandService
 {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
+	
+	public static final String RH_SESSION_PREFIX = "/Ses";
 
 	private RhClient rhConnection;
 	private MessageHandler messageHandler;
@@ -63,9 +67,10 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		logger.info("Action: '{}', request: '{}'", "executeRhActionsBatch", TextFormat.shortDebugString(request));
 
 		RhScriptResult scriptResult;
+		List<MessageID> messageIDS = new ArrayList<>();
 		try
 		{
-			rhConnection.send(buildScript(request));
+			rhConnection.send(buildScript(request, messageIDS));
 			scriptResult = rhConnection.waitAndGet(120);
 		}
 		catch (RhException | IOException e)
@@ -76,12 +81,14 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 			scriptResult.setErrorMessage(errMsg);
 			logger.warn(errMsg, e);
 		}
+
+		messageIDS.add(messageHandler.onResponse(scriptResult, request.getParentEventId(),
+				rhConnection.getSessionId(), createSessionId(rhConnection.getSessionId())));
+		
 		RhBatchResponse response = RhBatchResponse.newBuilder()
 				.setScriptResult(RhResponseCode.byCode(scriptResult.getCode()).toString())
 				.setErrorMessage(defaultIfEmpty(scriptResult.getErrorMessage(), "")).setSessionId(rhConnection.getSessionId())
-				.addAllTextOut(scriptResult.getTextOutput()).build();
-		
-		messageHandler.onResponse(response, request.getParentEventId(), rhConnection.getSessionId(), rhConnection.getSessionId());
+				.addAllTextOut(scriptResult.getTextOutput()).addAllAttachedMessageIds(messageIDS).build();
 
 		responseObserver.onNext(response);
 		responseObserver.onCompleted();
@@ -93,7 +100,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		this.messageHandler = new MessageHandler(config.getRabbitMqConfiguration());
 	}
 
-	private String buildScript(RhActionsList actionsList) throws IOException
+	private String buildScript(RhActionsList actionsList, List<MessageID> messageIDS) throws IOException
 	{
 		String sessionId = rhConnection.getSessionId();
 		StringBuilder sb = new StringBuilder();
@@ -196,8 +203,15 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		}
 
 		String s = sb.toString();
-		messageHandler.onRequest(actionsList, s, sessionId);
+		messageIDS.addAll(messageHandler.onRequest(actionsList, s, createSessionId(sessionId)));
 		return s;		
+	}
+	
+	private String createSessionId(String sessionId) {
+		if (sessionId != null && sessionId.startsWith(RH_SESSION_PREFIX)) {
+			return sessionId.substring(RH_SESSION_PREFIX.length());
+		}
+		return sessionId;
 	}
 
 	private void addOpen(CSVPrinter printer, Open open) throws IOException

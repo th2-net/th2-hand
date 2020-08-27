@@ -18,8 +18,9 @@ package com.exactpro.th2.hand.services;
 
 import com.exactpro.th2.act.grpc.hand.RhAction;
 import com.exactpro.th2.act.grpc.hand.RhActionsList;
-import com.exactpro.th2.act.grpc.hand.RhBatchResponse;
 import com.exactpro.th2.hand.RabbitMqConfiguration;
+import com.exactpro.th2.hand.remotehand.RhResponseCode;
+import com.exactpro.th2.hand.remotehand.RhScriptResult;
 import com.exactpro.th2.infra.grpc.ConnectionID;
 import com.exactpro.th2.infra.grpc.Direction;
 import com.exactpro.th2.infra.grpc.EventID;
@@ -41,6 +42,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class MessageHandler implements AutoCloseable {
 
@@ -56,7 +58,7 @@ public class MessageHandler implements AutoCloseable {
 		return Value.newBuilder().setSimpleValue(Objects.toString(obj)).build();
 	}
 	
-	public void onRequest(RhActionsList actionsList, String scriptText, String sessionId) {
+	public List<MessageID> onRequest(RhActionsList actionsList, String scriptText, String sessionId) {
 		EventID parentId = actionsList.getParentEventId();
 		List<Message> messages = new ArrayList<>();
 		long sq = System.nanoTime();
@@ -69,7 +71,7 @@ public class MessageHandler implements AutoCloseable {
 					if (value instanceof GeneratedMessageV3) {
 						for (Map.Entry<Descriptors.FieldDescriptor, Object> entry2 : 
 								((GeneratedMessageV3)value).getAllFields().entrySet()) {
-							fields.put(entry2.getKey().getName(), simpleFromText(entry.getKey().getName()));
+							fields.put(entry2.getKey().getName(), simpleFromText(entry2.getValue()));
 						}
 					}
 					messages.add(this.buildMessage(parentId, fields, Direction.FIRST, sessionId, sq++));
@@ -84,50 +86,15 @@ public class MessageHandler implements AutoCloseable {
 		} catch (Exception e) {
 			logger.error("Cannot send message to message-storage", e);
 		}
-	}
-	
-	public void onRequest(String name, EventID parentId, Map<Descriptors.FieldDescriptor, Object> msgFields, String sessionId) {
-		Map<String, Value> fields = new LinkedHashMap<>();
-		fields.put("ActionName", simpleFromText(name));
-		for (Map.Entry<Descriptors.FieldDescriptor, Object> entries : msgFields.entrySet()) {
-			fields.put(entries.getKey().getName(), simpleFromText(entries.getValue()));
-		}
-		Message message = this.buildMessage(parentId, fields, Direction.FIRST, sessionId, System.nanoTime());
-		try {
-			this.rabbitMqConnection.sendMessage(message);
-		} catch (Exception e) {
-			logger.error("Cannot send message to message-storage", e);
-		}
+		
+		return messages.stream().map(message -> message.getMetadata().getId()).collect(Collectors.toList());
 	}
 
-	public void onRequest(String name, EventID parentId, String sessionId) {
+	public MessageID onResponse(RhScriptResult response, EventID eventId, String sessionId, String rhSessionId) {
 		Map<String, Value> fields = new LinkedHashMap<>();
-		fields.put("ActionName", simpleFromText(name));
-		fields.put("ErrorText", simpleFromText("Is not implemented"));
-		Message message = this.buildMessage(parentId, fields, Direction.FIRST, sessionId, System.nanoTime());
-		try {
-			this.rabbitMqConnection.sendMessage(message);
-		} catch (Exception e) {
-			logger.error("Cannot send message to message-storage", e);
-		}
-	}
-
-	public void onRequestMessage(String wholeMessage, EventID parentId, String sessionId) {
-		Map<String, Value> fields = new LinkedHashMap<>();
-		fields.put("ScriptText", simpleFromText("wholeMessage"));
-		Message message = this.buildMessage(parentId, fields, Direction.FIRST, sessionId, System.nanoTime());
-		try {
-			this.rabbitMqConnection.sendMessage(message);
-		} catch (Exception e) {
-			logger.error("Cannot send message to message-storage", e);
-		}
-	}
-
-	public void onResponse(RhBatchResponse response, EventID eventId, String sessionId, String rhSessionId) {
-		Map<String, Value> fields = new LinkedHashMap<>();
-		fields.put("ScriptOutputCode", simpleFromText(String.valueOf(response.getScriptResult())));
+		fields.put("ScriptOutputCode", simpleFromText(RhResponseCode.byCode(response.getCode()).toString()));
 		fields.put("ErrorText", simpleFromText(response.getErrorMessage() == null ? "" : response.getErrorMessage()));
-		fields.put("Text out", simpleFromText(StringUtils.join(response.getTextOutList(), '|')));
+		fields.put("Text out", simpleFromText(StringUtils.join(response.getTextOutput(), '|')));
 		fields.put("RhSessionId", simpleFromText(rhSessionId));
 
 		Message message = this.buildMessage(eventId, fields, Direction.SECOND, sessionId, System.nanoTime());
@@ -136,6 +103,8 @@ public class MessageHandler implements AutoCloseable {
 		} catch (Exception e) {
 			logger.error("Cannot send message to message-storage", e);
 		}
+		
+		return message.getMetadata().getId();
 	}
 
 

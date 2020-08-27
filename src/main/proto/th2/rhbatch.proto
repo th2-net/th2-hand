@@ -34,6 +34,7 @@ message RhBatchResponse {
     string errorMessage = 2;
     repeated string textOut = 3;
     string sessionId = 4;
+    repeated MessageID attached_message_ids = 5;
 }
 
 // Represents list of RhActions which need to be executed to perform some operation user wants to
