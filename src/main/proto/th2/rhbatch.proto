@@ -21,6 +21,7 @@ option java_package = "com.exactpro.th2.act.grpc.hand";
 
 import "th2/rhactionsmessages.proto";
 import "th2/rhactionsmessages_win.proto";
+import "th2/infra.proto";
 
 package th2;
 
@@ -38,6 +39,7 @@ message RhBatchResponse {
 // Represents list of RhActions which need to be executed to perform some operation user wants to
 message RhActionsList {
   repeated RhAction rhAction = 1;
+  EventID parentEventId = 2;
 }
 
 message RhAction {

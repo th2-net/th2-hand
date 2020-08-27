@@ -33,17 +33,17 @@ public class Config
 
 	protected final int grpcPort;
 	protected final String rhUrl;
-	protected final Path rootDir;
-	protected final Path cfgDir;
-	protected final Path scriptsDir;
+	protected final Path rootDir;	
+	
+	protected final RabbitMqConfiguration rabbitMqConfiguration;
 
 	public Config()
 	{
-		grpcPort = getEnvTh2GrpcPort();
-		rhUrl = getEnvTh2RhUrl();
-		rootDir = getRootDir();
-		cfgDir = getEnvTh2CfgDir();
-		scriptsDir = getEnvTh2ScriptsDir();
+		this.grpcPort = getEnvTh2GrpcPort();
+		this.rhUrl = getEnvTh2RhUrl();
+		this.rootDir = getRootDir();
+		
+		this.rabbitMqConfiguration = new RabbitMqConfiguration();
 	}
 
 	protected Path getRootDir()
@@ -51,18 +51,7 @@ public class Config
 		return Paths.get(ObjectUtils.defaultIfNull(System.getenv(PROJECT_DIR_ARG), System.getProperty("user.dir")));
 	}
 
-	protected Path getEnvTh2CfgDir()
-	{
-		return rootDir.resolve("cfg");
-	}
-
-	protected Path getEnvTh2ScriptsDir()
-	{
-		return cfgDir.resolve("scripts");
-	}
-
-	protected String getEnvTh2RhUrl()
-	{
+	protected String getEnvTh2RhUrl() {
 		return ObjectUtils.defaultIfNull(System.getenv(RH_URL_ARG), DEFAULT_RH_URL);
 	}
 
@@ -81,13 +70,7 @@ public class Config
 		return rhUrl;
 	}
 
-	public Path getCfgDir()
-	{
-		return cfgDir;
-	}
-
-	public Path getScriptsDir()
-	{
-		return scriptsDir;
+	public RabbitMqConfiguration getRabbitMqConfiguration() {
+		return rabbitMqConfiguration;
 	}
 }

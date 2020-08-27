@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 import com.exactpro.th2.hand.remotehand.RhClient;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 
@@ -34,19 +36,20 @@ public class HandServer
 	private final Config config;
 	private final RhClient rhConnection;
 	private final Server server;
+	private final List<IHandService> services; 
 
-	public HandServer(Config config, RhClient rhConnection)
-	{
+	public HandServer(Config config, RhClient rhConnection) throws Exception {
 		this.config = config;
 		this.rhConnection = rhConnection;
-		this.server = buildServer();
+		this.services = new ArrayList<>();
+		this.server = buildServer(this.services);
 	}
 
-	protected Server buildServer()
-	{
+	protected Server buildServer(List<IHandService> services) throws Exception {
 		ServerBuilder<?> builder = ServerBuilder.forPort(config.getGrpcPort());
 		for (IHandService rhService : ServiceLoader.load(IHandService.class))
 		{
+			services.add(rhService);
 			rhService.init(config, rhConnection);
 			builder.addService(rhService);
 			logger.info("Service '{}' was loaded", rhService.getClass().getName());
@@ -92,6 +95,12 @@ public class HandServer
 		if (server != null)
 		{
 			server.awaitTermination();
+		}
+	}
+	
+	public void dispose() {
+		for (IHandService service : this.services) {
+			service.dispose();
 		}
 	}
 }

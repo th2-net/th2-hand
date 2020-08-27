@@ -22,5 +22,6 @@ import io.grpc.BindableService;
 
 public interface IHandService extends BindableService
 {
-	void init(Config config, RhClient rhConnection);
+	void init(Config config, RhClient rhConnection) throws Exception;
+	void dispose();
 }

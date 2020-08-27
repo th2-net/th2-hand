@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.exactpro.th2.act.grpc.hand.*;
+import com.exactpro.th2.act.grpc.hand.RhAction.ActionCase;
 import com.exactpro.th2.act.grpc.hand.RhBatchGrpc.RhBatchImplBase;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.Click;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.Click.ModifiersList;
@@ -32,6 +33,7 @@ import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.Open;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.SendKeys;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.SendKeysToActive;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.SwitchWindow;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 import com.exactpro.th2.hand.remotehand.RhClient;
 import com.exactpro.th2.hand.remotehand.RhException;
 import com.exactpro.th2.hand.remotehand.RhResponseCode;
@@ -53,6 +55,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	private RhClient rhConnection;
+	private MessageHandler messageHandler;
 
 	@Override
 	public void executeRhActionsBatch(RhActionsList request, StreamObserver<RhBatchResponse> responseObserver)
@@ -77,19 +80,22 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 				.setScriptResult(RhResponseCode.byCode(scriptResult.getCode()).toString())
 				.setErrorMessage(defaultIfEmpty(scriptResult.getErrorMessage(), "")).setSessionId(rhConnection.getSessionId())
 				.addAllTextOut(scriptResult.getTextOutput()).build();
+		
+		messageHandler.onResponse(response, request.getParentEventId(), rhConnection.getSessionId(), rhConnection.getSessionId());
 
 		responseObserver.onNext(response);
 		responseObserver.onCompleted();
 	}
 
 	@Override
-	public void init(Config config, RhClient rhConnection)
-	{
+	public void init(Config config, RhClient rhConnection) throws Exception {
 		this.rhConnection = rhConnection;
+		this.messageHandler = new MessageHandler(config.getRabbitMqConfiguration());
 	}
 
 	private String buildScript(RhActionsList actionsList) throws IOException
 	{
+		String sessionId = rhConnection.getSessionId();
 		StringBuilder sb = new StringBuilder();
 		List<RhAction> actionList = actionsList.getRhActionList();
 		try (CSVPrinter printer = CSVFormat.DEFAULT.print(sb))
@@ -99,47 +105,87 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 				switch (action.getActionCase())
 				{
 					case OPEN:
-						addOpen(printer, action.getOpen());
+						Open open = action.getOpen();
+						addOpen(printer, open);
+//						messageHandler.onRequest(ActionCase.OPEN.name(), actionsList.getParentEventId(),
+//								open.getAllFields(), sessionId);
 						break;
 					case SENDKEYS:
-						addSendKeys(printer, action.getSendKeys());
+						SendKeys sendKeys = action.getSendKeys();
+						addSendKeys(printer, sendKeys);
+//						messageHandler.onRequest(ActionCase.SENDKEYS.name(), actionsList.getParentEventId(),
+//								sendKeys.getAllFields(), sessionId);
 						break;
 					case FINDELEMENT:
-						addFindElement(printer, action.getFindElement());
+						FindElement findElement = action.getFindElement();
+//						messageHandler.onRequest(ActionCase.FINDELEMENT.name(), actionsList.getParentEventId(),
+//								findElement.getAllFields(), sessionId);
+						addFindElement(printer, findElement);
 						break;
 					case CLICK:
-						addClick(printer, action.getClick());
+						Click click = action.getClick();
+//						messageHandler.onRequest(ActionCase.CLICK.name(), actionsList.getParentEventId(),
+//								click.getAllFields(), sessionId);
+						addClick(printer, click);
 						break;
 					case SENDKEYSTOACTIVE:
-						addSendKeysToActive(printer, action.getSendKeysToActive());
+						SendKeysToActive sendKeysToActive = action.getSendKeysToActive();
+//						messageHandler.onRequest(ActionCase.SENDKEYSTOACTIVE.name(), actionsList.getParentEventId(),
+//								sendKeysToActive.getAllFields(), sessionId);
+						addSendKeysToActive(printer, sendKeysToActive);
 						break;
 					case SWITCHWINDOW:
-						addSwitchWindow(printer, action.getSwitchWindow());
+						SwitchWindow switchWindow = action.getSwitchWindow();
+						addSwitchWindow(printer, switchWindow);
+//						messageHandler.onRequest(ActionCase.SWITCHWINDOW.name(), actionsList.getParentEventId(),
+//								switchWindow.getAllFields(), sessionId);
 						break;
 					
 					case WINOPEN:
-						WinActionsBuilder.addOpen(printer, action.getWinOpen());
+						RhWinActionsMessages.WinOpen winOpen = action.getWinOpen();
+						WinActionsBuilder.addOpen(printer, winOpen);
+//						messageHandler.onRequest(ActionCase.WINOPEN.name(), actionsList.getParentEventId(),
+//								winOpen.getAllFields(), sessionId);
 						break;
 					case WINCLICK:
-						WinActionsBuilder.addClick(printer, action.getWinClick());
+						RhWinActionsMessages.WinClick winClick = action.getWinClick();
+						WinActionsBuilder.addClick(printer, winClick);
+//						messageHandler.onRequest(ActionCase.WINCLICK.name(), actionsList.getParentEventId(),
+//								winClick.getAllFields(), sessionId);
 						break;
 					case WINSENDTEXT:
-						WinActionsBuilder.addSendText(printer, action.getWinSendText());
+						RhWinActionsMessages.WinSendText winSendText = action.getWinSendText();
+						WinActionsBuilder.addSendText(printer, winSendText);
+//						messageHandler.onRequest(ActionCase.WINSENDTEXT.name(), actionsList.getParentEventId(),
+//								winSendText.getAllFields(), sessionId);
 						break;
 					case WINGETACTIVEWINDOW:
-						WinActionsBuilder.addActiveWindow(printer, action.getWinGetActiveWindow());
+						RhWinActionsMessages.WinGetActiveWindow winGetActiveWindow = action.getWinGetActiveWindow();
+						WinActionsBuilder.addActiveWindow(printer, winGetActiveWindow);
+//						messageHandler.onRequest(ActionCase.WINGETACTIVEWINDOW.name(), actionsList.getParentEventId(),
+//								winGetActiveWindow.getAllFields(), sessionId);
 						break;
 					case WINGETELEMENTATTRIBUTE:
-						WinActionsBuilder.addGetElementAttribute(printer, action.getWinGetElementAttribute());
+						RhWinActionsMessages.WinGetElementAttribute winGetElementAttribute = action.getWinGetElementAttribute();
+						WinActionsBuilder.addGetElementAttribute(printer, winGetElementAttribute);
+//						messageHandler.onRequest(ActionCase.WINGETELEMENTATTRIBUTE.name(), actionsList.getParentEventId(),
+//								winGetElementAttribute.getAllFields(), sessionId);
 						break;
 					case WINWAIT:
-						WinActionsBuilder.addWait(printer, action.getWinWait());
+						RhWinActionsMessages.WinWait winWait = action.getWinWait();
+						WinActionsBuilder.addWait(printer, winWait);
+//						messageHandler.onRequest(ActionCase.WINWAIT.name(), actionsList.getParentEventId(),
+//								winWait.getAllFields(), sessionId);
 						break;
 					case WINTOGGLECHECKBOX:
-						WinActionsBuilder.addToggleCheckBox(printer, action.getWinToggleCheckBox());
+						RhWinActionsMessages.WinToggleCheckBox winToggleCheckBox = action.getWinToggleCheckBox();
+						WinActionsBuilder.addToggleCheckBox(printer, winToggleCheckBox);
+//						messageHandler.onRequest(ActionCase.WINTOGGLECHECKBOX.name(), actionsList.getParentEventId(),
+//								winToggleCheckBox.getAllFields(), sessionId);
 						break;
 					case WINCLICKCONTEXTMENU:
-						WinActionsBuilder.addClickContextMenu(printer, action.getWinClickContextMenu());
+						RhWinActionsMessages.WinClickContextMenu winClickContextMenu = action.getWinClickContextMenu();
+						WinActionsBuilder.addClickContextMenu(printer, winClickContextMenu);
 						break;
 					
 					default:
@@ -149,7 +195,9 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 			}
 		}
 
-		return sb.toString();
+		String s = sb.toString();
+		messageHandler.onRequest(actionsList, s, sessionId);
+		return s;		
 	}
 
 	private void addOpen(CSVPrinter printer, Open open) throws IOException
@@ -291,4 +339,14 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		printer.print(String.valueOf(switchWindow.getWindow()));
 		printer.println();
 	}
+
+	@Override
+	public void dispose() {
+		try {
+			this.messageHandler.close();
+		} catch (Exception e) {
+			logger.error("Error disposing message handler", e);
+		}
+	}
+
 }

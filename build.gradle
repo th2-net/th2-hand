@@ -74,7 +74,8 @@ dependencies {
 	compile "io.grpc:grpc-protobuf:${grpcVersion}"
 	compile "io.grpc:grpc-stub:${grpcVersion}"
 	compile "io.grpc:grpc-netty-shaded:${grpcVersion}"
-	
+
+	compile "com.rabbitmq:amqp-client:5.8.0"
 	compile "com.exactpro.th2:th2-grpc-infra:+"
 	
 	compile 'org.apache.commons:commons-lang3:3.4'
@@ -156,6 +157,23 @@ publishing {
 	}
 }
 
+jar {
+	archivesBaseName = "${archivesBaseName}"
+	manifest {
+		attributes('Specification-Title': 'TH2 Hand')
+		attributes('Main-Class': 'com.exactpro.th2.hand.Application')
+		attributes("Class-Path": configurations.compileClasspath.collect { "lib/" + it.getName() }.join(' '))
+	}
+}
+
+task release(group: 'distribution', type: Zip, dependsOn: jar) {
+	archiveName = "${archivesBaseName}"+getDate('yyyyMMdd.HHmmss')+".zip"
+	from(configurations.compileClasspath) {
+		into "lib"
+	}
+	from jar
+}
+
 artifactory {
 	publish {
 		defaults {
@@ -169,4 +187,10 @@ artifactory {
 			publishPom = true
 		}
 	}
+}
+
+static def getDate(String format) {
+	def date = new Date()
+	def formattedDate = date.format(format)
+	return formattedDate
 }
