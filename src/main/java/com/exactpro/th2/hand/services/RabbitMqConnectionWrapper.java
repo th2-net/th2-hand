@@ -19,6 +19,8 @@ package com.exactpro.th2.hand.services;
 import com.exactpro.th2.hand.RabbitMqConfiguration;
 import com.exactpro.th2.infra.grpc.Message;
 import com.exactpro.th2.infra.grpc.MessageBatch;
+import com.exactpro.th2.infra.grpc.RawMessage;
+import com.exactpro.th2.infra.grpc.RawMessageBatch;
 import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -61,12 +63,27 @@ public class RabbitMqConnectionWrapper implements AutoCloseable {
 		return factory;
 	}
 
-	public void sendMessage(Message message) throws Exception {
+	public void sendMessage(RawMessage message) throws Exception {
 		sendMessage(Collections.singleton(message));
 	}
 	
-	public void sendMessage(Collection<Message> messages) throws Exception {
-		byte[] bytes = MessageBatch.newBuilder().addAllMessages(messages).build().toByteArray();
+	public void sendMessage(Collection<RawMessage> messages) throws Exception {
+		RawMessageBatch.Builder builder = RawMessageBatch.newBuilder();
+		int count = 0;
+		for (RawMessage message : messages) {
+			if (message != null) {
+				builder.addMessages(message);
+				count++;
+			}
+		}
+		
+		if (count == 0) {
+			logger.debug("Nothing to send to {} {}", exchangeName, routingKey);
+			return;
+		}
+			
+		
+		byte[] bytes = builder.build().toByteArray();
 		synchronized (channel) {
 			channel.basicPublish(exchangeName, routingKey, null, bytes);
 		}

@@ -38,10 +38,17 @@ public class Application
 	{
 		Config config = getConfig();
 		RhClient rhConnection = initRhConnection(config);
-		HandServer handServer = null;
 		try
 		{
-			handServer = new HandServer(config, rhConnection);
+			final HandServer handServer = new HandServer(config, rhConnection);
+			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+				try {
+					LOGGER.info("Disposing hand server");
+					handServer.dispose();
+				} catch (Exception e) {
+					LOGGER.error("Cannot dispose hand server", e);
+				} 
+			}));
 			handServer.start();
 			handServer.blockUntilShutdown();
 		}
@@ -49,11 +56,7 @@ public class Application
 		{
 			LOGGER.error("Unable to start 'HandServer'", e);
 			closeApp();
-        } finally {
-        	if (handServer != null) {
-        		handServer.dispose();
-			}
-		}
+        }
 	}
 
 	protected Config getConfig()

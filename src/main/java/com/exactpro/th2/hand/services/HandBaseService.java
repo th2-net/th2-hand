@@ -82,8 +82,8 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 			logger.warn(errMsg, e);
 		}
 
-		messageIDS.add(messageHandler.onResponse(scriptResult, request.getParentEventId(),
-				rhConnection.getSessionId(), createSessionId(rhConnection.getSessionId())));
+		messageIDS.add(messageHandler.onResponse(scriptResult, createSessionId(rhConnection.getSessionId()), 
+				rhConnection.getSessionId()));
 		
 		RhBatchResponse response = RhBatchResponse.newBuilder()
 				.setScriptResult(RhResponseCode.byCode(scriptResult.getCode()).toString())
@@ -114,81 +114,55 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 					case OPEN:
 						Open open = action.getOpen();
 						addOpen(printer, open);
-//						messageHandler.onRequest(ActionCase.OPEN.name(), actionsList.getParentEventId(),
-//								open.getAllFields(), sessionId);
 						break;
 					case SENDKEYS:
 						SendKeys sendKeys = action.getSendKeys();
 						addSendKeys(printer, sendKeys);
-//						messageHandler.onRequest(ActionCase.SENDKEYS.name(), actionsList.getParentEventId(),
-//								sendKeys.getAllFields(), sessionId);
 						break;
 					case FINDELEMENT:
 						FindElement findElement = action.getFindElement();
-//						messageHandler.onRequest(ActionCase.FINDELEMENT.name(), actionsList.getParentEventId(),
-//								findElement.getAllFields(), sessionId);
 						addFindElement(printer, findElement);
 						break;
 					case CLICK:
 						Click click = action.getClick();
-//						messageHandler.onRequest(ActionCase.CLICK.name(), actionsList.getParentEventId(),
-//								click.getAllFields(), sessionId);
 						addClick(printer, click);
 						break;
 					case SENDKEYSTOACTIVE:
 						SendKeysToActive sendKeysToActive = action.getSendKeysToActive();
-//						messageHandler.onRequest(ActionCase.SENDKEYSTOACTIVE.name(), actionsList.getParentEventId(),
-//								sendKeysToActive.getAllFields(), sessionId);
 						addSendKeysToActive(printer, sendKeysToActive);
 						break;
 					case SWITCHWINDOW:
 						SwitchWindow switchWindow = action.getSwitchWindow();
 						addSwitchWindow(printer, switchWindow);
-//						messageHandler.onRequest(ActionCase.SWITCHWINDOW.name(), actionsList.getParentEventId(),
-//								switchWindow.getAllFields(), sessionId);
 						break;
 					
 					case WINOPEN:
 						RhWinActionsMessages.WinOpen winOpen = action.getWinOpen();
 						WinActionsBuilder.addOpen(printer, winOpen);
-//						messageHandler.onRequest(ActionCase.WINOPEN.name(), actionsList.getParentEventId(),
-//								winOpen.getAllFields(), sessionId);
 						break;
 					case WINCLICK:
 						RhWinActionsMessages.WinClick winClick = action.getWinClick();
 						WinActionsBuilder.addClick(printer, winClick);
-//						messageHandler.onRequest(ActionCase.WINCLICK.name(), actionsList.getParentEventId(),
-//								winClick.getAllFields(), sessionId);
 						break;
 					case WINSENDTEXT:
 						RhWinActionsMessages.WinSendText winSendText = action.getWinSendText();
 						WinActionsBuilder.addSendText(printer, winSendText);
-//						messageHandler.onRequest(ActionCase.WINSENDTEXT.name(), actionsList.getParentEventId(),
-//								winSendText.getAllFields(), sessionId);
 						break;
 					case WINGETACTIVEWINDOW:
 						RhWinActionsMessages.WinGetActiveWindow winGetActiveWindow = action.getWinGetActiveWindow();
 						WinActionsBuilder.addActiveWindow(printer, winGetActiveWindow);
-//						messageHandler.onRequest(ActionCase.WINGETACTIVEWINDOW.name(), actionsList.getParentEventId(),
-//								winGetActiveWindow.getAllFields(), sessionId);
 						break;
 					case WINGETELEMENTATTRIBUTE:
 						RhWinActionsMessages.WinGetElementAttribute winGetElementAttribute = action.getWinGetElementAttribute();
 						WinActionsBuilder.addGetElementAttribute(printer, winGetElementAttribute);
-//						messageHandler.onRequest(ActionCase.WINGETELEMENTATTRIBUTE.name(), actionsList.getParentEventId(),
-//								winGetElementAttribute.getAllFields(), sessionId);
 						break;
 					case WINWAIT:
 						RhWinActionsMessages.WinWait winWait = action.getWinWait();
 						WinActionsBuilder.addWait(printer, winWait);
-//						messageHandler.onRequest(ActionCase.WINWAIT.name(), actionsList.getParentEventId(),
-//								winWait.getAllFields(), sessionId);
 						break;
 					case WINTOGGLECHECKBOX:
 						RhWinActionsMessages.WinToggleCheckBox winToggleCheckBox = action.getWinToggleCheckBox();
 						WinActionsBuilder.addToggleCheckBox(printer, winToggleCheckBox);
-//						messageHandler.onRequest(ActionCase.WINTOGGLECHECKBOX.name(), actionsList.getParentEventId(),
-//								winToggleCheckBox.getAllFields(), sessionId);
 						break;
 					case WINCLICKCONTEXTMENU:
 						RhWinActionsMessages.WinClickContextMenu winClickContextMenu = action.getWinClickContextMenu();
