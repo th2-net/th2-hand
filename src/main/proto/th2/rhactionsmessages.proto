@@ -17,7 +17,7 @@
 syntax = "proto3";
 
 option java_multiple_files = false;
-option java_package = "com.exactpro.th2.hand.grpc.rhbatch.rhactions";
+option java_package = "com.exactpro.th2.act.grpc.hand.rhactions";
 option java_outer_classname = "RhActionsMessages";
 
 package th2;
