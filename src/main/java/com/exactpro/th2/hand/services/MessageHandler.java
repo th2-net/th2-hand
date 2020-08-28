@@ -23,10 +23,7 @@ import com.exactpro.th2.hand.remotehand.RhResponseCode;
 import com.exactpro.th2.hand.remotehand.RhScriptResult;
 import com.exactpro.th2.infra.grpc.ConnectionID;
 import com.exactpro.th2.infra.grpc.Direction;
-import com.exactpro.th2.infra.grpc.EventID;
-import com.exactpro.th2.infra.grpc.Message;
 import com.exactpro.th2.infra.grpc.MessageID;
-import com.exactpro.th2.infra.grpc.MessageMetadata;
 import com.exactpro.th2.infra.grpc.RawMessage;
 import com.exactpro.th2.infra.grpc.RawMessageMetadata;
 import com.exactpro.th2.infra.grpc.Value;
@@ -36,7 +33,6 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Timestamp;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,10 +55,6 @@ public class MessageHandler implements AutoCloseable {
 		this.rabbitMqConnection = new RabbitMqConnectionWrapper(configuration);
 	}
 
-	private static Value simpleFromText(Object obj) {
-		return Value.newBuilder().setSimpleValue(Objects.toString(obj)).build();
-	}
-	
 	public List<MessageID> onRequest(RhActionsList actionsList, String scriptText, String sessionId) {
 		List<RawMessage> messages = new ArrayList<>();
 		long sq = System.nanoTime();
@@ -118,7 +110,7 @@ public class MessageHandler implements AutoCloseable {
 		MessageID messageID = MessageID.newBuilder()
 				.setConnectionId(connectionID)
 				.setDirection(direction)
-				// TODO to replace it to sequence number from 1 to ...
+				// TODO to replace it with sequence number from 1 to ...
 				.setSequence(sq)
 				.build();
 		RawMessageMetadata messageMetadata = RawMessageMetadata.newBuilder()
@@ -133,7 +125,7 @@ public class MessageHandler implements AutoCloseable {
 			byte[] bytes = mapper.writeValueAsBytes(fields);
 			return builder.setMetadata(messageMetadata).setBody(ByteString.copyFrom(bytes)).build();
 		} catch (JsonProcessingException e) {
-			logger.error("Cannot encode message to JSON", e);
+			logger.error("Could not encode message as JSON", e);
 			return null;
 		}
 	}

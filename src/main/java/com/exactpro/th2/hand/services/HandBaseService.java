@@ -95,7 +95,8 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 	}
 
 	@Override
-	public void init(Config config, RhClient rhConnection) throws Exception {
+	public void init(Config config, RhClient rhConnection) throws Exception
+	{
 		this.rhConnection = rhConnection;
 		this.messageHandler = new MessageHandler(config.getRabbitMqConfiguration());
 	}
@@ -333,7 +334,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		try {
 			this.messageHandler.close();
 		} catch (Exception e) {
-			logger.error("Error disposing message handler", e);
+			logger.error("Error while disposing message handler", e);
 		}
 	}
 

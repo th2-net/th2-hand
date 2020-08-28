@@ -38,21 +38,23 @@ public class HandServer
 	private final Server server;
 	private final List<IHandService> services; 
 
-	public HandServer(Config config, RhClient rhConnection) throws Exception {
+	public HandServer(Config config, RhClient rhConnection) throws Exception
+	{
 		this.config = config;
 		this.rhConnection = rhConnection;
 		this.services = new ArrayList<>();
 		this.server = buildServer(this.services);
 	}
 
-	protected Server buildServer(List<IHandService> services) throws Exception {
+	protected Server buildServer(List<IHandService> services) throws Exception
+	{
 		ServerBuilder<?> builder = ServerBuilder.forPort(config.getGrpcPort());
 		for (IHandService rhService : ServiceLoader.load(IHandService.class))
 		{
 			services.add(rhService);
 			rhService.init(config, rhConnection);
 			builder.addService(rhService);
-			logger.info("Service '{}' was loaded", rhService.getClass().getName());
+			logger.info("Service '{}' loaded", rhService.getClass().getName());
 		}
 		
 		return builder.build();
@@ -64,7 +66,7 @@ public class HandServer
 		server.start();
 		logger.info("Server started, listening on port {}", server.getPort());
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-			logger.info("*** shutting down gRPC server since JVM is shutting down");
+			logger.info("*** shutting down gRPC server because JVM is shutting down");
 			try
 			{
 				stop();

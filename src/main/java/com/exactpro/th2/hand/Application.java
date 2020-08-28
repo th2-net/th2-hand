@@ -43,10 +43,10 @@ public class Application
 			final HandServer handServer = new HandServer(config, rhConnection);
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 				try {
-					LOGGER.info("Disposing hand server");
+					LOGGER.info("Disposing Hand server");
 					handServer.dispose();
 				} catch (Exception e) {
-					LOGGER.error("Cannot dispose hand server", e);
+					LOGGER.error("Error while disposing Hand server", e);
 				} 
 			}));
 			handServer.start();
@@ -54,7 +54,7 @@ public class Application
 		}
 		catch (Exception e)
 		{
-			LOGGER.error("Unable to start 'HandServer'", e);
+			LOGGER.error("Could not to start Hand server", e);
 			closeApp();
 		}
 	}
@@ -66,14 +66,14 @@ public class Application
 
 	protected RhClient initRhConnection(Config config)
 	{
-		LOGGER.debug("Creating Remote hand connection...");
+		LOGGER.info("Creating RemoteHand connection...");
 		try
 		{
 			return RhUtils.createRhConnection(config.getRhUrl());
 		}
 		catch (IOException | RhException e)
 		{
-			LOGGER.error("Unable to create RH connection", e);
+			LOGGER.error("Could not create RemoteHand connection", e);
 			closeApp();
 		}
 		

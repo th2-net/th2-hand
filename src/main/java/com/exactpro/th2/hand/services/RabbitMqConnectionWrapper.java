@@ -50,7 +50,7 @@ public class RabbitMqConnectionWrapper implements AutoCloseable {
 		this.channel = this.connection.createChannel();
 		this.channel.exchangeDeclare(exchangeName, BuiltinExchangeType.DIRECT);
 		
-		logger.debug("MQ channel was opened");
+		logger.debug("MQ channel opened");
 	}
 	
 	private ConnectionFactory buildFactory(RabbitMqConfiguration configuration) {
@@ -87,7 +87,7 @@ public class RabbitMqConnectionWrapper implements AutoCloseable {
 		synchronized (channel) {
 			channel.basicPublish(exchangeName, routingKey, null, bytes);
 		}
-		logger.debug("Array with size {} bytes was sent to {} {}", bytes.length, exchangeName, routingKey);
+		logger.debug("Array with {} bytes size sent to {} {}", bytes.length, exchangeName, routingKey);
 	}
 
 	@Override
@@ -97,7 +97,7 @@ public class RabbitMqConnectionWrapper implements AutoCloseable {
 			this.channel.close();
 		} catch (Exception e) {
 			exception = e;
-			logger.error("Cannot close RabbitMQ channel", e);
+			logger.error("Could not close RabbitMQ channel", e);
 		}
 		try {
 			this.connection.close();
@@ -105,11 +105,11 @@ public class RabbitMqConnectionWrapper implements AutoCloseable {
 			if (exception == null) {
 				exception = e;
 			}
-			logger.error("Cannot close RabbitMQ connection", e);
+			logger.error("Could not close RabbitMQ connection", e);
 		}
 		if (exception != null) {
 			throw exception;
 		}
-		logger.debug("MQ channel was closed");
+		logger.debug("MQ channel closed");
 	}
 }

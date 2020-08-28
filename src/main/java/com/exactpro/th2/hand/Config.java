@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.exactpro.th2.hand;
 
 import org.apache.commons.lang3.ObjectUtils;
@@ -52,7 +51,8 @@ public class Config
 		return Paths.get(ObjectUtils.defaultIfNull(System.getenv(PROJECT_DIR_ARG), System.getProperty("user.dir")));
 	}
 
-	protected String getEnvTh2RhUrl() {
+	protected String getEnvTh2RhUrl()
+	{
 		return ObjectUtils.defaultIfNull(System.getenv(RH_URL_ARG), DEFAULT_RH_URL);
 	}
 
@@ -71,7 +71,8 @@ public class Config
 		return rhUrl;
 	}
 
-	public RabbitMqConfiguration getRabbitMqConfiguration() {
+	public RabbitMqConfiguration getRabbitMqConfiguration()
+	{
 		return rabbitMqConfiguration;
 	}
 }
