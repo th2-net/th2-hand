@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2009-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import io.grpc.stub.StreamObserver;
 public class HandBaseService extends HandBaseImplBase implements IHandService
 {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
 	private Config config;
 	private RhClient rhConnection;
 
@@ -62,23 +62,23 @@ public class HandBaseService extends HandBaseImplBase implements IHandService
         int waitInSeconds = request.getWaitInSeconds();
 
         logger.info("Action: '{}', Script name: '{}', Parameters:'{}'", "runScript", request.getScriptName(), params);
-        
+
         RhScriptResult scriptResult = new RhScriptResult();
         String errMsg = "";
         try {
             scriptResult = rhConnection.executeScript(scriptFile, params, waitInSeconds == 0 ? 10 : waitInSeconds);
-        } 
+        }
         catch (RhException e ) {
             scriptResult.setCode(RhResponseCode.UNKNOWN.getCode());
             errMsg = "Error occured while fetching data from Remotehand";
             logger.warn(errMsg, e);
-        } 
+        }
         catch (IOException e) {
             scriptResult.setCode(RhResponseCode.UNKNOWN.getCode());
             errMsg = String.format("Error occured while reading script file '%s'", scriptFile);
             logger.warn(errMsg, scriptFile, e);
         }
-        
+
         BaseResponse response = BaseResponse.newBuilder()
                 .setScriptResult(RhResponseCode.byCode(scriptResult.getCode()).toString())
                 .setErrorMessage(isEmpty(errMsg) ? defaultIfEmpty(scriptResult.getErrorMessage(), "") : errMsg)

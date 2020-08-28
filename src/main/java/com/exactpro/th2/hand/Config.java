@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2009-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ public class Config
 	protected final Path rootDir;
 	protected final Path cfgDir;
 	protected final Path scriptsDir;
-			
+
 	public Config()
 	{
 		grpcPort = getEnvTh2GrpcPort();
@@ -55,7 +55,7 @@ public class Config
 	}
 
     protected Path getEnvTh2ScriptsDir() {
-	    return cfgDir.resolve("scripts");      
+	    return cfgDir.resolve("scripts");
     }
 
 	protected String getEnvTh2RhUrl() {
@@ -63,7 +63,7 @@ public class Config
 	}
 
 	protected int getEnvTh2GrpcPort() {
-		return NumberUtils.toInt(System.getenv(GRPC_PORT_ARG), DEFAULT_GRPC_PORT);		
+		return NumberUtils.toInt(System.getenv(GRPC_PORT_ARG), DEFAULT_GRPC_PORT);
 	}
 
 	public int getGrpcPort() {

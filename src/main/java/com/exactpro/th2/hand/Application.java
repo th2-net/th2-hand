@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2009-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ public class Application
 	{
         new Application().run(args);
 	}
-	
+
 	public void run(String[] args) {
         Config config = getConfig();
         RhClient rhConnection = initRhConnection(config);
@@ -48,11 +48,11 @@ public class Application
             closeApp();
         }
     }
-    
+
     protected Config getConfig() {
         return new Config();
     }
-	
+
 	protected RhClient initRhConnection(Config config)
 	{
 		LOGGER.debug("Creating Remote hand connection...");

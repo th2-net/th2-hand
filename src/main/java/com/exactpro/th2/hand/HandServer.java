@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2009-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ public class HandServer
 	private final Config config;
 	private final RhClient rhConnection;
 	private final Server server;
-	
+
 	public HandServer(Config config, RhClient rhConnection)
 	{
 		this.config = config;
@@ -50,7 +50,7 @@ public class HandServer
 			builder.addService(rhService);
 			logger.info("Service '{}' was loaded", rhService.getClass().getName());
 		}
-		
+
 		return builder.build();
 	}
 
@@ -61,11 +61,11 @@ public class HandServer
 		logger.info("Server started, listening on port:{}", server.getPort());
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			logger.info("*** shutting down gRPC server since JVM is shutting down");
-			try 
+			try
 			{
 				HandServer.this.stop();
-			} 
-			catch (InterruptedException e) 
+			}
+			catch (InterruptedException e)
 			{
 				logger.warn("Server termination await was terminated", e);
 			}
