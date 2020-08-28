@@ -19,6 +19,7 @@ plugins {
 	id 'distribution'
 	id 'com.google.protobuf' version '0.8.8'
 	id 'com.jfrog.artifactory' version '4.15.1'
+	id 'com.palantir.docker' version '0.25.0' apply false
 }
 
 java {
@@ -35,6 +36,7 @@ apply plugin: 'distribution'
 apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.artifactory'
 apply plugin: 'com.google.protobuf'
+apply plugin: 'com.palantir.docker'
 
 ext {
 	version_slf4j = '1.7.30'
@@ -46,6 +48,8 @@ ext {
 	mainRsrcDir = 'src/main/resources'
 	sharedDir = file("${projectDir}/shared")
 	genDir = file("${projectDir}/src/gen")
+
+	dockerImageVersion      = "${version_major}.${version_minor}.${version_maintenance}.${version_build}"
 }
 
 repositories {
@@ -130,8 +134,21 @@ protobuf {
 
 compileJava.dependsOn.add('generateProto')
 
+applicationName = 'th2-hand'
+
 distTar {
-	archiveName "${rootProject.name}.tar"
+	archiveName "${applicationName}.tar"
+}
+
+docker {
+	name "${target_docker_repository}/${docke_image_name}:${dockerImageVersion}"
+	tag 'local-version', "${docke_image_name}:${dockerImageVersion}"
+
+	copySpec.from(tarTree("$buildDir/distributions/${archivesBaseName}.tar"))
+}
+
+dockerPrepare {
+	dependsOn distTar
 }
 
 clean {
@@ -158,7 +175,7 @@ publishing {
 }
 
 jar {
-	archivesBaseName = "${archivesBaseName}"
+	archivesBaseName = applicationName
 	manifest {
 		attributes('Specification-Title': 'TH2 Hand')
 		attributes('Main-Class': 'com.exactpro.th2.hand.Application')
@@ -167,7 +184,7 @@ jar {
 }
 
 task release(group: 'distribution', type: Zip, dependsOn: jar) {
-	archiveName = "${archivesBaseName}"+getDate('yyyyMMdd.HHmmss')+".zip"
+	archiveName = applicationName + getDate('yyyyMMdd.HHmmss')+".zip"
 	from(configurations.compileClasspath) {
 		into "lib"
 	}
