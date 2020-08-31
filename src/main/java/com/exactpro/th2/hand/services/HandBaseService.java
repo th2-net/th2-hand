@@ -16,6 +16,7 @@
 
 package com.exactpro.th2.hand.services;
 
+import static com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.*;
 import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 import com.exactpro.th2.act.grpc.hand.*;
 import com.exactpro.th2.act.grpc.hand.RhAction.ActionCase;
 import com.exactpro.th2.act.grpc.hand.RhBatchGrpc.RhBatchImplBase;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.Click;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.Click.ModifiersList;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.FindElement;
@@ -136,7 +138,15 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						SwitchWindow switchWindow = action.getSwitchWindow();
 						addSwitchWindow(printer, switchWindow);
 						break;
-					
+					case GETELEMENTVALUE:
+						GetElementValue getElementValue = action.getGetElementValue();
+						addGetElementValue(printer, getElementValue);
+						break;
+					case SCROLLDIVUNTIL:
+						ScrollDivUntil scrollDivUntil = action.getScrollDivUntil();
+						addScrollDivUntil(printer, scrollDivUntil);
+						break;
+
 					case WINOPEN:
 						RhWinActionsMessages.WinOpen winOpen = action.getWinOpen();
 						WinActionsBuilder.addOpen(printer, winOpen);
@@ -326,6 +336,52 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		
 		printer.print("SwitchWindow");
 		printer.print(String.valueOf(switchWindow.getWindow()));
+		printer.println();
+	}
+
+	private void addScrollDivUntil(CSVPrinter printer, ScrollDivUntil scrollDivUntil) throws IOException
+	{
+		// #action,#wait,#locator,#matcher,#wait2,#locator2,#matcher2,#searchdir,#searchoffset,#doscrollto,#yoffset
+		printer.print("#action");
+		printer.print("#wait");
+		printer.print("#locator");
+		printer.print("#matcher");
+		printer.print("#wait2");
+		printer.print("#locator2");
+		printer.print("#matcher2");
+		printer.print("#searchdir");
+		printer.print("#searchoffset");
+		printer.print("#doscrollto");
+		printer.print("#yoffset");
+		printer.println();
+
+		printer.print("ScrollDivUntil");
+		printer.print(String.valueOf(scrollDivUntil.getWait()));
+		printer.print(readLocator(scrollDivUntil.getLocator()));
+		printer.print(scrollDivUntil.getMatcher());
+		printer.print(String.valueOf(scrollDivUntil.getWait2()));
+		printer.print(readLocator(scrollDivUntil.getLocator2()));
+		printer.print(scrollDivUntil.getMatcher2());
+		printer.print(scrollDivUntil.getSearchDir().name().toLowerCase());
+		printer.print(String.valueOf(scrollDivUntil.getSearchOffset()));
+		printer.print(String.valueOf(scrollDivUntil.getDoScrollTo()));
+		printer.print(String.valueOf(scrollDivUntil.getYOffset()));
+		printer.println();
+	}
+
+	private void addGetElementValue(CSVPrinter printer, GetElementValue getElementValue) throws IOException
+	{
+		// #action,#wait,#locator,#matcher
+		printer.print("#action");
+		printer.print("#wait");
+		printer.print("#locator");
+		printer.print("#matcher");
+		printer.println();
+
+		printer.print("GetElementValue");
+		printer.print(String.valueOf(getElementValue.getWait()));
+		printer.print(readLocator(getElementValue.getLocator()));
+		printer.print(getElementValue.getMatcher());
 		printer.println();
 	}
 
