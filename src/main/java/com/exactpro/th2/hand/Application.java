@@ -37,10 +37,9 @@ public class Application
 	public void run(String[] args)
 	{
 		Config config = getConfig();
-		RhClient rhConnection = initRhConnection(config);
 		try
 		{
-			final HandServer handServer = new HandServer(config, rhConnection);
+			final HandServer handServer = new HandServer(config, new RhConnectionManager(config));
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 				try {
 					LOGGER.info("Disposing Hand server");
@@ -62,22 +61,6 @@ public class Application
 	protected Config getConfig()
 	{
 		return new Config();
-	}
-
-	protected RhClient initRhConnection(Config config)
-	{
-		LOGGER.info("Creating RemoteHand connection...");
-		try
-		{
-			return RhUtils.createRhConnection(config.getRhUrl());
-		}
-		catch (IOException | RhException e)
-		{
-			LOGGER.error("Could not create RemoteHand connection", e);
-			closeApp();
-		}
-		
-		return null;
 	}
 
 	private static void closeApp()
