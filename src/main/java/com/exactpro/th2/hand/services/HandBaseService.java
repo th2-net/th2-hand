@@ -25,9 +25,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.exactpro.th2.act.grpc.hand.*;
-import com.exactpro.th2.act.grpc.hand.RhAction.ActionCase;
 import com.exactpro.th2.act.grpc.hand.RhBatchGrpc.RhBatchImplBase;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.Click;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.Click.ModifiersList;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.FindElement;
@@ -37,6 +35,7 @@ import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.SendKeys;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.SendKeysToActive;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.SwitchWindow;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
+import com.exactpro.th2.hand.RhConnectionManager;
 import com.exactpro.th2.hand.remotehand.RhClient;
 import com.exactpro.th2.hand.remotehand.RhException;
 import com.exactpro.th2.hand.remotehand.RhResponseCode;
@@ -60,7 +59,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 
 	public static final String RH_SESSION_PREFIX = "/Ses";
 
-	private RhClient rhConnection;
+	private RhConnectionManager rhConnManager;
 	private MessageHandler messageHandler;
 
 	@Override
@@ -70,12 +69,15 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		
 		RhScriptResult scriptResult;
 		List<MessageID> messageIDS = new ArrayList<>();
+		String sessionId = "th2_hand";
 		try
 		{
+			RhClient rhConnection = rhConnManager.getClient();
+			sessionId = rhConnection.getSessionId();
 			rhConnection.send(buildScript(request, messageIDS));
 			scriptResult = rhConnection.waitAndGet(120);
 		}
-		catch (RhException | IOException e)
+		catch (Exception e)
 		{
 			scriptResult = new RhScriptResult();
 			scriptResult.setCode(RhResponseCode.UNKNOWN.getCode());
@@ -84,12 +86,11 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 			logger.warn(errMsg, e);
 		}
 		
-		messageIDS.add(messageHandler.onResponse(scriptResult, createSessionId(rhConnection.getSessionId()), 
-				rhConnection.getSessionId()));
+		messageIDS.add(messageHandler.onResponse(scriptResult, createSessionId(sessionId), sessionId));
 		
 		RhBatchResponse response = RhBatchResponse.newBuilder()
 				.setScriptResult(RhResponseCode.byCode(scriptResult.getCode()).toString())
-				.setErrorMessage(defaultIfEmpty(scriptResult.getErrorMessage(), "")).setSessionId(rhConnection.getSessionId())
+				.setErrorMessage(defaultIfEmpty(scriptResult.getErrorMessage(), "")).setSessionId(sessionId)
 				.addAllTextOut(scriptResult.getTextOutput()).addAllAttachedMessageIds(messageIDS).build();
 		
 		responseObserver.onNext(response);
@@ -97,15 +98,21 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 	}
 
 	@Override
-	public void init(Config config, RhClient rhConnection) throws Exception
+	public void init(Config config, RhConnectionManager rhConnManager) throws Exception
 	{
-		this.rhConnection = rhConnection;
+		this.rhConnManager = rhConnManager;
 		this.messageHandler = new MessageHandler(config.getRabbitMqConfiguration());
 	}
 
 	private String buildScript(RhActionsList actionsList, List<MessageID> messageIDS) throws IOException
 	{
-		String sessionId = rhConnection.getSessionId();
+		String sessionId = "th2_hand";
+		try {
+			sessionId = this.rhConnManager.getClient().getSessionId();
+		} catch (Exception e) {
+			logger.error("Error occurred while interacting with RemoteHand", e);
+		}
+		
 		StringBuilder sb = new StringBuilder();
 		List<RhAction> actionList = actionsList.getRhActionList();
 		try (CSVPrinter printer = CSVFormat.DEFAULT.print(sb))

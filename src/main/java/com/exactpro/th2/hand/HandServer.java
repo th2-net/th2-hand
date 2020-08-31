@@ -34,14 +34,14 @@ public class HandServer
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	private final Config config;
-	private final RhClient rhConnection;
+	private final RhConnectionManager rhConnectionManager;
 	private final Server server;
 	private final List<IHandService> services; 
 
-	public HandServer(Config config, RhClient rhConnection) throws Exception
+	public HandServer(Config config, RhConnectionManager connectionManager) throws Exception
 	{
 		this.config = config;
-		this.rhConnection = rhConnection;
+		this.rhConnectionManager = connectionManager;
 		this.services = new ArrayList<>();
 		this.server = buildServer(this.services);
 	}
@@ -52,7 +52,7 @@ public class HandServer
 		for (IHandService rhService : ServiceLoader.load(IHandService.class))
 		{
 			services.add(rhService);
-			rhService.init(config, rhConnection);
+			rhService.init(config, rhConnectionManager);
 			builder.addService(rhService);
 			logger.info("Service '{}' loaded", rhService.getClass().getName());
 		}

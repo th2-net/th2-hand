@@ -16,12 +16,10 @@
 
 package com.exactpro.th2.hand;
 
-import com.exactpro.th2.hand.remotehand.RhClient;
-
 import io.grpc.BindableService;
 
 public interface IHandService extends BindableService
 {
-	void init(Config config, RhClient rhConnection) throws Exception;
+	void init(Config config, RhConnectionManager rhConnection) throws Exception;
 	void dispose();
 }
