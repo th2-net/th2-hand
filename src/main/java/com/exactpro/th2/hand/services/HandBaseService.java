@@ -37,7 +37,6 @@ import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.SwitchWindow;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 import com.exactpro.th2.hand.RhConnectionManager;
 import com.exactpro.th2.hand.remotehand.RhClient;
-import com.exactpro.th2.hand.remotehand.RhException;
 import com.exactpro.th2.hand.remotehand.RhResponseCode;
 import com.exactpro.th2.hand.remotehand.RhScriptResult;
 
@@ -49,6 +48,7 @@ import org.slf4j.LoggerFactory;
 
 import com.exactpro.th2.hand.Config;
 import com.exactpro.th2.hand.IHandService;
+import com.google.protobuf.Empty;
 import com.google.protobuf.TextFormat;
 
 import io.grpc.stub.StreamObserver;
@@ -61,6 +61,46 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 
 	private RhConnectionManager rhConnManager;
 	private MessageHandler messageHandler;
+	
+
+	@Override
+	public void init(Config config, RhConnectionManager rhConnManager) throws Exception
+	{
+		this.rhConnManager = rhConnManager;
+		this.messageHandler = new MessageHandler(config.getRabbitMqConfiguration());
+	}
+	
+	@Override
+	public void register(Empty request, StreamObserver<RhSessionID> responseObserver)
+	{
+		String sessionId;
+		try
+		{
+			RhClient client = rhConnManager.createClient();
+			sessionId = client.getSessionId();
+		}
+		catch (Exception e)
+		{
+			logger.error("Error while creating RH client", e);
+			sessionId = null;
+		}
+		RhSessionID result = RhSessionID.newBuilder().setId(sessionId).build();
+		responseObserver.onNext(result);
+		responseObserver.onCompleted();
+	}
+	
+	@Override
+	public void unregister(RhSessionID request, StreamObserver<Empty> responseObserver)
+	{
+		try
+		{
+			rhConnManager.closeClient(request.getId());
+		}
+		catch (IOException e)
+		{
+			logger.error("Error while closing RH client for session '"+request.getId()+"'", e);
+		}
+	}
 
 	@Override
 	public void executeRhActionsBatch(RhActionsList request, StreamObserver<RhBatchResponse> responseObserver)
@@ -72,9 +112,9 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		String sessionId = "th2_hand";
 		try
 		{
-			RhClient rhConnection = rhConnManager.getClient();
-			sessionId = rhConnection.getSessionId();
-			rhConnection.send(buildScript(request, messageIDS));
+			sessionId = request.getSessionId().getId();
+			RhClient rhConnection = rhConnManager.getClient(sessionId);
+			rhConnection.send(buildScript(request, messageIDS, sessionId));
 			scriptResult = rhConnection.waitAndGet(120);
 		}
 		catch (Exception e)
@@ -96,23 +136,10 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		responseObserver.onNext(response);
 		responseObserver.onCompleted();
 	}
+	
 
-	@Override
-	public void init(Config config, RhConnectionManager rhConnManager) throws Exception
+	private String buildScript(RhActionsList actionsList, List<MessageID> messageIDS, String sessionId) throws IOException
 	{
-		this.rhConnManager = rhConnManager;
-		this.messageHandler = new MessageHandler(config.getRabbitMqConfiguration());
-	}
-
-	private String buildScript(RhActionsList actionsList, List<MessageID> messageIDS) throws IOException
-	{
-		String sessionId = "th2_hand";
-		try {
-			sessionId = this.rhConnManager.getClient().getSessionId();
-		} catch (Exception e) {
-			logger.error("Error occurred while interacting with RemoteHand", e);
-		}
-		
 		StringBuilder sb = new StringBuilder();
 		List<RhAction> actionList = actionsList.getRhActionList();
 		try (CSVPrinter printer = CSVFormat.DEFAULT.print(sb))
@@ -398,6 +425,12 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 			this.messageHandler.close();
 		} catch (Exception e) {
 			logger.error("Error while disposing message handler", e);
+		}
+		
+		try {
+			this.rhConnManager.dispose();
+		} catch (Exception e) {
+			logger.error("Error while disposing RH connections", e);
 		}
 	}
 
