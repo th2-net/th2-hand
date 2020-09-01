@@ -22,6 +22,7 @@ public class RabbitMqConfiguration {
 	
 	public static final String EXCHANGE_NAME_KEY = "RABBITMQ_EXCHANGE";
 	public static final String ROUTING_KEY_KEY = "RABBITMQ_ROUTINGKEY";
+	public static final String RAW_ROUTING_KEY_KEY = "RABBITMQ_RAW_ROUTINGKEY";
 	public static final String RABBIT_MQ_HOST_KEY = "RABBITMQ_HOST";
 	public static final String RABBIT_MQ_PORT_KEY = "RABBITMQ_PORT";
 	public static final String RABBIT_MQ_VIRTUALHOST_KEY = "RABBITMQ_VHOST";
@@ -30,15 +31,16 @@ public class RabbitMqConfiguration {
 
 	public static final String EXCHANGE_NAME_DEFAULT_VALUE = "";
 	public static final String ROUTING_KEY_DEFAULT_VALUE = "";
+	public static final String RAW_ROUTING_KEY_DEFAULT_VALUE = "";
 	public static final String RABBIT_MQ_HOST_DEFAULT_VALUE = "";
 	public static final int RABBIT_MQ_PORT_DEFAULT_VALUE = 0;
 	public static final String RABBIT_MQ_VIRTUALHOST_DEFAULT_VALUE = "";
 	public static final String RABBIT_MQ_USERNAME_DEFAULT_VALUE = "";
 	public static final String RABBIT_MQ_PASSWORD_DEFAULT_VALUE = "";
 	
-
 	protected final String exchangeName;
 	protected final String routingKey;
+	protected final String rawRoutingKey;
 	protected final String rabbitMqHost;
 	protected final int rabbitMqPort;
 	protected final String rabbitMqVirtualHost;
@@ -49,6 +51,7 @@ public class RabbitMqConfiguration {
 	public RabbitMqConfiguration() {
 		this.exchangeName = ObjectUtils.defaultIfNull(System.getenv(EXCHANGE_NAME_KEY), EXCHANGE_NAME_DEFAULT_VALUE);
 		this.routingKey = ObjectUtils.defaultIfNull(System.getenv(ROUTING_KEY_KEY), ROUTING_KEY_DEFAULT_VALUE);
+		this.rawRoutingKey = ObjectUtils.defaultIfNull(System.getenv(RAW_ROUTING_KEY_KEY), RAW_ROUTING_KEY_DEFAULT_VALUE);
 		this.rabbitMqHost = ObjectUtils.defaultIfNull(System.getenv(RABBIT_MQ_HOST_KEY), RABBIT_MQ_HOST_DEFAULT_VALUE);
 		this.rabbitMqPort = this.getIntDefaultIfNull(System.getenv(RABBIT_MQ_PORT_KEY), RABBIT_MQ_PORT_DEFAULT_VALUE);
 		this.rabbitMqVirtualHost = ObjectUtils.defaultIfNull(System.getenv(RABBIT_MQ_VIRTUALHOST_KEY), RABBIT_MQ_VIRTUALHOST_DEFAULT_VALUE);
@@ -91,5 +94,9 @@ public class RabbitMqConfiguration {
 
 	public String getRabbitMqPassword() {
 		return rabbitMqPassword;
+	}
+
+	public String getRawRoutingKey() {
+		return rawRoutingKey;
 	}
 }
