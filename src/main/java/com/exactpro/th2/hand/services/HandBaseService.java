@@ -213,6 +213,14 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						RhWinActionsMessages.WinClickContextMenu winClickContextMenu = action.getWinClickContextMenu();
 						WinActionsBuilder.addClickContextMenu(printer, winClickContextMenu);
 						break;
+					case WINCHECKELEMENT:
+						RhWinActionsMessages.WinCheckElement winCheckElement = action.getWinCheckElement();
+						WinActionsBuilder.addCheckElement(printer, winCheckElement);
+						break;
+					case WINGETWINDOW:
+						RhWinActionsMessages.WinGetWindow winGetWindow = action.getWinGetWindow();
+						WinActionsBuilder.addGetWindow(printer, winGetWindow);
+						break;
 					
 					default:
 						logger.warn("Unsupported action: " + action.getActionCase());
