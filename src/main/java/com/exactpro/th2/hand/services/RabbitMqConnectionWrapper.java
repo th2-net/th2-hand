@@ -39,11 +39,13 @@ public class RabbitMqConnectionWrapper implements AutoCloseable {
 	private final Connection connection;
 	
 	private final String exchangeName;
+	private final String rawRoutingKey;
 	private final String routingKey;
 	
 	public RabbitMqConnectionWrapper(RabbitMqConfiguration configuration) throws Exception {
 		this.exchangeName = configuration.getExchangeName();
 		this.routingKey = configuration.getRoutingKey();
+		this.rawRoutingKey = configuration.getRawRoutingKey();
 		
 		ConnectionFactory connectionFactory = this.buildFactory(configuration);
 		this.connection = connectionFactory.newConnection();
@@ -63,33 +65,37 @@ public class RabbitMqConnectionWrapper implements AutoCloseable {
 		return factory;
 	}
 
-	public void sendMessage(RawMessage message) throws Exception {
-		sendMessage(Collections.singleton(message));
+	public void sendMessages(MessageHandler.PairMessage messages) throws Exception {
+		this.sendMessages(Collections.singleton(messages));
 	}
 	
-	public void sendMessage(Collection<RawMessage> messages) throws Exception {
-		RawMessageBatch.Builder builder = RawMessageBatch.newBuilder();
+	public void sendMessages(Collection<MessageHandler.PairMessage> messages) throws Exception {
+		MessageBatch.Builder builder = MessageBatch.newBuilder();
+		RawMessageBatch.Builder rawBuilder = RawMessageBatch.newBuilder();
 		int count = 0;
-		for (RawMessage message : messages) {
-			if (message != null) {
-				builder.addMessages(message);
+		for (MessageHandler.PairMessage message : messages) {
+			if (message.valid) {
+				builder.addMessages(message.message);
+				rawBuilder.addMessages(message.rawMessage);
 				count++;
 			}
 		}
-		
+
 		if (count == 0) {
-			logger.debug("Nothing to send to {} {}", exchangeName, routingKey);
+			logger.debug("Nothing to send to {} {} / {}", exchangeName, routingKey, rawRoutingKey);
 			return;
 		}
-			
 		
 		byte[] bytes = builder.build().toByteArray();
+		byte[] rawBytes = rawBuilder.build().toByteArray();
 		synchronized (channel) {
 			channel.basicPublish(exchangeName, routingKey, null, bytes);
+			channel.basicPublish(exchangeName, rawRoutingKey, null, rawBytes);
 		}
 		logger.debug("Array with {} bytes size sent to {} {}", bytes.length, exchangeName, routingKey);
+		logger.debug("Array with {} bytes size sent to {} {}", rawBytes.length, exchangeName, rawRoutingKey);
 	}
-
+	
 	@Override
 	public void close() throws Exception {
 		Exception exception = null;
