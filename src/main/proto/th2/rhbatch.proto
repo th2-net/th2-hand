@@ -22,11 +22,18 @@ option java_package = "com.exactpro.th2.act.grpc.hand";
 import "th2/rhactionsmessages.proto";
 import "th2/rhactionsmessages_win.proto";
 import "th2/infra.proto";
+import "google/protobuf/empty.proto";
 
 package th2;
 
 service RhBatch {
+  rpc register(google.protobuf.Empty) returns (RhSessionID) {}
+  rpc unregister(RhSessionID) returns (google.protobuf.Empty) {}
   rpc executeRhActionsBatch(RhActionsList) returns (RhBatchResponse) {}
+}
+
+message RhSessionID {
+  string id = 1;
 }
 
 message RhBatchResponse {
@@ -39,8 +46,9 @@ message RhBatchResponse {
 
 // Represents list of RhActions which need to be executed to perform some operation user wants to
 message RhActionsList {
-  repeated RhAction rhAction = 1;
-  EventID parentEventId = 2;
+  RhSessionID sessionId = 1;
+  repeated RhAction rhAction = 2;
+  EventID parentEventId = 3;
 }
 
 message RhAction {

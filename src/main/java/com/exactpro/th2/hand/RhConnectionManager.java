@@ -23,26 +23,63 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RhConnectionManager {
 
 	private static final Logger logger = LoggerFactory.getLogger(RhConnectionManager.class);
 	
-	private RhClient currentClient;
+	private Map<String, RhClient> clients = new ConcurrentHashMap<String, RhClient>();
 	private Config config;
 
 	public RhConnectionManager(Config config) {
 		this.config = config;
 	}
 
-	public RhClient getClient() throws IOException, RhException
+	public RhClient getClient(String sessionId) throws IOException, RhException
 	{
-		if (currentClient == null)
+		RhClient result = clients.get(sessionId);
+		if (result == null)
+			logger.warn("Requested client for session '{}' is not registered", sessionId);
+		return result;
+	}
+	
+	public RhClient createClient() throws IOException, RhException
+	{
+		RhClient result = initRhConnection(config);
+		clients.put(result.getSessionId(), result);
+		return result;
+	}
+	
+	public void closeClient(String sessionId) throws IOException
+	{
+		RhClient client = clients.remove(sessionId);
+		if (client == null)
 		{
-			logger.info("Rh client is not created.");
-			this.currentClient = initRhConnection(this.config);
+			logger.warn("Client for session '{}', requested to close, is not registered", sessionId);
+			return;
 		}
-		return currentClient;
+		client.close();
+	}
+	
+	public void dispose()
+	{
+		Iterator<String> it = clients.keySet().iterator();
+		while (it.hasNext())
+		{
+			String id = it.next();
+			RhClient client = clients.remove(id);
+			try
+			{
+				client.close();
+			}
+			catch (IOException e)
+			{
+				logger.warn("Error while closing RH client for session '{}'", id);
+			}
+		}
 	}
 
 	protected RhClient initRhConnection(Config config) throws IOException, RhException
