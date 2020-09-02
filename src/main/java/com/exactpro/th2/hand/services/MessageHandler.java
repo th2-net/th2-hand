@@ -35,6 +35,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.GeneratedMessageV3;
+import com.google.protobuf.Int32Value;
+import com.google.protobuf.StringValue;
 import com.google.protobuf.Timestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,17 +60,27 @@ public class MessageHandler implements AutoCloseable {
 		this.rabbitMqConnection = new RabbitMqConnectionWrapper(configuration);
 	}
 	
+	private String valueToString(Object object) {
+		if (object instanceof Int32Value) {
+			return String.valueOf(((Int32Value) object).getValue());
+		} else if (object instanceof StringValue) {
+			return ((StringValue) object).getValue();
+		} else {
+			return String.valueOf(object);
+		}
+	}
+	
 	private List<Map<String, Object>> processList(List<?> list) {
 		List<Map<String, Object>> processed = new ArrayList<>(list.size());
 		for (Object o : list) {
 			if (o instanceof GeneratedMessageV3) {
 				Map<String, Object> map = new LinkedHashMap<>();
 				for (Map.Entry<Descriptors.FieldDescriptor, Object> entry : ((GeneratedMessageV3) o).getAllFields().entrySet()) {
-					map.put(entry.getKey().getName(), String.valueOf(entry.getValue()));
+					map.put(entry.getKey().getName(), valueToString(entry.getValue()));
 				}
 				processed.add(map);
 			} else {
-				processed.add(Collections.singletonMap("Value", String.valueOf(o)));
+				processed.add(Collections.singletonMap("Value", valueToString(o)));
 			}
 		}
 		return processed;
@@ -77,6 +89,7 @@ public class MessageHandler implements AutoCloseable {
 	public List<MessageID> onRequest(RhActionsList actionsList, String scriptText, String sessionId) {
 		List<PairMessage> messages = new ArrayList<>();
 		long sq = System.nanoTime();
+		List<Map<String, Object>> allMessages = new ArrayList<>();
 		for (RhAction rhAction : actionsList.getRhActionList()) {
 			for (Map.Entry<Descriptors.FieldDescriptor, Object> entry : rhAction.getAllFields().entrySet()) {
 				if (entry != null) {
@@ -90,17 +103,17 @@ public class MessageHandler implements AutoCloseable {
 							if (valueObj instanceof List) {
 								fields.put(entry2.getKey().getName(), this.processList((List<?>) valueObj));
 							} else {
-								fields.put(entry2.getKey().getName(), String.valueOf(valueObj));	
+								fields.put(entry2.getKey().getName(), valueToString(valueObj));	
 							}
 							
 						}
 					}
-					messages.add(new PairMessage(fields, Direction.SECOND, sessionId, sq++));
+					allMessages.add(fields);
 				}
 			}
 		}
-		messages.add(new PairMessage(Collections.singletonMap("ScriptText", scriptText),
-				Direction.SECOND, sessionId, sq++));
+		messages.add(new PairMessage(allMessages, Direction.SECOND, sessionId, sq++));
+		messages.add(new PairMessage("ScriptText", scriptText, Direction.SECOND, sessionId, sq++));
 		
 		try {
 			this.rabbitMqConnection.sendMessages(messages);
@@ -129,8 +142,7 @@ public class MessageHandler implements AutoCloseable {
 		return null;
 	}
 
-
-	public RawMessage buildMessage(Map<String, Object> fields, Direction direction, String sessionId, Long sq) {
+	public RawMessage buildMessage(byte[] bytes, Direction direction, String sessionId, Long sq) {
 		ConnectionID connectionID = ConnectionID.newBuilder().setSessionAlias(sessionId).build();
 		MessageID messageID = MessageID.newBuilder()
 				.setConnectionId(connectionID)
@@ -142,56 +154,66 @@ public class MessageHandler implements AutoCloseable {
 				.setId(messageID)
 				.setTimestamp(getTimestamp(Instant.now()))
 				.build();
-		
-		RawMessage.Builder builder = RawMessage.newBuilder();
-		
+
+		return RawMessage.newBuilder().setMetadata(messageMetadata).setBody(ByteString.copyFrom(bytes)).build();
+	}
+
+	public RawMessage buildMessage(Map<String, Object> fields, Direction direction, String sessionId, Long sq) {
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			byte[] bytes = mapper.writeValueAsBytes(fields);
-			return builder.setMetadata(messageMetadata).setBody(ByteString.copyFrom(bytes)).build();
+			return buildMessage(bytes, direction, sessionId, sq);
 		} catch (JsonProcessingException e) {
 			logger.error("Could not encode message as JSON", e);
 			return null;
 		}
 	}
-	
+
 	public Message buildParsedMessage(Map<String, Object> fileds, RawMessage rawMessage) {
-		RawMessageMetadata metadata1 = rawMessage.getMetadata();
+		if (rawMessage == null)
+			return null;
 		
+		RawMessageMetadata metadata1 = rawMessage.getMetadata();
+
 		MessageMetadata metadata = MessageMetadata.newBuilder()
 				.setId(metadata1.getId())
 				.setTimestamp(metadata1.getTimestamp())
 				.setMessageType(metadata1.getId().getDirection() == Direction.SECOND ?
 						"from act to hand": "from hand to act").build();
-		
+
+		Message.Builder builder = buildParsedMessage(fileds);
+		builder.setMetadata(metadata);
+		return builder.build();
+	}
+	
+	private Value parseObj(Object value) {
+		if (value instanceof List) {
+			ListValue.Builder listValueBuilder = ListValue.newBuilder();
+			for (Object o : ((List<?>) value)) {
+
+				if (o instanceof Map) {
+					Message.Builder msgBuilder = Message.newBuilder();
+					for (Map.Entry<?, ?> o1 : ((Map<?, ?>) o).entrySet()) {
+						msgBuilder.putFields(String.valueOf(o1.getKey()), parseObj(o1.getValue()));
+					}
+					listValueBuilder.addValues(Value.newBuilder().setMessageValue(msgBuilder.build()));
+				} else {
+					listValueBuilder.addValues(Value.newBuilder().setSimpleValue(String.valueOf(o)));
+				}
+			}
+			return Value.newBuilder().setListValue(listValueBuilder).build();
+		} else {
+			return Value.newBuilder().setSimpleValue(String.valueOf(value)).build();
+		}
+	}
+	
+	public Message.Builder buildParsedMessage(Map<String, Object> fileds) {
 		Map<String, Value> messageFields = new LinkedHashMap<>(fileds.size());
 		for (Map.Entry<String, Object> entry : fileds.entrySet()) {
-			Object value = entry.getValue();
-			Value rpcValue = null;
-			if (value instanceof List) {
-				ListValue.Builder listValueBuilder = ListValue.newBuilder();
-				for (Object o : ((List<?>) value)) {
-					
-					if (o instanceof Map) {
-						Message.Builder msgBuilder = Message.newBuilder();
-						for (Map.Entry<?, ?> o1 : ((Map<?, ?>) o).entrySet()) {
-							msgBuilder.putFields(String.valueOf(o1.getKey()), 
-									Value.newBuilder().setSimpleValue(String.valueOf(o1.getValue())).build());
-						}
-						listValueBuilder.addValues(Value.newBuilder().setMessageValue(msgBuilder.build()));
-					} else {
-						listValueBuilder.addValues(Value.newBuilder().setSimpleValue(String.valueOf(o)));
-					}
-				}
-				rpcValue = Value.newBuilder().setListValue(listValueBuilder).build();
-			} else {
-				rpcValue = Value.newBuilder().setSimpleValue(String.valueOf(value)).build();
-			}
-			
-			messageFields.put(entry.getKey(), rpcValue);
+			messageFields.put(entry.getKey(), parseObj(entry.getValue()));
 		}
 		
-		return Message.newBuilder().putAllFields(messageFields).setMetadata(metadata).build();
+		return Message.newBuilder().putAllFields(messageFields);
 	}
 
 	private static Timestamp getTimestamp(Instant instant) {
@@ -217,18 +239,20 @@ public class MessageHandler implements AutoCloseable {
 			this.valid = valid;
 		}
 
+		private PairMessage(String name, String text, Direction direction, String sessionId, Long sq) {
+			this.rawMessage = buildMessage(text.getBytes(), direction, sessionId, sq);
+			this.message = buildParsedMessage(Collections.singletonMap(name, text), rawMessage);
+			this.valid = rawMessage != null && message != null;
+		}
+
+		private PairMessage(List<Map<String, Object>> fields, Direction direction, String sessionId, Long sq) {
+			this(Collections.singletonMap("messages", fields), direction, sessionId, sq);
+		}
+
 		private PairMessage(Map<String, Object> fields, Direction direction, String sessionId, Long sq) {
 			this.rawMessage = buildMessage(fields, direction, sessionId, sq);
-			boolean valid = true;
-			if (rawMessage == null) {
-				this.message = null;
-				valid = false;
-			} else {
-				this.message = buildParsedMessage(fields, rawMessage);
-			}
-			if (valid && message == null)
-				valid = false;
-			this.valid = valid;
+			this.message = buildParsedMessage(fields, rawMessage);
+			this.valid = rawMessage != null && message != null;
 		}
 		
 		private MessageID getMessageId() {
