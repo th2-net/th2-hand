@@ -95,12 +95,12 @@ public class MessageHandler implements AutoCloseable {
 							
 						}
 					}
-					messages.add(new PairMessage(fields, Direction.FIRST, sessionId, sq++));
+					messages.add(new PairMessage(fields, Direction.SECOND, sessionId, sq++));
 				}
 			}
 		}
 		messages.add(new PairMessage(Collections.singletonMap("ScriptText", scriptText),
-				Direction.FIRST, sessionId, sq++));
+				Direction.SECOND, sessionId, sq++));
 		
 		try {
 			this.rabbitMqConnection.sendMessages(messages);
@@ -119,7 +119,7 @@ public class MessageHandler implements AutoCloseable {
 		fields.put("RhSessionId", rhSessionId);
 		
 		try {
-			PairMessage message = new PairMessage(fields, Direction.SECOND, sessionId, System.nanoTime());
+			PairMessage message = new PairMessage(fields, Direction.FIRST, sessionId, System.nanoTime());
 			this.rabbitMqConnection.sendMessages(message);
 			return message.getMessageId();
 		} catch (Exception e) {
@@ -161,7 +161,7 @@ public class MessageHandler implements AutoCloseable {
 		MessageMetadata metadata = MessageMetadata.newBuilder()
 				.setId(metadata1.getId())
 				.setTimestamp(metadata1.getTimestamp())
-				.setMessageType(metadata1.getId().getDirection() == Direction.FIRST ?
+				.setMessageType(metadata1.getId().getDirection() == Direction.SECOND ?
 						"from act to hand": "from hand to act").build();
 		
 		Map<String, Value> messageFields = new LinkedHashMap<>(fileds.size());
