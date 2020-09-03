@@ -100,6 +100,8 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		{
 			logger.error("Error while closing RH client for session '"+request.getId()+"'", e);
 		}
+		responseObserver.onNext(Empty.getDefaultInstance());
+		responseObserver.onCompleted();
 	}
 
 	@Override
