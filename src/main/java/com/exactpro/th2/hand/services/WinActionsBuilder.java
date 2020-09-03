@@ -16,10 +16,12 @@
 
 package com.exactpro.th2.hand.services;
 
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinCheckElement;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinClick;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinClickContextMenu;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinGetActiveWindow;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinGetElementAttribute;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinGetWindow;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinLocator;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinOpen;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinSendText;
@@ -32,6 +34,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WinActionsBuilder {
+
+	private static void addDefaults(String id, String execute, List<String> headers, List<String> values) {
+				
+		if (id != null && !id.isEmpty()) {
+			headers.add("#id");
+			values.add(id);
+		}
+
+		if (execute != null && !execute.isEmpty()) {
+			headers.add("#execute");
+			values.add(execute);
+		}
+	}
 	
 	private static void addLocator(List<WinLocator> winLocators, List<String> headers, List<String> values) {
 		if (winLocators == null || winLocators.isEmpty())
@@ -44,8 +59,8 @@ public class WinActionsBuilder {
 				headers.add("#locator");
 				headers.add("#matcher");
 			} else {
-				headers.add("locator" + count);
-				headers.add("matcher" + count);
+				headers.add("#locator" + count);
+				headers.add("#matcher" + count);
 			}
 			
 			++count;
@@ -61,7 +76,8 @@ public class WinActionsBuilder {
 		
 		headers.add("#action");
 		values.add("Click");
-		
+
+		addDefaults(clickAction.getId(), clickAction.getExecute(), headers, values);
 		addLocator(clickAction.getLocatorsList(), headers, values);
 		
 		WinClick.Button button = clickAction.getButton();
@@ -90,6 +106,8 @@ public class WinActionsBuilder {
 		
 		headers.add("#action");
 		values.add("Open");
+
+		addDefaults(openAction.getId(), openAction.getExecute(), headers, values);
 		
 		headers.add("#workdir");
 		values.add(openAction.getWorkDir());
@@ -108,7 +126,8 @@ public class WinActionsBuilder {
 		
 		headers.add("#action");
 		values.add("SendText");
-		
+
+		addDefaults(sendTextAction.getId(), sendTextAction.getExecute(), headers, values);
 		addLocator(sendTextAction.getLocatorsList(), headers, values);
 		
 		headers.add("#text");
@@ -124,10 +143,28 @@ public class WinActionsBuilder {
 		
 		headers.add("#action");
 		values.add("GetActiveWindow");
+
+		addDefaults(getActiveWindow.getId(), getActiveWindow.getExecute(), headers, values);
 		
 		headers.add("#windowname");
 		values.add(getActiveWindow.getWindowName());
 		
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+
+	public static void addGetWindow(CSVPrinter printer, WinGetWindow getWindow) throws IOException
+	{
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add("#action");
+		values.add("GetWindow");
+
+		addDefaults(getWindow.getId(), getWindow.getExecute(), headers, values);
+
+		headers.add("#windowname");
+		values.add(getWindow.getWindowName());
+
 		printer.printRecord(headers);
 		printer.printRecord(values);
 	}
@@ -138,7 +175,8 @@ public class WinActionsBuilder {
 		
 		headers.add("#action");
 		values.add("GetElementAttribute");
-		
+
+		addDefaults(getElementAttribute.getId(), getElementAttribute.getExecute(), headers, values);
 		addLocator(getElementAttribute.getLocatorsList(), headers, values);
 		
 		headers.add("#attributeName");
@@ -154,6 +192,8 @@ public class WinActionsBuilder {
 		
 		headers.add("#action");
 		values.add("Wait");
+
+		addDefaults(winWait.getId(), winWait.getExecute(), headers, values);
 		
 		headers.add("#millis");
 		values.add(String.valueOf(winWait.getMillis()));
@@ -168,7 +208,8 @@ public class WinActionsBuilder {
 		
 		headers.add("#action");
 		values.add("ToggleCheckBox");
-		
+
+		addDefaults(toggleCheckBoxAction.getId(), toggleCheckBoxAction.getExecute(), headers, values);
 		addLocator(toggleCheckBoxAction.getLocatorsList(), headers, values);
 		
 		headers.add("#expectedState");
@@ -184,11 +225,26 @@ public class WinActionsBuilder {
 		
 		headers.add("#action");
 		values.add("ClickContextMenu");
-		
+
+		addDefaults(clickContextMenu.getId(), clickContextMenu.getExecute(), headers, values);
 		addLocator(clickContextMenu.getLocatorsList(), headers, values);
 		
 		printer.printRecord(headers);
 		printer.printRecord(values);
-	}	
+	}
+
+	public static void addCheckElement(CSVPrinter printer, WinCheckElement checkElement) throws IOException
+	{
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add("#action");
+		values.add("CheckElement");
+
+		addDefaults(checkElement.getId(), checkElement.getExecute(), headers, values);
+		addLocator(checkElement.getLocatorsList(), headers, values);
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
 	
 }

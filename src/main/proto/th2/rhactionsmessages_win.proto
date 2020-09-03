@@ -30,8 +30,10 @@ message WinLocator {
 }
 
 message WinOpen {
-    string workDir = 2;
-    string appFile = 3;
+    string id = 2;
+    string execute = 3;
+    string workDir = 4;
+    string appFile = 5;
 }
 
 message WinClick {
@@ -42,35 +44,61 @@ message WinClick {
     DOUBLE = 3;
   }
   repeated WinLocator locators = 1;
-  Button button = 2;
-  google.protobuf.Int32Value xOffset = 3;
-  google.protobuf.Int32Value yOffset = 4;
+  string id = 2;
+  string execute = 3;
+  Button button = 4;
+  google.protobuf.Int32Value xOffset = 5;
+  google.protobuf.Int32Value yOffset = 6;
 }
 
 message WinSendText {
   repeated WinLocator locators = 1;
-  string text = 2;
-  bool clearBefore = 3;
+  string id = 2;
+  string execute = 3;
+  string text = 4;
+  bool clearBefore = 5;
 }
 
 message WinGetActiveWindow {
-  string windowName = 2;
+  string id = 2;
+  string execute = 3;
+  string windowName = 4;
 }
 
 message WinGetElementAttribute {
   repeated WinLocator locators = 1;
-  string attributeName = 2;
+  string id = 2;
+  string execute = 3;
+  string attributeName = 4;
 }
 
 message WinWait {
-  uint32 millis = 2;
+  string id = 2;
+  string execute = 3;
+  uint32 millis = 4;
 }
 
 message WinToggleCheckBox {
   repeated WinLocator locators = 1;
-  string expectedState = 2;
+  string id = 2;
+  string execute = 3;
+  string expectedState = 4;
 }
 
 message WinClickContextMenu {
   repeated WinLocator locators = 1;
+  string id = 2;
+  string execute = 3;
+}
+
+message WinCheckElement {
+  repeated WinLocator locators = 1;
+  string id = 2;
+  string execute = 3;
+}
+
+message WinGetWindow {
+  string id = 2;
+  string execute = 3;
+  string windowName = 4;
 }
