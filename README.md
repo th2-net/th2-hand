@@ -1,24 +1,23 @@
-# TH2-HAND
+# TH2-Hand
 
-TH2-HAND is used to transmit and interpret messages from TH2-ACT to Remotehand (selenium agent) and vice versa.
+TH2-Hand is used to interpret and transmit commands from TH2-Act to RemoteHand (Selenium agent) and vice versa.
+All incoming and outgoing data is stored in Cradle as messages.
 
 ### Requirements
 
-* JDK 8+ (OpenJDK 12 recommended)
+* JDK 8+ (OpenJDK 11 is recommended)
 * Gradle (Optional)
 * Docker
 
 ### Build
 
-This project is built by gradle.
-You cat use gralde wrapper to build
+This project is built by Gradle.
+You cat use Gradle wrapper to build it:
 ``` shell script
 ./gradlew build
 ```
-Or install gradle tool into your system.
-
-To build docker image use Dockerfile.
-eg
+To build a Docker image use Dockerfile, 
+e.g.
 ``` shell script
 docker build -t th2-hand:1.1 -f Dockerfile .
 ``` 
@@ -29,13 +28,13 @@ This project uses environment variables as its settings
 
 ENV VAR NAME | DEFAULT VALUE | DESCRIPTION
 ------------ | ------------- | -----------
-RABBITMQ_EXCHANGE | | RabbitMq Exchange name setting
+RABBITMQ_EXCHANGE | | RabbitMQ Exchange name setting
 RABBITMQ_ROUTINGKEY | | Queue configured in Message storage as one for parsed messages
 RABBITMQ_RAW_ROUTINGKEY | | Queue configured in Message storage as one for raw messages
-RABBITMQ_HOST | | RabbitMq host setting
-RABBITMQ_PORT | |RabbitMq port setting
-RABBITMQ_VHOST | | RabbitMq Virtual Host setting
-RABBITMQ_USER | | RabbitMq username
-RABBITMQ_PASS | | RabbitMq password
-RH_URL | http://localhost:8008 | Remotehand URL
-GRPC_PORT | 8080 | TH2-hand GRPC Server port
+RABBITMQ_HOST | | RabbitMQ host setting
+RABBITMQ_PORT | |RabbitMQ port setting
+RABBITMQ_VHOST | | RabbitMQ Virtual Host setting
+RABBITMQ_USER | | RabbitMQ username
+RABBITMQ_PASS | | RabbitMQ password
+RH_URL | http://localhost:8008 | RemoteHand URL
+GRPC_PORT | 8080 | TH2-Hand gRPC Server port to run on
