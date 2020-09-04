@@ -19,7 +19,7 @@ You cat use Gradle wrapper to build it:
 To build a Docker image use Dockerfile, 
 e.g.
 ``` shell script
-docker build -t th2-hand:1.1 -f Dockerfile .
+docker build -t <image name>:<version> -f Dockerfile .
 ``` 
 
 ### Configuration
