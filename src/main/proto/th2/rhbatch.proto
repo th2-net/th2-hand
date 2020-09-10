@@ -103,5 +103,7 @@ message RhAction {
       WinClickContextMenu winClickContextMenu = 107;
       WinCheckElement winCheckElement = 108;
       WinGetWindow winGetWindow = 109;
+      WinSearchElement winSearchElement = 110;
+      WinWaitForAttribute winWaitForAttribute = 111;
   }
 }
