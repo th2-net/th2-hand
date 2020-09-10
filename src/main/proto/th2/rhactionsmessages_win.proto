@@ -102,3 +102,20 @@ message WinGetWindow {
   string execute = 3;
   string windowName = 4;
 }
+
+message WinSearchElement {
+  repeated WinLocator locators = 1;
+  string id = 2;
+  string execute = 3;
+}
+
+message WinWaitForAttribute {
+  repeated WinLocator locators = 1;
+  string id = 2;
+  string execute = 3;
+  string attributeName = 4;
+  string expectedValue = 5;
+  string maxTimeout = 6;
+  string checkInterval = 7;
+  string fromRoot = 8;
+}

@@ -24,10 +24,13 @@ import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinGetEleme
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinGetWindow;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinLocator;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinOpen;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinSearchElement;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinSendText;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinToggleCheckBox;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinWait;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinWaitForAttribute;
 import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,16 +39,8 @@ import java.util.List;
 public class WinActionsBuilder {
 
 	private static void addDefaults(String id, String execute, List<String> headers, List<String> values) {
-				
-		if (id != null && !id.isEmpty()) {
-			headers.add("#id");
-			values.add(id);
-		}
-
-		if (execute != null && !execute.isEmpty()) {
-			headers.add("#execute");
-			values.add(execute);
-		}
+		addIfNotEmpty("#id", id, headers, values);
+		addIfNotEmpty("#execute", execute, headers, values);
 	}
 	
 	private static void addLocator(List<WinLocator> winLocators, List<String> headers, List<String> values) {
@@ -245,6 +240,48 @@ public class WinActionsBuilder {
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
+	}
+
+	public static void addSearchElement(CSVPrinter printer, WinSearchElement searchElement) throws IOException
+	{
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add("#action");
+		values.add("SearchElement");
+
+		addDefaults(searchElement.getId(), searchElement.getExecute(), headers, values);
+		addLocator(searchElement.getLocatorsList(), headers, values);
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+
+	public static void addWaitForAttribute(CSVPrinter printer, WinWaitForAttribute waitForAttribute) throws IOException
+	{
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add("#action");
+		values.add("WaitForAttribute");
+
+		addDefaults(waitForAttribute.getId(), waitForAttribute.getExecute(), headers, values);
+		addLocator(waitForAttribute.getLocatorsList(), headers, values);
+
+		addIfNotEmpty("#attributeName", waitForAttribute.getAttributeName(), headers, values);
+		addIfNotEmpty("#expectedValue", waitForAttribute.getExpectedValue(), headers, values);
+		addIfNotEmpty("#maxTimeout", waitForAttribute.getMaxTimeout(), headers, values);
+		addIfNotEmpty("#checkInterval", waitForAttribute.getCheckInterval(), headers, values);
+		addIfNotEmpty("#fromRoot", waitForAttribute.getFromRoot(), headers, values);
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+	
+	
+	private static void addIfNotEmpty(String headerName, String value, List<String> headers, List<String> values) {
+		if (StringUtils.isNotBlank(value)) {
+			headers.add(headerName);
+			values.add(value);
+		}
 	}
 	
 }

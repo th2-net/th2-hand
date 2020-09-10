@@ -223,6 +223,14 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						RhWinActionsMessages.WinGetWindow winGetWindow = action.getWinGetWindow();
 						WinActionsBuilder.addGetWindow(printer, winGetWindow);
 						break;
+					case WINSEARCHELEMENT:
+						RhWinActionsMessages.WinSearchElement winSearchElement = action.getWinSearchElement();
+						WinActionsBuilder.addSearchElement(printer, winSearchElement);
+						break;
+					case WINWAITFORATTRIBUTE:
+						RhWinActionsMessages.WinWaitForAttribute winWaitForAttribute = action.getWinWaitForAttribute();
+						WinActionsBuilder.addWaitForAttribute(printer, winWaitForAttribute);
+						break;
 					
 					default:
 						logger.warn("Unsupported action: " + action.getActionCase());
