@@ -105,5 +105,6 @@ message RhAction {
       WinGetWindow winGetWindow = 109;
       WinSearchElement winSearchElement = 110;
       WinWaitForAttribute winWaitForAttribute = 111;
+      WinScrollUsingText winScrollUsingText = 112;
   }
 }
