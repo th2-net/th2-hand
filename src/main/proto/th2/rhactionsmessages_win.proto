@@ -56,7 +56,8 @@ message WinSendText {
   string id = 2;
   string execute = 3;
   string text = 4;
-  bool clearBefore = 5;
+  string clearBefore = 5;
+  string isDirectText = 6;
 }
 
 message WinGetActiveWindow {
@@ -118,4 +119,13 @@ message WinWaitForAttribute {
   string maxTimeout = 6;
   string checkInterval = 7;
   string fromRoot = 8;
+}
+
+message WinScrollUsingText {
+  repeated WinLocator locators = 1;
+  string id = 2;
+  string execute = 3;
+  string textToSend = 4;
+  string maxIterations = 5;
+  repeated WinLocator textLocators = 6;
 }

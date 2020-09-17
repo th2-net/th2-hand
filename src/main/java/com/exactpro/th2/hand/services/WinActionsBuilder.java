@@ -24,6 +24,7 @@ import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinGetEleme
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinGetWindow;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinLocator;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinOpen;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinScrollUsingText;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinSearchElement;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinSendText;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinToggleCheckBox;
@@ -31,6 +32,8 @@ import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinWait;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinWaitForAttribute;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,8 +45,13 @@ public class WinActionsBuilder {
 		addIfNotEmpty("#id", id, headers, values);
 		addIfNotEmpty("#execute", execute, headers, values);
 	}
-	
+
 	private static void addLocator(List<WinLocator> winLocators, List<String> headers, List<String> values) {
+		addLocator(winLocators, headers, values, new ImmutablePair<>("#locator", "#matcher"));
+	}
+	
+	private static void addLocator(List<WinLocator> winLocators, List<String> headers, List<String> values,
+								   Pair<String, String> keys) {
 		if (winLocators == null || winLocators.isEmpty())
 			return;
 		
@@ -51,11 +59,11 @@ public class WinActionsBuilder {
 		for (WinLocator winLocator : winLocators) {
 			
 			if (count == 1) {
-				headers.add("#locator");
-				headers.add("#matcher");
+				headers.add(keys.getKey());
+				headers.add(keys.getValue());
 			} else {
-				headers.add("#locator" + count);
-				headers.add("#matcher" + count);
+				headers.add(keys.getKey() + count);
+				headers.add(keys.getValue() + count);
 			}
 			
 			++count;
@@ -103,12 +111,9 @@ public class WinActionsBuilder {
 		values.add("Open");
 
 		addDefaults(openAction.getId(), openAction.getExecute(), headers, values);
-		
-		headers.add("#workdir");
-		values.add(openAction.getWorkDir());
-		
-		headers.add("#execfile");
-		values.add(openAction.getAppFile());
+
+		addIfNotEmpty("#workdir", openAction.getWorkDir(), headers, values);
+		addIfNotEmpty("#execfile", openAction.getAppFile(), headers, values);
 		
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -125,8 +130,9 @@ public class WinActionsBuilder {
 		addDefaults(sendTextAction.getId(), sendTextAction.getExecute(), headers, values);
 		addLocator(sendTextAction.getLocatorsList(), headers, values);
 		
-		headers.add("#text");
-		values.add(sendTextAction.getText());
+		addIfNotEmpty("#text", sendTextAction.getText(), headers, values);
+		addIfNotEmpty("#clearBefore", sendTextAction.getClearBefore(), headers, values);
+		addIfNotEmpty("#directSend", sendTextAction.getIsDirectText(), headers, values);
 		
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -271,6 +277,24 @@ public class WinActionsBuilder {
 		addIfNotEmpty("#maxTimeout", waitForAttribute.getMaxTimeout(), headers, values);
 		addIfNotEmpty("#checkInterval", waitForAttribute.getCheckInterval(), headers, values);
 		addIfNotEmpty("#fromRoot", waitForAttribute.getFromRoot(), headers, values);
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+
+	public static void addScrollUsingText(CSVPrinter printer, WinScrollUsingText scrollUsingText) throws IOException
+	{
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add("#action");
+		values.add("ScrollUsingText");
+
+		addDefaults(scrollUsingText.getId(), scrollUsingText.getExecute(), headers, values);
+		addLocator(scrollUsingText.getLocatorsList(), headers, values);
+		addLocator(scrollUsingText.getTextLocatorsList(), headers, values, new ImmutablePair<>("#textLocator", "#textMatcher"));
+
+		addIfNotEmpty("#textToSend", scrollUsingText.getTextToSend(), headers, values);
+		addIfNotEmpty("#maxIterations", scrollUsingText.getMaxIterations(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);

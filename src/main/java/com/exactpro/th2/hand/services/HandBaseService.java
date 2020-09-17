@@ -231,6 +231,10 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						RhWinActionsMessages.WinWaitForAttribute winWaitForAttribute = action.getWinWaitForAttribute();
 						WinActionsBuilder.addWaitForAttribute(printer, winWaitForAttribute);
 						break;
+					case WINSCROLLUSINGTEXT:
+						RhWinActionsMessages.WinScrollUsingText scrollUsingText = action.getWinScrollUsingText();
+						WinActionsBuilder.addScrollUsingText(printer, scrollUsingText);
+						break;
 					
 					default:
 						logger.warn("Unsupported action: " + action.getActionCase());
