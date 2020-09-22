@@ -27,6 +27,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+
 public class RhConnectionManager {
 
 	private static final Logger logger = LoggerFactory.getLogger(RhConnectionManager.class);
@@ -46,9 +49,9 @@ public class RhConnectionManager {
 		return result;
 	}
 	
-	public RhClient createClient() throws IOException, RhException
+	public RhClient createClient(String targetServer) throws IOException, RhException
 	{
-		RhClient result = initRhConnection(config);
+		RhClient result = initRhConnection(config, targetServer);
 		clients.put(result.getSessionId(), result);
 		return result;
 	}
@@ -82,9 +85,12 @@ public class RhConnectionManager {
 		}
 	}
 
-	protected RhClient initRhConnection(Config config) throws IOException, RhException
+	protected RhClient initRhConnection(Config config, String targetServer) throws IOException, RhException
 	{
-		logger.info("Creating RemoteHand connection...");
-		return RhUtils.createRhConnection(config.getRhUrl());
+		logger.info("Creating RemoteHand connection to server '{}'...", targetServer);
+		String host = config.getRhUrls().get(targetServer);
+		if (isEmpty(host))
+			throw new RhException(format("Target server '%s' is not initialized", targetServer));
+		return RhUtils.createRhConnection(host);
 	}
 }

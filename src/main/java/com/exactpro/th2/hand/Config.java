@@ -16,11 +16,14 @@
 
 package com.exactpro.th2.hand;
 
+import com.exactpro.th2.hand.utils.Utils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.Map;
 
 public class Config
 {
@@ -28,11 +31,12 @@ public class Config
 	public static final String PROJECT_DIR_ARG = "PROJECT_DIR";
 	public static final String PROJECT_NAME_ARG = "PROJECT_NAME";
 	public static final int DEFAULT_GRPC_PORT = 8080;
-	public static final String RH_URL_ARG = "RH_URL";
+	public static final String RH_URLS_ARG = "RH_URLS";
+	public static final String DEFAULT_SERVER_TARGET = "Default";
 	public static final String DEFAULT_RH_URL = "http://localhost:8008";
 
 	protected final int grpcPort;
-	protected final String rhUrl;
+	protected final Map<String, String> rhUrls;
 	protected final Path rootDir;
 	
 	protected final RabbitMqConfiguration rabbitMqConfiguration;
@@ -40,7 +44,7 @@ public class Config
 	public Config()
 	{
 		this.grpcPort = getEnvTh2GrpcPort();
-		this.rhUrl = getEnvTh2RhUrl();
+		this.rhUrls = getEnvTh2RhUrls();
 		this.rootDir = getRootDir();
 		
 		this.rabbitMqConfiguration = new RabbitMqConfiguration();
@@ -51,9 +55,10 @@ public class Config
 		return Paths.get(ObjectUtils.defaultIfNull(System.getenv(PROJECT_DIR_ARG), System.getProperty("user.dir")));
 	}
 
-	protected String getEnvTh2RhUrl()
+	protected Map<String, String> getEnvTh2RhUrls()
 	{
-		return ObjectUtils.defaultIfNull(System.getenv(RH_URL_ARG), DEFAULT_RH_URL);
+		Map<String, String> rhUrls = Utils.readMapFromString(System.getenv(RH_URLS_ARG));
+		return rhUrls.isEmpty() ? Collections.singletonMap(DEFAULT_SERVER_TARGET, DEFAULT_RH_URL) : rhUrls;
 	}
 
 	protected int getEnvTh2GrpcPort()
@@ -66,9 +71,9 @@ public class Config
 		return grpcPort;
 	}
 
-	public String getRhUrl()
+	public Map<String, String> getRhUrls()
 	{
-		return rhUrl;
+		return rhUrls;
 	}
 
 	public RabbitMqConfiguration getRabbitMqConfiguration()
