@@ -27,13 +27,17 @@ import "google/protobuf/empty.proto";
 package th2;
 
 service RhBatch {
-  rpc register(google.protobuf.Empty) returns (RhSessionID) {}
+  rpc register(RhTargetServer) returns (RhSessionID) {}
   rpc unregister(RhSessionID) returns (google.protobuf.Empty) {}
   rpc executeRhActionsBatch(RhActionsList) returns (RhBatchResponse) {}
 }
 
 message RhSessionID {
   string id = 1;
+}
+
+message RhTargetServer {
+    string target = 1;
 }
 
 message RhBatchResponse {

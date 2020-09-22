@@ -71,12 +71,12 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 	}
 	
 	@Override
-	public void register(Empty request, StreamObserver<RhSessionID> responseObserver)
+	public void register(RhTargetServer targetServer, StreamObserver<RhSessionID> responseObserver)
 	{
 		String sessionId;
 		try
 		{
-			RhClient client = rhConnManager.createClient();
+			RhClient client = rhConnManager.createClient(targetServer.getTarget());
 			sessionId = client.getSessionId();
 		}
 		catch (Exception e)
