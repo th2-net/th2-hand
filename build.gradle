@@ -28,9 +28,10 @@ java {
 }
 
 group 'com.exactpro.th2'
-version = "${version_major}.${version_minor}-SNAPSHOT"
+version = release_version
 
 apply plugin: 'java'
+apply plugin: 'java-library'
 apply plugin: 'application'
 apply plugin: 'distribution'
 apply plugin: 'maven-publish'
@@ -48,8 +49,6 @@ ext {
 	mainRsrcDir = 'src/main/resources'
 	sharedDir = file("${projectDir}/shared")
 	genDir = file("${projectDir}/src/gen")
-
-	dockerImageVersion      = "${version_major}.${version_minor}.${version_maintenance}.${version_build}"
 }
 
 repositories {
@@ -62,7 +61,12 @@ repositories {
 		name 'Artifactory snapshot'
 		url 'http://artifactory5.exp.exactpro.com/artifactory/libs-snapshot'
 	}
-	
+
+	maven {
+		name 'Artifactory release'
+		url 'http://artifactory5.exp.exactpro.com/artifactory/libs-release'
+	}
+
 	mavenCentral()
 	
 	configurations.all {
@@ -72,6 +76,8 @@ repositories {
 }
 
 dependencies {
+	api platform('com.exactpro.th2:th2-bom:1.0.4')
+
 	compile "org.slf4j:slf4j-api:${version_slf4j}"
 	compile "org.slf4j:slf4j-log4j12:${version_slf4j}"
 	
@@ -80,7 +86,7 @@ dependencies {
 	compile "io.grpc:grpc-netty-shaded:${grpcVersion}"
 
 	compile "com.rabbitmq:amqp-client:5.8.0"
-	compile "com.exactpro.th2:th2-grpc-infra:+"
+	implementation "com.exactpro.th2:th2-grpc-infra"
 	
 	compile 'org.apache.commons:commons-lang3:3.4'
 	compile 'org.apache.httpcomponents:fluent-hc:4.5.5'
@@ -134,17 +140,14 @@ protobuf {
 
 compileJava.dependsOn.add('generateProto')
 
-applicationName = 'th2-hand'
+applicationName = 'service'
 
 distTar {
 	archiveName "${applicationName}.tar"
 }
 
 docker {
-	name "${target_docker_repository}/${docke_image_name}:${dockerImageVersion}"
-	tag 'local-version', "${docke_image_name}:${dockerImageVersion}"
-
-	copySpec.from(tarTree("$buildDir/distributions/${archivesBaseName}.tar"))
+	copySpec.from(tarTree("$buildDir/distributions/${applicationName}.tar"))
 }
 
 dockerPrepare {
@@ -180,19 +183,26 @@ jar {
 		attributes('Specification-Title': 'TH2 Hand')
 		attributes('Main-Class': 'com.exactpro.th2.hand.Application')
 		attributes("Class-Path": configurations.compileClasspath.collect { "lib/" + it.getName() }.join(' '))
+		attributes(
+				'Created-By':               "${System.getProperty('java.version')} (${System.getProperty('java.vendor')})",
+				'Specification-Title':      '',
+				'Specification-Vendor':     'Exactpro Systems LLC',
+				'Implementation-Title':     project.archivesBaseName,
+				'Implementation-Vendor':    'Exactpro Systems LLC',
+				'Implementation-Vendor-Id': 'com.exactpro',
+				'Implementation-Version':   project.version
+		)
 	}
-}
-
-task release(group: 'distribution', type: Zip, dependsOn: jar) {
-	archiveName = applicationName + getDate('yyyyMMdd.HHmmss')+".zip"
-	from(configurations.compileClasspath) {
-		into "lib"
-	}
-	from jar
 }
 
 artifactory {
 	publish {
+		contextUrl = "${artifactory_url}"
+		repository {
+			repoKey = "${artifactory_deploy_repo_key}" // The Artifactory repository key to publish to
+			username = "${artifactory_user}" // The publisher user name
+			password = "${artifactory_password}" // The publisher password
+		}
 		defaults {
 			// Reference to Gradle publications defined in the build script.
 			// This is how we tell the Artifactory Plugin which artifacts should be
@@ -204,10 +214,4 @@ artifactory {
 			publishPom = true
 		}
 	}
-}
-
-static def getDate(String format) {
-	def date = new Date()
-	def formattedDate = date.format(format)
-	return formattedDate
 }
