@@ -2,9 +2,7 @@ variables:
   APP_NAME: "th2-hand"
   MAJOR_VERSION: "1"
   MINOR_VERSION: "1"
-  MAINTENANCE_VERSION: "63"
-  INSPECTION_ENABLED: 'true'
-  ARTIFACTORY_PUBLISH_ENABLED: 'true'
+  MAINTENANCE_VERSION: "64"
 
 include:
   - project: 'vivarium/th2/pipelines'

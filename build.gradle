@@ -15,11 +15,10 @@
  ******************************************************************************/
 plugins {
 	id 'java'
+    id 'java-library'
 	id 'application'
-	id 'distribution'
 	id 'com.google.protobuf' version '0.8.8'
-	id 'com.jfrog.artifactory' version '4.15.1'
-	id 'com.palantir.docker' version '0.25.0' apply false
+	id 'com.palantir.docker' version '0.25.0'
 }
 
 java {
@@ -29,15 +28,6 @@ java {
 
 group 'com.exactpro.th2'
 version = release_version
-
-apply plugin: 'java'
-apply plugin: 'java-library'
-apply plugin: 'application'
-apply plugin: 'distribution'
-apply plugin: 'maven-publish'
-apply plugin: 'com.jfrog.artifactory'
-apply plugin: 'com.google.protobuf'
-apply plugin: 'com.palantir.docker'
 
 ext {
 	version_slf4j = '1.7.30'
@@ -160,21 +150,6 @@ clean {
 
 application {
 	mainClassName = "com.exactpro.th2.hand.Application"
-}
-
-publishing {
-	publications {
-		mavenJava(MavenPublication) {
-			from components.java
-		}
-	}
-
-	repositories {
-		maven {
-			name = 'localRepo'
-			url = sharedDir
-		}
-	}
 }
 
 jar {
