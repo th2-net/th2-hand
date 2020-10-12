@@ -40,10 +40,22 @@ message RhTargetServer {
     string target = 1;
 }
 
+message ResultDetails {
+    string actionId = 1;
+    string result = 2;
+}
+
 message RhBatchResponse {
-    string scriptResult = 1;
+
+    enum ScriptExecutionStatus {
+        SUCCESS = 0;
+        COMPILE_ERROR = 1;
+        EXECUTION_ERROR = 2;
+    }
+
+    ScriptExecutionStatus scriptStatus = 1;
     string errorMessage = 2;
-    repeated string textOut = 3;
+    repeated ResultDetails result = 3;
     string sessionId = 4;
     repeated MessageID attached_message_ids = 5;
 }
@@ -110,5 +122,6 @@ message RhAction {
       WinSearchElement winSearchElement = 110;
       WinWaitForAttribute winWaitForAttribute = 111;
       WinScrollUsingText winScrollUsingText = 112;
+      WinGetDataFromClipboard winGetDataFromClipboard = 113;
   }
 }

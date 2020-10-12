@@ -16,6 +16,7 @@
 
 package com.exactpro.th2.hand.services;
 
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinCheckElement;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinClick;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinClickContextMenu;
@@ -295,6 +296,19 @@ public class WinActionsBuilder {
 
 		addIfNotEmpty("#textToSend", scrollUsingText.getTextToSend(), headers, values);
 		addIfNotEmpty("#maxIterations", scrollUsingText.getMaxIterations(), headers, values);
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+
+	public static void addGetDataFromClipboard(CSVPrinter printer, RhWinActionsMessages.WinGetDataFromClipboard scrollUsingText) throws IOException
+	{
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add("#action");
+		values.add("GetDataFromClipboard");
+
+		addDefaults(scrollUsingText.getId(), scrollUsingText.getExecute(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);

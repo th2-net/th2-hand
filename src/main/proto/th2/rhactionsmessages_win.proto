@@ -129,3 +129,8 @@ message WinScrollUsingText {
   string maxIterations = 5;
   repeated WinLocator textLocators = 6;
 }
+
+message WinGetDataFromClipboard {
+  string id = 2;
+  string execute = 3;
+}
