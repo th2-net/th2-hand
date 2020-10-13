@@ -123,7 +123,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		catch (Exception e)
 		{
 			scriptResult = new RhScriptResult();
-			scriptResult.setCode(RhResponseCode.UNKNOWN.getCode());
+			scriptResult.setCode(RhResponseCode.EXECUTION_ERROR.getCode());
 			String errMsg = "Error occurred while interacting with RemoteHand";
 			scriptResult.setErrorMessage(errMsg);
 			logger.warn(errMsg, e);
