@@ -40,6 +40,7 @@ import com.exactpro.th2.hand.remotehand.RhClient;
 import com.exactpro.th2.hand.remotehand.RhResponseCode;
 import com.exactpro.th2.hand.remotehand.RhScriptResult;
 
+import com.exactpro.th2.hand.remotehand.RhUtils;
 import com.exactpro.th2.infra.grpc.MessageID;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -122,7 +123,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		catch (Exception e)
 		{
 			scriptResult = new RhScriptResult();
-			scriptResult.setCode(RhResponseCode.UNKNOWN.getCode());
+			scriptResult.setCode(RhResponseCode.EXECUTION_ERROR.getCode());
 			String errMsg = "Error occurred while interacting with RemoteHand";
 			scriptResult.setErrorMessage(errMsg);
 			logger.warn(errMsg, e);
@@ -131,14 +132,54 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		messageIDS.add(messageHandler.onResponse(scriptResult, createSessionId(sessionId), sessionId));
 		
 		RhBatchResponse response = RhBatchResponse.newBuilder()
-				.setScriptResult(RhResponseCode.byCode(scriptResult.getCode()).toString())
+				.setScriptStatus(getScriptExecutionStatus(RhResponseCode.byCode(scriptResult.getCode())))
 				.setErrorMessage(defaultIfEmpty(scriptResult.getErrorMessage(), "")).setSessionId(sessionId)
-				.addAllTextOut(scriptResult.getTextOutput()).addAllAttachedMessageIds(messageIDS).build();
+				.addAllResult(parseResultDetails(scriptResult.getTextOutput())).addAllAttachedMessageIds(messageIDS).build();
 		
 		responseObserver.onNext(response);
 		responseObserver.onCompleted();
 	}
 	
+	private List<ResultDetails> parseResultDetails(List<String> result) {
+
+		List<ResultDetails> details = new ArrayList<>(result.size());
+		ResultDetails.Builder resultDetailsBuilder = ResultDetails.newBuilder();
+		for (String s : result) {
+			String id = null, detailsStr = s;
+			
+			if (s.contains(RhUtils.LINE_SEPARATOR)) {
+				s = s.replaceAll(RhUtils.LINE_SEPARATOR, "\n");
+			}
+			
+			int index = s.indexOf('=');
+			if (index > 0) {
+				id = s.substring(0, index);
+				detailsStr = s.substring(index + 1);
+			}
+
+			resultDetailsBuilder.clear();
+			if (id != null)
+				resultDetailsBuilder.setActionId(id);
+			resultDetailsBuilder.setResult(detailsStr);
+			details.add(resultDetailsBuilder.build());
+		}
+		
+		return details;
+		
+	}
+	
+	private RhBatchResponse.ScriptExecutionStatus getScriptExecutionStatus(RhResponseCode code) {
+
+		//TODO fill others codes
+		switch (code) {
+			case SUCCESS: return RhBatchResponse.ScriptExecutionStatus.SUCCESS;
+			case EXECUTION_ERROR: return RhBatchResponse.ScriptExecutionStatus.EXECUTION_ERROR;
+			case COMPILE_ERROR: return RhBatchResponse.ScriptExecutionStatus.COMPILE_ERROR;
+			default: return RhBatchResponse.ScriptExecutionStatus.UNRECOGNIZED;
+		}
+		
+		
+	}
 
 	private String buildScript(RhActionsList actionsList, List<MessageID> messageIDS, String sessionId) throws IOException
 	{
@@ -234,6 +275,10 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 					case WINSCROLLUSINGTEXT:
 						RhWinActionsMessages.WinScrollUsingText scrollUsingText = action.getWinScrollUsingText();
 						WinActionsBuilder.addScrollUsingText(printer, scrollUsingText);
+						break;
+					case WINGETDATAFROMCLIPBOARD:
+						RhWinActionsMessages.WinGetDataFromClipboard dataFromClipboard = action.getWinGetDataFromClipboard();
+						WinActionsBuilder.addGetDataFromClipboard(printer, dataFromClipboard);
 						break;
 					
 					default:
