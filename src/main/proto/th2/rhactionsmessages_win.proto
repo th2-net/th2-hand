@@ -134,3 +134,12 @@ message WinGetDataFromClipboard {
   string id = 2;
   string execute = 3;
 }
+
+message WinTableClick {
+  repeated WinLocator locators = 1;
+  string id = 2;
+  string execute = 3;
+  string searchParams = 4;
+  string targetColumn = 5;
+  string columnIndex = 6;
+}

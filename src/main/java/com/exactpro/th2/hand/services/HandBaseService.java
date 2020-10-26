@@ -280,7 +280,9 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						RhWinActionsMessages.WinGetDataFromClipboard dataFromClipboard = action.getWinGetDataFromClipboard();
 						WinActionsBuilder.addGetDataFromClipboard(printer, dataFromClipboard);
 						break;
-					
+					case WINTABLECLICK:
+						RhWinActionsMessages.WinTableClick winTableClick = action.getWinTableClick();
+						WinActionsBuilder.addWinTableClick(printer, winTableClick);
 					default:
 						logger.warn("Unsupported action: " + action.getActionCase());
 						break;

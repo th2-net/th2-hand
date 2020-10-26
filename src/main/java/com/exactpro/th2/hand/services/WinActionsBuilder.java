@@ -313,8 +313,29 @@ public class WinActionsBuilder {
 		printer.printRecord(headers);
 		printer.printRecord(values);
 	}
-	
-	
+
+	public static void addWinTableClick(CSVPrinter printer, RhWinActionsMessages.WinTableClick winTableClick) throws IOException {
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add("#action");
+		values.add("TableClick");
+
+		addDefaults(winTableClick.getId(), winTableClick.getExecute(), headers, values);
+		addLocator(winTableClick.getLocatorsList(), headers, values);
+
+		headers.add("#filter");
+		values.add(winTableClick.getSearchParams());
+
+		headers.add("#column");
+		values.add(winTableClick.getTargetColumn());
+
+		addIfNotEmpty("#index", winTableClick.getColumnIndex(), headers, values);
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+
+
 	private static void addIfNotEmpty(String headerName, String value, List<String> headers, List<String> values) {
 		if (StringUtils.isNotBlank(value)) {
 			headers.add(headerName);
