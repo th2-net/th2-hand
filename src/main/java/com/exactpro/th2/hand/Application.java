@@ -19,11 +19,7 @@ package com.exactpro.th2.hand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.exactpro.th2.hand.remotehand.RhClient;
-import com.exactpro.th2.hand.remotehand.RhException;
-import com.exactpro.th2.hand.remotehand.RhUtils;
-
-import java.io.IOException;
+import com.exactpro.th2.schema.factory.CommonFactory;
 
 public class Application
 {
@@ -36,9 +32,9 @@ public class Application
 
 	public void run(String[] args)
 	{
-		Config config = getConfig();
-		try
+		try(CommonFactory factory = CommonFactory.createFromArguments(args))
 		{
+            Config config = getConfig(factory);
 			final HandServer handServer = new HandServer(config, new RhConnectionManager(config));
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 				try {
@@ -58,9 +54,9 @@ public class Application
 		}
 	}
 
-	protected Config getConfig()
+	protected Config getConfig(CommonFactory factory)
 	{
-		return new Config();
+		return new Config(factory);
 	}
 
 	private static void closeApp()

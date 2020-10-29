@@ -18,7 +18,6 @@ package com.exactpro.th2.hand.services;
 
 import com.exactpro.th2.act.grpc.hand.RhAction;
 import com.exactpro.th2.act.grpc.hand.RhActionsList;
-import com.exactpro.th2.hand.RabbitMqConfiguration;
 import com.exactpro.th2.hand.remotehand.RhResponseCode;
 import com.exactpro.th2.hand.remotehand.RhScriptResult;
 import com.exactpro.th2.infra.grpc.ConnectionID;
@@ -30,6 +29,7 @@ import com.exactpro.th2.infra.grpc.MessageMetadata;
 import com.exactpro.th2.infra.grpc.RawMessage;
 import com.exactpro.th2.infra.grpc.RawMessageMetadata;
 import com.exactpro.th2.infra.grpc.Value;
+import com.exactpro.th2.schema.factory.CommonFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
@@ -50,14 +50,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class MessageHandler implements AutoCloseable {
+public class MessageHandler{
 
 	private static final Logger logger = LoggerFactory.getLogger(MessageHandler.class);
 
 	private final RabbitMqConnectionWrapper rabbitMqConnection;
 
-	public MessageHandler(RabbitMqConfiguration configuration) throws Exception {
-		this.rabbitMqConnection = new RabbitMqConnectionWrapper(configuration);
+	public MessageHandler(CommonFactory factory) {
+		this.rabbitMqConnection = new RabbitMqConnectionWrapper(factory);
 	}
 	
 	private String valueToString(Object object) {
@@ -221,11 +221,6 @@ public class MessageHandler implements AutoCloseable {
 				.setSeconds(instant.getEpochSecond())
 				.setNanos(instant.getNano())
 				.build();
-	}
-
-	@Override
-	public void close() throws Exception {
-		this.rabbitMqConnection.close();
 	}
 
 	public class PairMessage {

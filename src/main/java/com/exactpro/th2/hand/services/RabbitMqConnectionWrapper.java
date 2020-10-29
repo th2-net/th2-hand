@@ -16,56 +16,52 @@
 
 package com.exactpro.th2.hand.services;
 
-import com.exactpro.th2.hand.RabbitMqConfiguration;
-import com.exactpro.th2.infra.grpc.Message;
 import com.exactpro.th2.infra.grpc.MessageBatch;
-import com.exactpro.th2.infra.grpc.RawMessage;
 import com.exactpro.th2.infra.grpc.RawMessageBatch;
-import com.rabbitmq.client.BuiltinExchangeType;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
+import com.exactpro.th2.schema.factory.CommonFactory;
+import com.exactpro.th2.schema.message.MessageRouter;
+import com.exactpro.th2.schema.message.QueueAttribute;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Collections;
 
-public class RabbitMqConnectionWrapper implements AutoCloseable {
+public class RabbitMqConnectionWrapper {
 
 	private static final Logger logger = LoggerFactory.getLogger(RabbitMqConnectionWrapper.class);
 	
-	private final Channel channel;
-	private final Connection connection;
-	
-	private final String exchangeName;
-	private final String rawRoutingKey;
-	private final String routingKey;
-	
-	public RabbitMqConnectionWrapper(RabbitMqConfiguration configuration) throws Exception {
-		this.exchangeName = configuration.getExchangeName();
-		this.routingKey = configuration.getRoutingKey();
-		this.rawRoutingKey = configuration.getRawRoutingKey();
-		
-		ConnectionFactory connectionFactory = this.buildFactory(configuration);
-		this.connection = connectionFactory.newConnection();
-		this.channel = this.connection.createChannel();
-		this.channel.exchangeDeclare(exchangeName, BuiltinExchangeType.DIRECT);
-		
-		logger.debug("MQ channel opened");
-	}
-	
-	private ConnectionFactory buildFactory(RabbitMqConfiguration configuration) {
-		ConnectionFactory factory = new ConnectionFactory();
-		factory.setHost(configuration.getRabbitMqHost());
-		factory.setPort(configuration.getRabbitMqPort());
-		factory.setVirtualHost(configuration.getRabbitMqVirtualHost());
-		factory.setUsername(configuration.getRabbitMqUsername());
-		factory.setPassword(configuration.getRabbitMqPassword());
-		return factory;
-	}
+    private final MessageRouter<MessageBatch> messageRouterParsedBatch;
+    private final MessageRouter<RawMessageBatch> messageRouterRawBatch;
 
-	public void sendMessages(MessageHandler.PairMessage messages) throws Exception {
+    public RabbitMqConnectionWrapper(CommonFactory factory) {
+        messageRouterParsedBatch = factory.getMessageRouterParsedBatch();
+        messageRouterRawBatch = factory.getMessageRouterRawBatch();
+        writeToLogAboutConnection(factory);
+    }
+
+    private void writeToLogAboutConnection(CommonFactory factory) {
+        StringBuilder connectionInfo = new StringBuilder("Connection to RbbitMQ with ");
+        connectionInfo.append(factory.getRabbitMqConfiguration()).append(" established \n");
+        connectionInfo.append("Queues: \n");
+        factory.getMessageRouterConfiguration().getQueues().forEach((name, queue) -> {
+            connectionInfo.append(name).append(" : ");
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                connectionInfo.append(mapper.writeValueAsString(queue));
+            } catch (JsonProcessingException e) {
+                logger.warn("Error occurs while convert QueueConfiguration to JSON string", e);
+                connectionInfo.append("QueueConfiguration is not available");
+            }
+            connectionInfo.append('\n');
+        });
+        logger.info(connectionInfo.toString());
+    }
+
+    public void sendMessages(MessageHandler.PairMessage messages) throws Exception {
 		this.sendMessages(Collections.singleton(messages));
 	}
 	
@@ -82,40 +78,19 @@ public class RabbitMqConnectionWrapper implements AutoCloseable {
 		}
 
 		if (count == 0) {
-			logger.debug("Nothing to send to {} {} / {}", exchangeName, routingKey, rawRoutingKey);
+			logger.debug("There are no valid messages to send");
 			return;
 		}
-		
-		byte[] bytes = builder.build().toByteArray();
-		byte[] rawBytes = rawBuilder.build().toByteArray();
-		synchronized (channel) {
-			channel.basicPublish(exchangeName, routingKey, null, bytes);
-			channel.basicPublish(exchangeName, rawRoutingKey, null, rawBytes);
-		}
-		logger.debug("Array with {} bytes size sent to {} {}", bytes.length, exchangeName, routingKey);
-		logger.debug("Array with {} bytes size sent to {} {}", rawBytes.length, exchangeName, rawRoutingKey);
-	}
+
+        MessageBatch parsed = builder.build();
+        RawMessageBatch raw = rawBuilder.build();
+        messageRouterParsedBatch.send(parsed);
+        messageRouterRawBatch.send(raw);
+        if (logger.isDebugEnabled()) {
+            String msgTemplate = "Array with {} bytes size sent to {} queue";
+            logger.debug(msgTemplate, parsed.toByteArray().length, QueueAttribute.PARSED);
+            logger.debug(msgTemplate, raw.toByteArray().length, QueueAttribute.RAW);
+        }
+    }
 	
-	@Override
-	public void close() throws Exception {
-		Exception exception = null;
-		try {
-			this.channel.close();
-		} catch (Exception e) {
-			exception = e;
-			logger.error("Could not close RabbitMQ channel", e);
-		}
-		try {
-			this.connection.close();
-		} catch (Exception e) {
-			if (exception == null) {
-				exception = e;
-			}
-			logger.error("Could not close RabbitMQ connection", e);
-		}
-		if (exception != null) {
-			throw exception;
-		}
-		logger.debug("MQ channel closed");
-	}
 }

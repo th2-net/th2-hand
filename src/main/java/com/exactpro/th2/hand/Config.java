@@ -16,57 +16,51 @@
 
 package com.exactpro.th2.hand;
 
-import com.exactpro.th2.hand.utils.Utils;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.math.NumberUtils;
+import static java.util.Objects.requireNonNull;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
 
+import com.exactpro.th2.hand.schema.CustomConfiguration;
+import com.exactpro.th2.schema.factory.CommonFactory;
+
 public class Config
 {
-	public static final String GRPC_PORT_ARG = "GRPC_PORT";
-	public static final String PROJECT_DIR_ARG = "PROJECT_DIR";
-	public static final String PROJECT_NAME_ARG = "PROJECT_NAME";
-	public static final int DEFAULT_GRPC_PORT = 8080;
-	public static final String RH_URLS_ARG = "RH_URLS";
 	public static final String DEFAULT_SERVER_TARGET = "Default";
 	public static final String DEFAULT_RH_URL = "http://localhost:8008";
 
+    protected final CommonFactory factory;
 	protected final int grpcPort;
 	protected final Map<String, String> rhUrls;
-	protected final Path rootDir;
 	
-	protected final RabbitMqConfiguration rabbitMqConfiguration;
-	
-	public Config()
+	public Config(CommonFactory factory)
 	{
-		this.grpcPort = getEnvTh2GrpcPort();
-		this.rhUrls = getEnvTh2RhUrls();
-		this.rootDir = getRootDir();
-		
-		this.rabbitMqConfiguration = new RabbitMqConfiguration();
+	    this.factory = factory;
+		this.grpcPort = doGetGrpcPort();
+		this.rhUrls = doGetRhUrls();
 	}
 
-	protected Path getRootDir()
+    protected int doGetGrpcPort() {
+        return requireNonNull(
+                requireNonNull(factory.getGrpcRouterConfiguration(), "Configuration for grpc router can not be null")
+                        .getServerConfiguration(), "Configuration for grpc server can not be null")
+                .getPort();
+    }
+
+	protected Map<String, String> doGetRhUrls()
 	{
-		return Paths.get(ObjectUtils.defaultIfNull(System.getenv(PROJECT_DIR_ARG), System.getProperty("user.dir")));
+        CustomConfiguration customConfig = factory.getCustomConfiguration(CustomConfiguration.class);
+        if (customConfig == null)
+            return Collections.singletonMap(DEFAULT_SERVER_TARGET, DEFAULT_RH_URL);
+
+        return customConfig.getRhUrls();
 	}
 
-	protected Map<String, String> getEnvTh2RhUrls()
-	{
-		Map<String, String> rhUrls = Utils.readMapFromString(System.getenv(RH_URLS_ARG));
-		return rhUrls.isEmpty() ? Collections.singletonMap(DEFAULT_SERVER_TARGET, DEFAULT_RH_URL) : rhUrls;
-	}
+    public CommonFactory getFactory() {
+        return factory;
+    }
 
-	protected int getEnvTh2GrpcPort()
-	{
-		return NumberUtils.toInt(System.getenv(GRPC_PORT_ARG), DEFAULT_GRPC_PORT);
-	}
-
-	public int getGrpcPort()
+    public int getGrpcPort()
 	{
 		return grpcPort;
 	}
@@ -76,8 +70,4 @@ public class Config
 		return rhUrls;
 	}
 
-	public RabbitMqConfiguration getRabbitMqConfiguration()
-	{
-		return rabbitMqConfiguration;
-	}
 }
