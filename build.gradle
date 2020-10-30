@@ -34,7 +34,6 @@ ext {
 	grpcVersion = '1.30.0' // CURRENT_GRPC_VERSION
 	protobufVersion = '3.12.0'
 	protocVersion = "${protobufVersion}"
-	cth_core_version = '1.0.10452'
 
 	mainRsrcDir = 'src/main/resources'
 	sharedDir = file("${projectDir}/shared")
@@ -46,11 +45,6 @@ repositories {
 		name 'MavenLocal'
 		url sharedDir
 	}
-
-    maven {
-        name 'Schema snapshot'
-        url 'http://artifactory5.exp.exactpro.com/artifactory/th2-schema-snapshot-local'
-    }
 	
 	maven {
 		name 'Artifactory snapshot'
@@ -71,7 +65,7 @@ repositories {
 }
 
 dependencies {
-    api platform('com.exactpro.th2:th2-bom:1.0.0-schema-ci.+')
+    api platform('com.exactpro.th2:bom:2.+')
 
 	compile "org.slf4j:slf4j-api:${version_slf4j}"
 	compile "org.slf4j:slf4j-log4j12:${version_slf4j}"
@@ -81,8 +75,8 @@ dependencies {
 	compile "io.grpc:grpc-netty-shaded:${grpcVersion}"
 
 	compile "com.rabbitmq:amqp-client:5.8.0"
-	implementation "com.exactpro.th2:th2-grpc-infra"
-    implementation "com.exactpro.th2:th2-common"
+	implementation "com.exactpro.th2:grpc-common"
+    implementation "com.exactpro.th2:common"
 	
 	compile 'org.apache.commons:commons-lang3:3.4'
 	compile 'org.apache.httpcomponents:fluent-hc:4.5.5'

@@ -21,7 +21,7 @@ option java_package = "com.exactpro.th2.act.grpc.hand";
 
 import "th2/rhactionsmessages.proto";
 import "th2/rhactionsmessages_win.proto";
-import "th2/infra.proto";
+import "grpc_common/common.proto";
 import "google/protobuf/empty.proto";
 
 package th2;

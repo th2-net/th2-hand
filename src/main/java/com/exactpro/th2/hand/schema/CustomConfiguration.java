@@ -23,15 +23,15 @@ import com.fasterxml.jackson.annotation.JsonCreator.Mode;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class CustomConfiguration {
-    
-    private Map<String, String> rhUrls;
-    
-    @JsonCreator(mode = Mode.PROPERTIES)
-    public CustomConfiguration(@JsonProperty("rhUrls") Map<String, String> rhUrls) {
-        this.rhUrls = rhUrls;
-    }
 
-    public Map<String, String> getRhUrls() {
-        return rhUrls;
-    }
+	private Map<String, String> rhUrls;
+
+	@JsonCreator(mode = Mode.PROPERTIES)
+	public CustomConfiguration(@JsonProperty("rhUrls") Map<String, String> rhUrls) {
+		this.rhUrls = rhUrls;
+	}
+
+	public Map<String, String> getRhUrls() {
+		return rhUrls;
+	}
 }

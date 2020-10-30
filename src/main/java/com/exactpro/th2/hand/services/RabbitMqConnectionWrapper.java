@@ -16,11 +16,11 @@
 
 package com.exactpro.th2.hand.services;
 
-import com.exactpro.th2.infra.grpc.MessageBatch;
-import com.exactpro.th2.infra.grpc.RawMessageBatch;
-import com.exactpro.th2.schema.factory.CommonFactory;
-import com.exactpro.th2.schema.message.MessageRouter;
-import com.exactpro.th2.schema.message.QueueAttribute;
+import com.exactpro.th2.common.grpc.MessageBatch;
+import com.exactpro.th2.common.grpc.RawMessageBatch;
+import com.exactpro.th2.common.schema.factory.CommonFactory;
+import com.exactpro.th2.common.schema.message.MessageRouter;
+import com.exactpro.th2.common.schema.message.QueueAttribute;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -37,34 +37,37 @@ public class RabbitMqConnectionWrapper {
     private final MessageRouter<MessageBatch> messageRouterParsedBatch;
     private final MessageRouter<RawMessageBatch> messageRouterRawBatch;
 
-    public RabbitMqConnectionWrapper(CommonFactory factory) {
-        messageRouterParsedBatch = factory.getMessageRouterParsedBatch();
-        messageRouterRawBatch = factory.getMessageRouterRawBatch();
-        writeToLogAboutConnection(factory);
-    }
+	public RabbitMqConnectionWrapper(CommonFactory factory) {
+		messageRouterParsedBatch = factory.getMessageRouterParsedBatch();
+		messageRouterRawBatch = factory.getMessageRouterRawBatch();
+		writeToLogAboutConnection(factory);
+	}
 
-    private void writeToLogAboutConnection(CommonFactory factory) {
-        StringBuilder connectionInfo = new StringBuilder("Connection to RbbitMQ with ");
-        connectionInfo.append(factory.getRabbitMqConfiguration()).append(" established \n");
-        connectionInfo.append("Queues: \n");
-        factory.getMessageRouterConfiguration().getQueues().forEach((name, queue) -> {
-            connectionInfo.append(name).append(" : ");
-            ObjectMapper mapper = new ObjectMapper();
-            try {
-                connectionInfo.append(mapper.writeValueAsString(queue));
-            } catch (JsonProcessingException e) {
-                logger.warn("Error occurs while convert QueueConfiguration to JSON string", e);
-                connectionInfo.append("QueueConfiguration is not available");
-            }
-            connectionInfo.append('\n');
-        });
-        logger.info(connectionInfo.toString());
-    }
+	private void writeToLogAboutConnection(CommonFactory factory) {
+		if (logger.isInfoEnabled()) {
+			StringBuilder connectionInfo = new StringBuilder("Connection to RbbitMQ with ");
+			connectionInfo.append(factory.getRabbitMqConfiguration()).append(" established \n");
+			connectionInfo.append("Queues: \n");
+			factory.getMessageRouterConfiguration().getQueues().forEach((name, queue) -> {
+				connectionInfo.append(name).append(" : ");
+				try {
+					ObjectMapper mapper = new ObjectMapper();
+					connectionInfo.append(mapper.writeValueAsString(queue));
+				}
+				catch (JsonProcessingException e) {
+					logger.warn("Error occurs while convert QueueConfiguration to JSON string", e);
+					connectionInfo.append("QueueConfiguration is not available");
+				}
+				connectionInfo.append('\n');
+			});
+			logger.info(connectionInfo.toString());
+		}
+	}
 
     public void sendMessages(MessageHandler.PairMessage messages) throws Exception {
 		this.sendMessages(Collections.singleton(messages));
 	}
-	
+
 	public void sendMessages(Collection<MessageHandler.PairMessage> messages) throws Exception {
 		MessageBatch.Builder builder = MessageBatch.newBuilder();
 		RawMessageBatch.Builder rawBuilder = RawMessageBatch.newBuilder();
@@ -82,15 +85,15 @@ public class RabbitMqConnectionWrapper {
 			return;
 		}
 
-        MessageBatch parsed = builder.build();
-        RawMessageBatch raw = rawBuilder.build();
-        messageRouterParsedBatch.send(parsed);
-        messageRouterRawBatch.send(raw);
-        if (logger.isDebugEnabled()) {
-            String msgTemplate = "Array with {} bytes size sent to {} queue";
-            logger.debug(msgTemplate, parsed.toByteArray().length, QueueAttribute.PARSED);
-            logger.debug(msgTemplate, raw.toByteArray().length, QueueAttribute.RAW);
-        }
-    }
+		MessageBatch parsed = builder.build();
+		RawMessageBatch raw = rawBuilder.build();
+		messageRouterParsedBatch.send(parsed);
+		messageRouterRawBatch.send(raw);
+		if (logger.isDebugEnabled()) {
+			String msgTemplate = "Array with {} bytes size sent to {} queue";
+			logger.debug(msgTemplate, parsed.toByteArray().length, QueueAttribute.PARSED);
+			logger.debug(msgTemplate, raw.toByteArray().length, QueueAttribute.RAW);
+		}
+	}
 	
 }
