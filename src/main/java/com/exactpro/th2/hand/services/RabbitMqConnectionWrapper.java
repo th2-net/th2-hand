@@ -44,24 +44,24 @@ public class RabbitMqConnectionWrapper {
 	}
 
 	private void writeToLogAboutConnection(CommonFactory factory) {
-		if (logger.isInfoEnabled()) {
-			StringBuilder connectionInfo = new StringBuilder("Connection to RbbitMQ with ");
-			connectionInfo.append(factory.getRabbitMqConfiguration()).append(" established \n");
-			connectionInfo.append("Queues: \n");
-			factory.getMessageRouterConfiguration().getQueues().forEach((name, queue) -> {
-				connectionInfo.append(name).append(" : ");
-				try {
-					ObjectMapper mapper = new ObjectMapper();
-					connectionInfo.append(mapper.writeValueAsString(queue));
-				}
-				catch (JsonProcessingException e) {
-					logger.warn("Error occurs while convert QueueConfiguration to JSON string", e);
-					connectionInfo.append("QueueConfiguration is not available");
-				}
-				connectionInfo.append('\n');
-			});
-			logger.info(connectionInfo.toString());
-		}
+		if (!logger.isInfoEnabled())
+			return;
+		StringBuilder connectionInfo = new StringBuilder("Connection to RbbitMQ with ");
+		connectionInfo.append(factory.getRabbitMqConfiguration()).append(" established \n");
+		connectionInfo.append("Queues: \n");
+		factory.getMessageRouterConfiguration().getQueues().forEach((name, queue) -> {
+			connectionInfo.append(name).append(" : ");
+			try {
+				ObjectMapper mapper = new ObjectMapper();
+				connectionInfo.append(mapper.writeValueAsString(queue));
+			}
+			catch (JsonProcessingException e) {
+				logger.warn("Error occurs while convert QueueConfiguration to JSON string", e);
+				connectionInfo.append("QueueConfiguration is not available");
+			}
+			connectionInfo.append('\n');
+		});
+		logger.info(connectionInfo.toString());
 	}
 
     public void sendMessages(MessageHandler.PairMessage messages) throws Exception {
