@@ -24,17 +24,61 @@ docker build -t <image name>:<version> -f Dockerfile .
 
 ### Configuration
 
-This project uses environment variables as its settings
+This project uses the schema API to get its settings.
+For local run it needs `custom.json`, `grpc.jsom,` `rabbitMQ.json` and `mq.json` files.
 
-ENV VAR NAME | DEFAULT VALUE | DESCRIPTION
------------- | ------------- | -----------
-RABBITMQ_EXCHANGE | | RabbitMQ Exchange name setting
-RABBITMQ_ROUTINGKEY | | Queue configured in Message storage as one for parsed messages
-RABBITMQ_RAW_ROUTINGKEY | | Queue configured in Message storage as one for raw messages
-RABBITMQ_HOST | | RabbitMQ host setting
-RABBITMQ_PORT | |RabbitMQ port setting
-RABBITMQ_VHOST | | RabbitMQ Virtual Host setting
-RABBITMQ_USER | | RabbitMQ username
-RABBITMQ_PASS | | RabbitMQ password
-RH_URLS | first=http://localhost:8008;second=http://localhost:8009 | RemoteHand URLs map
-GRPC_PORT | 8080 | TH2-Hand gRPC Server port to run on
+The `custom.json` file contains RemoteHand URLs map and has next format:
+```
+{
+	"rhUrls":{
+		"first" : "http://localhost:8008",
+		"second" : "http://localhost:8008"
+		}
+}
+```
+The TH2-Hand gRPC server port to run is configured in `grpc.json`
+```
+{
+    "server":{
+            "port" : 8080
+            }
+}
+```
+The `mq.json` file must have two configured queues. 
+
+The first queue configured in Message storage as one for raw messages. It must nave two "publish", "raw" mandatory atributes. 
+
+The second queue configured in Message storage as one for parsed messages. It must nave two "publish", "parsed" mandatory atributes.
+
+Like this:
+```
+{
+     "queues": {
+       "send_raw" : {
+         "name": "default_general_decode_in",
+         "queue": "send_raw_queue",
+         "exchange": "default_general_exchange",
+         "attributes": ["raw", "publish"]
+       },
+       "send_parsed" : {
+         "name" : "default_general_decode_in",
+         "queue": "send_parsed_queue",
+         "exchange": "default_general_exchange",
+         "attributes": ["parsed", "publish"]
+       }
+     }
+}
+```
+
+The `rabbitMQ.json` must contain settings to connect to Rabbitmq exchange.
+
+Like this:
+```
+{
+  "host": "mq_host",
+  "vHost": "mq_vhost",
+  "port": 32600,
+  "username": "mq_username",
+  "password": "mq_pass"
+}
+```
