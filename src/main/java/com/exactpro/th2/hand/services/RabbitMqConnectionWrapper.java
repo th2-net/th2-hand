@@ -16,11 +16,9 @@
 
 package com.exactpro.th2.hand.services;
 
+import com.exactpro.th2.common.grpc.MessageBatch;
+import com.exactpro.th2.common.grpc.RawMessageBatch;
 import com.exactpro.th2.hand.RabbitMqConfiguration;
-import com.exactpro.th2.infra.grpc.Message;
-import com.exactpro.th2.infra.grpc.MessageBatch;
-import com.exactpro.th2.infra.grpc.RawMessage;
-import com.exactpro.th2.infra.grpc.RawMessageBatch;
 import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
