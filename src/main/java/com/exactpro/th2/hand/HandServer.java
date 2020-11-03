@@ -16,6 +16,7 @@
 
 package com.exactpro.th2.hand;
 
+import com.exactprosystems.remotehand.sessions.SessionWatcher;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import org.slf4j.Logger;
@@ -61,6 +62,7 @@ public class HandServer
 	/** Start serving requests. */
 	public void start() throws IOException
 	{
+		new Thread(SessionWatcher.getWatcher()).start();
 		server.start();
 		logger.info("Server started, listening on port {}", server.getPort());
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
