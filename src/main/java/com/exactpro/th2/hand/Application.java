@@ -19,52 +19,43 @@ package com.exactpro.th2.hand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.exactpro.th2.hand.remotehand.RhClient;
-import com.exactpro.th2.hand.remotehand.RhException;
-import com.exactpro.th2.hand.remotehand.RhUtils;
-
-import java.io.IOException;
+import com.exactpro.th2.common.schema.factory.CommonFactory;
 
 public class Application
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Application.class);
 
-	public static void main(String[] args)
-	{
+	public static void main(String[] args) {
 		new Application().run(args);
 	}
 
-	public void run(String[] args)
-	{
-		Config config = getConfig();
-		try
-		{
-			final HandServer handServer = new HandServer(config, new RhConnectionManager(config));
+	public void run(String[] args) {
+		try (CommonFactory factory = CommonFactory.createFromArguments(args)) {
+			Config config = getConfig(factory);
+			final HandServer handServer = new HandServer(config);
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 				try {
 					LOGGER.info("Disposing Hand server");
 					handServer.dispose();
-				} catch (Exception e) {
+				}
+				catch (Exception e) {
 					LOGGER.error("Error while disposing Hand server", e);
-				} 
+				}
 			}));
 			handServer.start();
 			handServer.blockUntilShutdown();
 		}
-		catch (Exception e)
-		{
+		catch (Exception e) {
 			LOGGER.error("Could not to start Hand server", e);
 			closeApp();
 		}
 	}
 
-	protected Config getConfig()
-	{
-		return new Config();
+	protected Config getConfig(CommonFactory factory) {
+		return new Config(factory);
 	}
 
-	private static void closeApp()
-	{
+	private static void closeApp() {
 		LOGGER.info("Application stopped");
 		System.exit(1);
 	}

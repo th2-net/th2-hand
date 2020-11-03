@@ -1,6 +1,6 @@
-# TH2-Hand
+# th2-hand
 
-TH2-Hand is used to interpret and transmit commands from TH2-Act to RemoteHand (Selenium agent) and vice versa.
+th2-hand is used to interpret and transmit commands from th2-act to Selenium or Windown Application Driver and vice versa.
 All incoming and outgoing data is stored in Cradle as messages.
 
 ### Requirements
@@ -24,17 +24,63 @@ docker build -t <image name>:<version> -f Dockerfile .
 
 ### Configuration
 
-This project uses environment variables as its settings
+This project uses the Schema API to get its settings.
+For local run it needs `custom.json`, `grpc.json`, `rabbitMQ.json` and `mq.json` files.
 
-ENV VAR NAME | DEFAULT VALUE | DESCRIPTION
------------- | ------------- | -----------
-RABBITMQ_EXCHANGE | | RabbitMQ Exchange name setting
-RABBITMQ_ROUTINGKEY | | Queue configured in Message storage as one for parsed messages
-RABBITMQ_RAW_ROUTINGKEY | | Queue configured in Message storage as one for raw messages
-RABBITMQ_HOST | | RabbitMQ host setting
-RABBITMQ_PORT | |RabbitMQ port setting
-RABBITMQ_VHOST | | RabbitMQ Virtual Host setting
-RABBITMQ_USER | | RabbitMQ username
-RABBITMQ_PASS | | RabbitMQ password
-RH_URLS | first=http://localhost:8008;second=http://localhost:8009 | RemoteHand URLs map
-GRPC_PORT | 8080 | TH2-Hand gRPC Server port to run on
+The `custom.json` file contains RemoteHand URLs map and has the following format:
+```
+{
+	"rhUrls":{
+		"first" : "http://localhost:8008",
+		"second" : "http://localhost:8008"
+	}
+}
+```
+
+th2-hand gRPC server port to run is configured in `grpc.json`:
+```
+{
+	"server":{
+		"port" : 8080
+	}
+}
+```
+
+The `mq.json` file must have two configured queues. 
+
+The first queue configured in Message storage is for raw messages. It must nave "publish" and "raw" mandatory attributes. 
+
+The second queue configured in Message storage is for parsed messages. It must nave "publish" and "parsed" mandatory attributes.
+
+Example of `mq.json`:
+```
+{
+	"queues": {
+		"send_raw" : {
+			"name": "default_general_decode_in",
+			"queue": "send_raw_queue",
+			"exchange": "default_general_exchange",
+			"attributes": ["raw", "publish"]
+		},
+		"send_parsed" : {
+			"name" : "default_general_decode_in",
+			"queue": "send_parsed_queue",
+			"exchange": "default_general_exchange",
+			"attributes": ["parsed", "publish"]
+		}
+	}
+}
+```
+
+The `rabbitMQ.json` file must contain settings to connect to RabbitMQ.
+
+Example of `rabbitMQ.json`:
+```
+{
+	"host": "mq_host",
+	"vHost": "mq_vhost",
+	"port": 32600,
+	"username": "mq_username",
+	"password": "mq_pass"
+}
+```
