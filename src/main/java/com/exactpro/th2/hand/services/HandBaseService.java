@@ -35,13 +35,13 @@ import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.SendKeys;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.SendKeysToActive;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.SwitchWindow;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
-import com.exactpro.th2.common.grpc.MessageID;
 import com.exactpro.th2.hand.RhConnectionManager;
 import com.exactpro.th2.hand.remotehand.RhClient;
 import com.exactpro.th2.hand.remotehand.RhResponseCode;
 import com.exactpro.th2.hand.remotehand.RhScriptResult;
 
 import com.exactpro.th2.hand.remotehand.RhUtils;
+import com.exactpro.th2.common.grpc.MessageID;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.slf4j.Logger;

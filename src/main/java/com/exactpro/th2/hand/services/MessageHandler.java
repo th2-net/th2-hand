@@ -18,6 +18,8 @@ package com.exactpro.th2.hand.services;
 
 import com.exactpro.th2.act.grpc.hand.RhAction;
 import com.exactpro.th2.act.grpc.hand.RhActionsList;
+import com.exactpro.th2.hand.remotehand.RhResponseCode;
+import com.exactpro.th2.hand.remotehand.RhScriptResult;
 import com.exactpro.th2.common.grpc.ConnectionID;
 import com.exactpro.th2.common.grpc.Direction;
 import com.exactpro.th2.common.grpc.ListValue;
@@ -27,9 +29,6 @@ import com.exactpro.th2.common.grpc.MessageMetadata;
 import com.exactpro.th2.common.grpc.RawMessage;
 import com.exactpro.th2.common.grpc.RawMessageMetadata;
 import com.exactpro.th2.common.grpc.Value;
-import com.exactpro.th2.common.schema.factory.CommonFactory;
-import com.exactpro.th2.hand.remotehand.RhResponseCode;
-import com.exactpro.th2.hand.remotehand.RhScriptResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
