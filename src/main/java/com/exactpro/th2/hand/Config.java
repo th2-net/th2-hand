@@ -17,13 +17,19 @@
 package com.exactpro.th2.hand;
 
 import com.exactpro.th2.hand.utils.Utils;
+import org.apache.commons.cli.*;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
+
+import static com.exactprosystems.remotehand.RemoteHandStarter.CONFIG_PARAM;
+import static com.exactprosystems.remotehand.RemoteHandStarter.ENV_VARS_PARAM;
 
 public class Config
 {
@@ -31,22 +37,25 @@ public class Config
 	public static final String PROJECT_DIR_ARG = "PROJECT_DIR";
 	public static final String PROJECT_NAME_ARG = "PROJECT_NAME";
 	public static final int DEFAULT_GRPC_PORT = 8080;
-	public static final String RH_URLS_ARG = "RH_URLS";
-	public static final String DEFAULT_SERVER_TARGET = "Default";
-	public static final String DEFAULT_RH_URL = "http://localhost:8008";
+	public static final String DRIVERS_MAPPING_ARG = "DRIVERS_MAPPING";
+
+	private static final String DEFAULT_SERVER_TARGET = "Default";
+	private static final String DEFAULT_DRIVER_URL = "http://localhost:4444";
+	private static final String DEFAULT_DRIVER_TYPE = "web";
 
 	protected final int grpcPort;
-	protected final Map<String, String> rhUrls;
+	protected final Map<String, Pair<String, String>> driversMapping;
 	protected final Path rootDir;
-	
+	protected final CommandLine commandLine;
+
 	protected final RabbitMqConfiguration rabbitMqConfiguration;
-	
-	public Config()
-	{
+
+	public Config(String[] args) throws ParseException {
 		this.grpcPort = getEnvTh2GrpcPort();
-		this.rhUrls = getEnvTh2RhUrls();
+		this.driversMapping = getEnvTh2DriversMapping();
 		this.rootDir = getRootDir();
-		
+		this.commandLine = getCommandLine(args);
+
 		this.rabbitMqConfiguration = new RabbitMqConfiguration();
 	}
 
@@ -55,10 +64,12 @@ public class Config
 		return Paths.get(ObjectUtils.defaultIfNull(System.getenv(PROJECT_DIR_ARG), System.getProperty("user.dir")));
 	}
 
-	protected Map<String, String> getEnvTh2RhUrls()
+	protected Map<String, Pair<String, String>> getEnvTh2DriversMapping()
 	{
-		Map<String, String> rhUrls = Utils.readMapFromString(System.getenv(RH_URLS_ARG));
-		return rhUrls.isEmpty() ? Collections.singletonMap(DEFAULT_SERVER_TARGET, DEFAULT_RH_URL) : rhUrls;
+		Map<String, Pair<String, String>> targetServers = Utils.readDriversMappingFromString(System.getenv(DRIVERS_MAPPING_ARG));
+		return targetServers.isEmpty()
+				? Collections.singletonMap(DEFAULT_SERVER_TARGET, new ImmutablePair<>(DEFAULT_DRIVER_TYPE, DEFAULT_DRIVER_URL))
+				: targetServers;
 	}
 
 	protected int getEnvTh2GrpcPort()
@@ -71,13 +82,39 @@ public class Config
 		return grpcPort;
 	}
 
-	public Map<String, String> getRhUrls()
+	public Map<String, Pair<String, String>> getDriversMapping()
 	{
-		return rhUrls;
+		return driversMapping;
 	}
 
 	public RabbitMqConfiguration getRabbitMqConfiguration()
 	{
 		return rabbitMqConfiguration;
+	}
+
+	public CommandLine getCommandLine() {
+		return commandLine;
+	}
+
+	@SuppressWarnings("static-access")
+	protected CommandLine getCommandLine(String[] args) throws ParseException {
+		Options options = new Options();
+
+		Option envVarsMode = OptionBuilder
+				.isRequired(false)
+				.withDescription("Enables environment variables. Example: to option SessionExpire (in ini file) " +
+						"option will be RH_SESSION_EXPIRE")
+				.create(ENV_VARS_PARAM);
+		options.addOption(envVarsMode);
+
+		Option configFileOption = OptionBuilder
+				.isRequired(false)
+				.withArgName("file")
+				.hasArg()
+				.withDescription("Specify configuration file")
+				.create(CONFIG_PARAM);
+		options.addOption(configFileOption);
+
+		return new GnuParser().parse(options, args);
 	}
 }

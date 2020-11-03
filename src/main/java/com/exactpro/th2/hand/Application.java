@@ -16,14 +16,9 @@
 
 package com.exactpro.th2.hand;
 
+import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.exactpro.th2.hand.remotehand.RhClient;
-import com.exactpro.th2.hand.remotehand.RhException;
-import com.exactpro.th2.hand.remotehand.RhUtils;
-
-import java.io.IOException;
 
 public class Application
 {
@@ -36,9 +31,9 @@ public class Application
 
 	public void run(String[] args)
 	{
-		Config config = getConfig();
 		try
 		{
+			Config config = getConfig(args);
 			final HandServer handServer = new HandServer(config, new RhConnectionManager(config));
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 				try {
@@ -46,7 +41,7 @@ public class Application
 					handServer.dispose();
 				} catch (Exception e) {
 					LOGGER.error("Error while disposing Hand server", e);
-				} 
+				}
 			}));
 			handServer.start();
 			handServer.blockUntilShutdown();
@@ -58,9 +53,8 @@ public class Application
 		}
 	}
 
-	protected Config getConfig()
-	{
-		return new Config();
+	protected Config getConfig(String[] args) throws ParseException {
+		return new Config(args);
 	}
 
 	private static void closeApp()

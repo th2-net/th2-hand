@@ -16,43 +16,33 @@
 
 package com.exactpro.th2.hand.services;
 
-import static com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.*;
-import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
+import com.exactpro.th2.act.grpc.hand.*;
+import com.exactpro.th2.act.grpc.hand.RhBatchGrpc.RhBatchImplBase;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.*;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.Click.ModifiersList;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
+import com.exactpro.th2.hand.Config;
+import com.exactpro.th2.hand.IHandService;
+import com.exactpro.th2.hand.RhConnectionManager;
+import com.exactpro.th2.hand.utils.Utils;
+import com.exactpro.th2.infra.grpc.MessageID;
+import com.exactprosystems.clearth.connectivity.data.rhdata.RhResponseCode;
+import com.exactprosystems.clearth.connectivity.data.rhdata.RhScriptResult;
+import com.exactprosystems.remotehand.requests.ExecutionRequest;
+import com.google.protobuf.Empty;
+import com.google.protobuf.TextFormat;
+import io.grpc.stub.StreamObserver;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.exactpro.th2.act.grpc.hand.*;
-import com.exactpro.th2.act.grpc.hand.RhBatchGrpc.RhBatchImplBase;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.Click;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.Click.ModifiersList;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.FindElement;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.Locator;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.Open;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.SendKeys;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.SendKeysToActive;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.SwitchWindow;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
-import com.exactpro.th2.hand.RhConnectionManager;
-import com.exactpro.th2.hand.remotehand.RhClient;
-import com.exactpro.th2.hand.remotehand.RhResponseCode;
-import com.exactpro.th2.hand.remotehand.RhScriptResult;
-
-import com.exactpro.th2.hand.remotehand.RhUtils;
-import com.exactpro.th2.infra.grpc.MessageID;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.exactpro.th2.hand.Config;
-import com.exactpro.th2.hand.IHandService;
-import com.google.protobuf.Empty;
-import com.google.protobuf.TextFormat;
-
-import io.grpc.stub.StreamObserver;
+import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 
 public class HandBaseService extends RhBatchImplBase implements IHandService
 {
@@ -72,18 +62,12 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 	}
 	
 	@Override
-	public void register(RhTargetServer targetServer, StreamObserver<RhSessionID> responseObserver)
-	{
-		String sessionId;
-		try
-		{
-			RhClient client = rhConnManager.createClient(targetServer.getTarget());
-			sessionId = client.getSessionId();
-		}
-		catch (Exception e)
-		{
+	public void register(RhTargetServer targetServer, StreamObserver<RhSessionID> responseObserver) {
+		String sessionId = null;
+		try {
+			sessionId = rhConnManager.createSessionHandler(targetServer.getTarget()).getId();
+		} catch (Exception e) {
 			logger.error("Error while creating RH client", e);
-			sessionId = null;
 		}
 		RhSessionID result = RhSessionID.newBuilder().setId(sessionId).build();
 		responseObserver.onNext(result);
@@ -91,16 +75,8 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 	}
 	
 	@Override
-	public void unregister(RhSessionID request, StreamObserver<Empty> responseObserver)
-	{
-		try
-		{
-			rhConnManager.closeClient(request.getId());
-		}
-		catch (IOException e)
-		{
-			logger.error("Error while closing RH client for session '"+request.getId()+"'", e);
-		}
+	public void unregister(RhSessionID request, StreamObserver<Empty> responseObserver) {
+		rhConnManager.closeSessionHandler(request.getId());
 		responseObserver.onNext(Empty.getDefaultInstance());
 		responseObserver.onCompleted();
 	}
@@ -116,9 +92,9 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		try
 		{
 			sessionId = request.getSessionId().getId();
-			RhClient rhConnection = rhConnManager.getClient(sessionId);
-			rhConnection.send(buildScript(request, messageIDS, sessionId));
-			scriptResult = rhConnection.waitAndGet(120);
+			HandSessionHandler sessionHandler = rhConnManager.getSessionHandler(sessionId);
+			sessionHandler.handle(new ExecutionRequest(buildScript(request, messageIDS, sessionId)), HandSessionExchange.getStub());
+			scriptResult = sessionHandler.waitAndGet(120);
 		}
 		catch (Exception e)
 		{
@@ -147,8 +123,8 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		for (String s : result) {
 			String id = null, detailsStr = s;
 			
-			if (s.contains(RhUtils.LINE_SEPARATOR)) {
-				s = s.replaceAll(RhUtils.LINE_SEPARATOR, "\n");
+			if (s.contains(Utils.LINE_SEPARATOR)) {
+				s = s.replaceAll(Utils.LINE_SEPARATOR, "\n");
 			}
 			
 			int index = s.indexOf('=');

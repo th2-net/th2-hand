@@ -36,5 +36,5 @@ RABBITMQ_PORT | |RabbitMQ port setting
 RABBITMQ_VHOST | | RabbitMQ Virtual Host setting
 RABBITMQ_USER | | RabbitMQ username
 RABBITMQ_PASS | | RabbitMQ password
-RH_URLS | first=http://localhost:8008;second=http://localhost:8009 | RemoteHand URLs map
+DRIVERS_MAPPING | Default=web@http://localhost:4444 | Drivers URLs mapping. Available driver type values are WEB and WIN.
 GRPC_PORT | 8080 | TH2-Hand gRPC Server port to run on

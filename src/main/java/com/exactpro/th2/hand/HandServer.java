@@ -21,8 +21,6 @@ import io.grpc.ServerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.exactpro.th2.hand.remotehand.RhClient;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
