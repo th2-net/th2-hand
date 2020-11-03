@@ -32,6 +32,12 @@ import com.exactprosystems.remotehand.requests.ExecutionRequest;
 import com.google.protobuf.Empty;
 import com.google.protobuf.TextFormat;
 import io.grpc.stub.StreamObserver;
+import com.exactpro.th2.hand.remotehand.RhClient;
+import com.exactpro.th2.hand.remotehand.RhResponseCode;
+import com.exactpro.th2.hand.remotehand.RhScriptResult;
+
+import com.exactpro.th2.hand.remotehand.RhUtils;
+import com.exactpro.th2.common.grpc.MessageID;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.slf4j.Logger;
@@ -58,7 +64,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 	public void init(Config config, RhConnectionManager rhConnManager) throws Exception
 	{
 		this.rhConnManager = rhConnManager;
-		this.messageHandler = new MessageHandler(config.getRabbitMqConfiguration());
+		this.messageHandler = new MessageHandler(config.getFactory());
 	}
 	
 	@Override
@@ -466,12 +472,6 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 
 	@Override
 	public void dispose() {
-		try {
-			this.messageHandler.close();
-		} catch (Exception e) {
-			logger.error("Error while disposing message handler", e);
-		}
-		
 		try {
 			this.rhConnManager.dispose();
 		} catch (Exception e) {

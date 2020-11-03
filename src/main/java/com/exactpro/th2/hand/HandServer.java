@@ -16,17 +16,17 @@
 
 package com.exactpro.th2.hand;
 
-import com.exactprosystems.remotehand.sessions.SessionWatcher;
-import io.grpc.Server;
-import io.grpc.ServerBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
+
+import com.exactprosystems.remotehand.sessions.SessionWatcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.grpc.Server;
 
 public class HandServer
 {
@@ -37,26 +37,24 @@ public class HandServer
 	private final Server server;
 	private final List<IHandService> services; 
 
-	public HandServer(Config config, RhConnectionManager connectionManager) throws Exception
+	public HandServer(Config config) throws Exception
 	{
 		this.config = config;
-		this.rhConnectionManager = connectionManager;
+		this.rhConnectionManager = new RhConnectionManager(config);
 		this.services = new ArrayList<>();
-		this.server = buildServer(this.services);
+		this.server = buildServer();
 	}
 
-	protected Server buildServer(List<IHandService> services) throws Exception
+	protected Server buildServer() throws Exception
 	{
-		ServerBuilder<?> builder = ServerBuilder.forPort(config.getGrpcPort());
 		for (IHandService rhService : ServiceLoader.load(IHandService.class))
 		{
 			services.add(rhService);
 			rhService.init(config, rhConnectionManager);
-			builder.addService(rhService);
 			logger.info("Service '{}' loaded", rhService.getClass().getName());
 		}
 		
-		return builder.build();
+		return config.getFactory().getGrpcRouter().startServer(services.toArray(new IHandService[0]));
 	}
 
 	/** Start serving requests. */
