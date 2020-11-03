@@ -25,9 +25,9 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public class Utils {
 	public static final String LINE_SEPARATOR = "&#13";
-	private static final String DEFAULT_KEY_VALUE_DELIMITER = "=";
-	private static final String DEFAULT_RECORDS_DELIMITER = ";";
-	private static final String DEFAULT_VALUE_DELIMITER = "@";
+	public static final String DEFAULT_KEY_VALUE_DELIMITER = "=";
+	public static final String DEFAULT_RECORDS_DELIMITER = ";";
+	public static final String DEFAULT_VALUE_DELIMITER = "@";
 
 
 	public static Map<String, Pair<String, String>> readDriversMappingFromString(String line)

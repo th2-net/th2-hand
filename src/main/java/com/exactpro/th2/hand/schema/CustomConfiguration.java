@@ -24,14 +24,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class CustomConfiguration {
 
-	private Map<String, String> rhUrls;
+	private Map<String, String> driversMapping;
 
 	@JsonCreator(mode = Mode.PROPERTIES)
-	public CustomConfiguration(@JsonProperty("rhUrls") Map<String, String> rhUrls) {
-		this.rhUrls = rhUrls;
+	public CustomConfiguration(@JsonProperty("driversMapping") Map<String, String> driversMapping) {
+		this.driversMapping = driversMapping;
 	}
 
-	public Map<String, String> getRhUrls() {
-		return rhUrls;
+	public Map<String, String> getDriversMapping() {
+		return driversMapping;
 	}
 }

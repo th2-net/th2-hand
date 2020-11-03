@@ -17,37 +17,51 @@
 package com.exactpro.th2.hand;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.hand.schema.CustomConfiguration;
+import com.exactpro.th2.hand.utils.Utils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class Config {
 	public static final String DEFAULT_SERVER_TARGET = "Default";
 	public static final String DEFAULT_RH_URL = "http://localhost:8008";
 
 	protected final CommonFactory factory;
-	protected final Map<String, String> rhUrls;
+	protected final Map<String, Pair<String, String>> driversMapping;
 
 	public Config(CommonFactory factory) {
 		this.factory = factory;
-		this.rhUrls = doGetRhUrls();
+		this.driversMapping = doGetDriversMappings();
 	}
 
-	protected Map<String, String> doGetRhUrls() {
+	protected Map<String, Pair<String, String>> doGetDriversMappings() {
 		CustomConfiguration customConfig = factory.getCustomConfiguration(CustomConfiguration.class);
-		if (customConfig == null)
-			return Collections.singletonMap(DEFAULT_SERVER_TARGET, DEFAULT_RH_URL);
+		Map<String, String> params = (customConfig == null) ? 
+				Collections.singletonMap(DEFAULT_SERVER_TARGET, DEFAULT_RH_URL):
+				customConfig.getDriversMapping();
 
-		return customConfig.getRhUrls();
+		Map<String, Pair<String, String>> output = new LinkedHashMap<>();
+		for (Map.Entry<String, String> mappings : params.entrySet()) {
+			String[] key = mappings.getValue().split(Utils.DEFAULT_VALUE_DELIMITER);
+			if (key.length != 2) {
+				continue;
+			}
+			output.put(mappings.getKey(), new ImmutablePair<>(key[0], key[1]));
+		}
+		
+		return output;
 	}
 
 	public CommonFactory getFactory() {
 		return factory;
 	}
 
-	public Map<String, String> getRhUrls() {
-		return rhUrls;
+	public Map<String, Pair<String, String>> getDriversMapping() {
+		return driversMapping;
 	}
 
 }
