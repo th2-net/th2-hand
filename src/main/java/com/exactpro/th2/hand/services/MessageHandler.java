@@ -18,6 +18,7 @@ package com.exactpro.th2.hand.services;
 
 import com.exactpro.th2.act.grpc.hand.RhAction;
 import com.exactpro.th2.act.grpc.hand.RhActionsList;
+import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.hand.remotehand.RhResponseCode;
 import com.exactpro.th2.hand.remotehand.RhScriptResult;
 import com.exactpro.th2.common.grpc.ConnectionID;
