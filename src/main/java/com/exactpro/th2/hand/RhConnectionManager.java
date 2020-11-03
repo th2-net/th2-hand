@@ -45,10 +45,10 @@ public class RhConnectionManager {
 	}
 
 
-	public HandSessionHandler getSessionHandler(String sessionId) {
+	public HandSessionHandler getSessionHandler(String sessionId) throws IllegalArgumentException {
 		HandSessionHandler sessionHandler = sessions.get(sessionId);
 		if (sessionHandler == null)
-			logger.warn("Requested client for session '{}' is not registered", sessionId);
+			throw new IllegalArgumentException("Requested client for session '"+sessionId+"' is not registered");
 		return sessionHandler;
 	}
 
@@ -56,7 +56,7 @@ public class RhConnectionManager {
 		Pair<String, String> driverSettings = config.getDriversMapping().get(targetServer);
 		RemoteManagerType remoteManagerType = RemoteManagerType.getByLabel(driverSettings.getKey());
 		if (remoteManagerType == null)
-			throw new RhConfigurationException("Unrecognized driver manager type");
+			throw new RhConfigurationException("Unrecognized driver manager type '"+driverSettings.getKey()+"'");
 
 		String sessionId = generateSessionId();
 		IRemoteHandManager remoteHandManager = gridRemoteHandManager.getRemoteHandManager(remoteManagerType);

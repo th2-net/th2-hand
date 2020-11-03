@@ -67,7 +67,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		try {
 			sessionId = rhConnManager.createSessionHandler(targetServer.getTarget()).getId();
 		} catch (Exception e) {
-			logger.error("Error while creating RH client", e);
+			logger.error("Error while creating session", e);
 		}
 		RhSessionID result = RhSessionID.newBuilder().setId(sessionId).build();
 		responseObserver.onNext(result);
@@ -100,7 +100,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		{
 			scriptResult = new RhScriptResult();
 			scriptResult.setCode(RhResponseCode.EXECUTION_ERROR.getCode());
-			String errMsg = "Error occurred while interacting with RemoteHand";
+			String errMsg = "Error occurred while executing commands";
 			scriptResult.setErrorMessage(errMsg);
 			logger.warn(errMsg, e);
 		}
@@ -475,7 +475,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		try {
 			this.rhConnManager.dispose();
 		} catch (Exception e) {
-			logger.error("Error while disposing RH connections", e);
+			logger.error("Error while disposing RH manager", e);
 		}
 	}
 
