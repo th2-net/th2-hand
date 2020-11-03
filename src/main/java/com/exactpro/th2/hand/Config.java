@@ -16,14 +16,10 @@
 
 package com.exactpro.th2.hand;
 
-import static java.util.Objects.requireNonNull;
-
 import java.util.Collections;
 import java.util.Map;
 
 import com.exactpro.th2.common.schema.factory.CommonFactory;
-import com.exactpro.th2.common.schema.grpc.configuration.GrpcRouterConfiguration;
-import com.exactpro.th2.common.schema.grpc.configuration.GrpcServerConfiguration;
 import com.exactpro.th2.hand.schema.CustomConfiguration;
 
 public class Config {
@@ -31,18 +27,11 @@ public class Config {
 	public static final String DEFAULT_RH_URL = "http://localhost:8008";
 
 	protected final CommonFactory factory;
-	protected final int grpcPort;
 	protected final Map<String, String> rhUrls;
 
 	public Config(CommonFactory factory) {
 		this.factory = factory;
-		this.grpcPort = doGetGrpcPort();
 		this.rhUrls = doGetRhUrls();
-	}
-
-	protected int doGetGrpcPort() {
-		return requireNonNull(requireNonNull(factory.getGrpcRouterConfiguration(), "Configuration for grpc router cannot be null")
-				.getServerConfiguration(), "Configuration for grpc server cannot be null").getPort();
 	}
 
 	protected Map<String, String> doGetRhUrls() {
@@ -55,10 +44,6 @@ public class Config {
 
 	public CommonFactory getFactory() {
 		return factory;
-	}
-
-	public int getGrpcPort() {
-		return grpcPort;
 	}
 
 	public Map<String, String> getRhUrls() {

@@ -32,7 +32,7 @@ public class Application
 	public void run(String[] args) {
 		try (CommonFactory factory = CommonFactory.createFromArguments(args)) {
 			Config config = getConfig(factory);
-			final HandServer handServer = new HandServer(config, new RhConnectionManager(config));
+			final HandServer handServer = new HandServer(config);
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 				try {
 					LOGGER.info("Disposing Hand server");
