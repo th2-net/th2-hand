@@ -22,35 +22,35 @@ import java.util.Map;
 
 import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.hand.schema.CustomConfiguration;
-import com.exactpro.th2.hand.utils.Utils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 public class Config {
-	public static final String DEFAULT_SERVER_TARGET = "Default";
-	public static final String DEFAULT_RH_URL = "http://localhost:8008";
 
 	protected final CommonFactory factory;
-	protected final Map<String, Pair<String, String>> driversMapping;
+	protected final CustomConfiguration customConfiguration;
+	protected final Map<String, DriverMapping> driversMapping;
 
-	public Config(CommonFactory factory) {
+	public Config(CommonFactory factory) throws ConfigurationException {
 		this.factory = factory;
+		this.customConfiguration = factory.getCustomConfiguration(CustomConfiguration.class);
+		if (customConfiguration == null) {
+			throw new ConfigurationException("Custom configuration is not found");
+		}
 		this.driversMapping = doGetDriversMappings();
 	}
 
-	protected Map<String, Pair<String, String>> doGetDriversMappings() {
-		CustomConfiguration customConfig = factory.getCustomConfiguration(CustomConfiguration.class);
-		Map<String, String> params = (customConfig == null) ? 
-				Collections.singletonMap(DEFAULT_SERVER_TARGET, DEFAULT_RH_URL):
-				customConfig.getDriversMapping();
+	protected Map<String, DriverMapping> doGetDriversMappings() throws ConfigurationException {
+		Map<String, Map<String, String>> params = customConfiguration.getDriversMapping();
+		if (params == null || params.isEmpty()) {
+			throw new ConfigurationException("Drivers mapping should be provided in custom config.");
+		}
 
-		Map<String, Pair<String, String>> output = new LinkedHashMap<>();
-		for (Map.Entry<String, String> mappings : params.entrySet()) {
-			String[] key = mappings.getValue().split(Utils.DEFAULT_VALUE_DELIMITER);
-			if (key.length != 2) {
-				continue;
-			}
-			output.put(mappings.getKey(), new ImmutablePair<>(key[0], key[1]));
+		Map<String, DriverMapping> output = new LinkedHashMap<>();
+		for (Map.Entry<String, Map<String, String>> mappings : params.entrySet()) {
+			Map<String, String> value = mappings.getValue();
+			String type = value.get("type");
+			String url = value.get("url");
+			
+			output.put(mappings.getKey(), new DriverMapping(type, url));
 		}
 		
 		return output;
@@ -60,8 +60,27 @@ public class Config {
 		return factory;
 	}
 
-	public Map<String, Pair<String, String>> getDriversMapping() {
+	public Map<String, DriverMapping> getDriversMapping() {
 		return driversMapping;
 	}
+	
+	public Map<String, String> getRhOptions() {
+		Map<String, String> rhOptions = this.customConfiguration.getRhOptions();
+		if (rhOptions == null) {
+			rhOptions = Collections.emptyMap(); 
+		}
+		return rhOptions;
+	}
 
+	public static class DriverMapping {
+		
+		public final String type;
+		public final String url;
+
+		public DriverMapping(String type, String url) {
+			this.type = type;
+			this.url = url;
+		}
+	} 
+	
 }

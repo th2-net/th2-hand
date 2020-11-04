@@ -22,7 +22,6 @@ import com.exactprosystems.remotehand.IRemoteHandManager;
 import com.exactprosystems.remotehand.RemoteManagerType;
 import com.exactprosystems.remotehand.RhConfigurationException;
 import com.exactprosystems.remotehand.grid.GridRemoteHandManager;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +40,7 @@ public class RhConnectionManager {
 	public RhConnectionManager(Config config) {
 		this.config = config;
 		gridRemoteHandManager = new GridRemoteHandManager();
-		gridRemoteHandManager.createConfigurations(config.getCommandLine());
+		gridRemoteHandManager.createConfigurations(null, config.getRhOptions());
 	}
 
 
@@ -53,15 +52,15 @@ public class RhConnectionManager {
 	}
 
 	public HandSessionHandler createSessionHandler(String targetServer) throws RhConfigurationException {
-		Pair<String, String> driverSettings = config.getDriversMapping().get(targetServer);
-		RemoteManagerType remoteManagerType = RemoteManagerType.getByLabel(driverSettings.getKey());
+		Config.DriverMapping driverSettings = config.getDriversMapping().get(targetServer);
+		RemoteManagerType remoteManagerType = RemoteManagerType.getByLabel(driverSettings.type);
 		if (remoteManagerType == null)
-			throw new RhConfigurationException("Unrecognized driver manager type '"+driverSettings.getKey()+"'");
+			throw new RhConfigurationException("Unrecognized driver manager type '"+driverSettings.type+"'");
 
 		String sessionId = generateSessionId();
 		IRemoteHandManager remoteHandManager = gridRemoteHandManager.getRemoteHandManager(remoteManagerType);
 		HandSessionHandler handSessionHandler = new HandSessionHandler(sessionId, remoteHandManager);
-		gridRemoteHandManager.saveSession(sessionId, driverSettings.getValue());
+		gridRemoteHandManager.saveSession(sessionId, driverSettings.url);
 		sessions.put(sessionId, handSessionHandler);
 
 		return handSessionHandler;

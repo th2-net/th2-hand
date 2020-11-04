@@ -16,8 +16,8 @@
 
 package com.exactpro.th2.hand.services;
 
-import com.exactprosystems.clearth.connectivity.data.rhdata.RhResponseCode;
-import com.exactprosystems.clearth.connectivity.data.rhdata.RhScriptResult;
+import com.exactprosystems.remotehand.rhdata.RhResponseCode;
+import com.exactprosystems.remotehand.rhdata.RhScriptResult;
 import com.exactprosystems.remotehand.IRemoteHandManager;
 import com.exactprosystems.remotehand.ScriptExecuteException;
 import com.exactprosystems.remotehand.sessions.SessionHandler;

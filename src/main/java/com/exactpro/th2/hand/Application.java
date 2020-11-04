@@ -51,7 +51,7 @@ public class Application
 		}
 	}
 
-	protected Config getConfig(CommonFactory factory) {
+	protected Config getConfig(CommonFactory factory) throws ConfigurationException {
 		return new Config(factory);
 	}
 

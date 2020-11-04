@@ -14,25 +14,26 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.hand.schema;
+package com.exactpro.th2.hand;
 
-import java.util.Map;
+public class ConfigurationException extends Exception {
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-public class CustomConfiguration {
-
-	@JsonProperty(value="driversMapping")
-	private Map<String, Map<String, String>> driversMapping;
-	
-	@JsonProperty(value="rhOptions")
-	private Map<String, String> rhOptions;
-
-	public Map<String, Map<String, String>> getDriversMapping() {
-		return driversMapping;
+	public ConfigurationException() {
 	}
 
-	public Map<String, String> getRhOptions() {
-		return rhOptions;
+	public ConfigurationException(String message) {
+		super(message);
+	}
+
+	public ConfigurationException(String message, Throwable cause) {
+		super(message, cause);
+	}
+
+	public ConfigurationException(Throwable cause) {
+		super(cause);
+	}
+
+	public ConfigurationException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+		super(message, cause, enableSuppression, writableStackTrace);
 	}
 }
