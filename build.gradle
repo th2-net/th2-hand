@@ -52,9 +52,17 @@ repositories {
 		name 'Artifactory release'
 		url 'http://artifactory5.exp.exactpro.com/artifactory/libs-release'
 	}
+	maven {
+		name 'Nexus'
+		url 'https://th2-oss.exactpro.com/repository/oss-maven/'
+	}
 
+	maven {
+		name 'Artifactory'
+		url 'http://arti.exactpro.com/libs-release'
+	}
 	mavenCentral()
-	
+
 	configurations.all {
 		resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 		resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
@@ -64,34 +72,29 @@ repositories {
 dependencies {
 	api platform('com.exactpro.th2:bom:2.1.+')
 
-	compile "org.slf4j:slf4j-api:${version_slf4j}"
-	compile "org.slf4j:slf4j-log4j12:${version_slf4j}"
+	compile "com.exactprosystems.remotehand:remotehand:1.0.1"
+	compile "org.slf4j:slf4j-api"
+	compile "org.slf4j:slf4j-log4j12"
 
 	compile "io.grpc:grpc-protobuf"
 	compile "io.grpc:grpc-stub"
 	compile "io.grpc:grpc-core"
 	compile "io.grpc:grpc-netty"
 
-	compile "com.rabbitmq:amqp-client:5.8.0"
+	compile "com.rabbitmq:amqp-client"
 	
 	implementation "com.exactpro.th2:grpc-hand"
 	implementation "com.exactpro.th2:grpc-common"
     implementation "com.exactpro.th2:common"
-	
-	compile 'org.apache.commons:commons-lang3:3.4'
-	compile 'org.apache.httpcomponents:fluent-hc:4.5.5'
-	compile 'org.apache.httpcomponents:httpclient:4.5.5'
-	compile 'org.apache.httpcomponents:httpclient-cache:4.5.5'
-	compile 'org.apache.httpcomponents:httpclient-win:4.5.5'
-	compile 'org.apache.httpcomponents:httpcore:4.4.9'
-	compile 'org.apache.httpcomponents:httpmime:4.5.5'
-	compile 'com.fasterxml.jackson.core:jackson-databind:2.4.2'
-	
+
+	compile 'org.apache.commons:commons-lang3'
+	compile 'com.fasterxml.jackson.core:jackson-databind'
+
 	//for support of jdk 11
 	compile "javax.annotation:javax.annotation-api:1.3.2"
-	
+
 	compile "org.apache.commons:commons-csv:1.8"
-	
+
 	testImplementation 'junit:junit:4.12'
 	testImplementation "io.grpc:grpc-testing:${grpcVersion}"
 }

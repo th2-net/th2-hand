@@ -18,20 +18,21 @@ package com.exactpro.th2.hand.schema;
 
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonCreator.Mode;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class CustomConfiguration {
 
-	private Map<String, String> rhUrls;
+	@JsonProperty(value="driversMapping")
+	private Map<String, Map<String, String>> driversMapping;
+	
+	@JsonProperty(value="rhOptions")
+	private Map<String, String> rhOptions;
 
-	@JsonCreator(mode = Mode.PROPERTIES)
-	public CustomConfiguration(@JsonProperty("rhUrls") Map<String, String> rhUrls) {
-		this.rhUrls = rhUrls;
+	public Map<String, Map<String, String>> getDriversMapping() {
+		return driversMapping;
 	}
 
-	public Map<String, String> getRhUrls() {
-		return rhUrls;
+	public Map<String, String> getRhOptions() {
+		return rhOptions;
 	}
 }

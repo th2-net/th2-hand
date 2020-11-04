@@ -5,7 +5,7 @@ RUN gradle dockerPrepare -Prelease_version=${app_version}
 
 FROM openjdk:12-alpine
 ENV GRPC_PORT=8080\
-    RH_URLS="first=http://localhost:8008;second=http://localhost:8009"
+    DRIVERS_MAPPING="Default=web@http://localhost:4444"
 WORKDIR /home
 COPY --from=build /home/gradle/build/docker ./
 ENTRYPOINT ["/home/service/bin/service"]

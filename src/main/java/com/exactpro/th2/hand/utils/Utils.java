@@ -16,31 +16,44 @@
 
 package com.exactpro.th2.hand.utils;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Utils
-{
-	private static final String DEFAULT_KEY_VALUE_DELIMITER = "=";
-	private static final String DEFAULT_RECORDS_DELIMITER = ";";
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+
+public class Utils {
+	public static final String LINE_SEPARATOR = "&#13";
+	public static final String DEFAULT_KEY_VALUE_DELIMITER = "=";
+	public static final String DEFAULT_RECORDS_DELIMITER = ";";
+	public static final String DEFAULT_VALUE_DELIMITER = "@";
 
 
-	public static Map<String, String> readMapFromString(String line)
+	public static Map<String, Pair<String, String>> readDriversMappingFromString(String line)
 	{
-		return readMapFromString(line, DEFAULT_KEY_VALUE_DELIMITER, DEFAULT_RECORDS_DELIMITER);
+		return readDriversMappingFromString(line, DEFAULT_RECORDS_DELIMITER, DEFAULT_KEY_VALUE_DELIMITER, DEFAULT_VALUE_DELIMITER);
 	}
 
-	public static Map<String, String> readMapFromString(String line, String keyValueDelimiter, String recordsDelimiter)
+	public static Map<String, Pair<String, String>> readDriversMappingFromString(String line, String recordsDelimiter,
+	                                                                             String keyValueDelimiter, String valueDelimiter)
 	{
+		if (line == null)
+			return Collections.emptyMap();
+
 		String[] records = line.split(recordsDelimiter);
-		Map<String, String> result = new HashMap<>(records.length);
+		Map<String, Pair<String, String>> result = new HashMap<>(records.length);
 		for (String record : records)
 		{
-			String[] splitParams = record.split(keyValueDelimiter);
+			String[] splitParams = record.split(keyValueDelimiter); // 0 - target machine, 1 - driver type with url
 			if (splitParams.length != 2)
 				continue;
 
-			result.put(splitParams[0], splitParams[1]);
+			String[] splitValue = splitParams[1].split(valueDelimiter); // 0 - driver type, 1 - driver url
+			if (splitValue.length != 2)
+				continue;
+
+			result.put(splitParams[0], new ImmutablePair<>(splitValue[0], splitValue[1]));
 		}
 
 		return result;

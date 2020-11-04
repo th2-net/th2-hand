@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 
+import com.exactprosystems.remotehand.sessions.SessionWatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,6 +60,7 @@ public class HandServer
 	/** Start serving requests. */
 	public void start() throws IOException
 	{
+		new Thread(SessionWatcher.getWatcher()).start();
 		server.start();
 		logger.info("Server started, listening on port {}", server.getPort());
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {

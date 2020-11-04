@@ -14,37 +14,26 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.hand.remotehand;
+package com.exactpro.th2.hand;
 
-public enum RhResponseCode
-{
-	SUCCESS(0),
-	COMPILE_ERROR(1),
-	EXECUTION_ERROR(2),
-	TOOL_BUSY(3),
-	INCORRECT_REQUEST(4),
-	RH_ERROR(5),
-	UNKNOWN(-1);
-	
-	private final int code;
-	
-	RhResponseCode(int code)
-	{
-		this.code = code;
+public class ConfigurationException extends Exception {
+
+	public ConfigurationException() {
 	}
-	
-	public int getCode()
-	{
-		return code;
+
+	public ConfigurationException(String message) {
+		super(message);
 	}
-	
-	public static RhResponseCode byCode(int code)
-	{
-		for (RhResponseCode error : values())
-		{
-			if (code == error.code)
-				return error;
-		}
-		return UNKNOWN;
+
+	public ConfigurationException(String message, Throwable cause) {
+		super(message, cause);
+	}
+
+	public ConfigurationException(Throwable cause) {
+		super(cause);
+	}
+
+	public ConfigurationException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+		super(message, cause, enableSuppression, writableStackTrace);
 	}
 }

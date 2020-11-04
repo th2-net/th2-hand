@@ -16,81 +16,76 @@
 
 package com.exactpro.th2.hand;
 
-import com.exactpro.th2.hand.remotehand.RhClient;
-import com.exactpro.th2.hand.remotehand.RhException;
-import com.exactpro.th2.hand.remotehand.RhUtils;
+import com.exactpro.th2.hand.services.HandBaseService;
+import com.exactpro.th2.hand.services.HandSessionHandler;
+import com.exactprosystems.remotehand.IRemoteHandManager;
+import com.exactprosystems.remotehand.RemoteManagerType;
+import com.exactprosystems.remotehand.RhConfigurationException;
+import com.exactprosystems.remotehand.grid.GridRemoteHandManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
-
 public class RhConnectionManager {
-
 	private static final Logger logger = LoggerFactory.getLogger(RhConnectionManager.class);
-	
-	private Map<String, RhClient> clients = new ConcurrentHashMap<String, RhClient>();
-	private Config config;
+
+	private final Map<String, HandSessionHandler> sessions = new ConcurrentHashMap<String, HandSessionHandler>();
+	private final GridRemoteHandManager gridRemoteHandManager;
+	private final Config config;
+
 
 	public RhConnectionManager(Config config) {
 		this.config = config;
+		gridRemoteHandManager = new GridRemoteHandManager();
+		gridRemoteHandManager.createConfigurations(null, config.getRhOptions());
 	}
 
-	public RhClient getClient(String sessionId) throws IOException, RhException
-	{
-		RhClient result = clients.get(sessionId);
-		if (result == null)
-			logger.warn("Requested client for session '{}' is not registered", sessionId);
-		return result;
+
+	public HandSessionHandler getSessionHandler(String sessionId) throws IllegalArgumentException {
+		HandSessionHandler sessionHandler = sessions.get(sessionId);
+		if (sessionHandler == null)
+			throw new IllegalArgumentException("Requested client for session '"+sessionId+"' is not registered");
+		return sessionHandler;
 	}
-	
-	public RhClient createClient(String targetServer) throws IOException, RhException
-	{
-		RhClient result = initRhConnection(config, targetServer);
-		clients.put(result.getSessionId(), result);
-		return result;
+
+	public HandSessionHandler createSessionHandler(String targetServer) throws RhConfigurationException {
+		Config.DriverMapping driverSettings = config.getDriversMapping().get(targetServer);
+		RemoteManagerType remoteManagerType = RemoteManagerType.getByLabel(driverSettings.type);
+		if (remoteManagerType == null)
+			throw new RhConfigurationException("Unrecognized driver manager type '"+driverSettings.type+"'");
+
+		String sessionId = generateSessionId();
+		IRemoteHandManager remoteHandManager = gridRemoteHandManager.getRemoteHandManager(remoteManagerType);
+		HandSessionHandler handSessionHandler = new HandSessionHandler(sessionId, remoteHandManager);
+		gridRemoteHandManager.saveSession(sessionId, driverSettings.url);
+		sessions.put(sessionId, handSessionHandler);
+
+		return handSessionHandler;
 	}
-	
-	public void closeClient(String sessionId) throws IOException
-	{
-		RhClient client = clients.remove(sessionId);
-		if (client == null)
+
+	public void closeSessionHandler(String sessionId) {
+		HandSessionHandler sessionHandler = sessions.remove(sessionId);
+		if (sessionHandler == null)
 		{
-			logger.warn("Client for session '{}', requested to close, is not registered", sessionId);
+			logger.warn("Session handler for session '{}', requested to close, is not registered", sessionId);
 			return;
 		}
-		client.close();
-	}
-	
-	public void dispose()
-	{
-		Iterator<String> it = clients.keySet().iterator();
-		while (it.hasNext())
-		{
-			String id = it.next();
-			RhClient client = clients.remove(id);
-			try
-			{
-				client.close();
-			}
-			catch (IOException e)
-			{
-				logger.warn("Error while closing RH client for session '{}'", id);
-			}
-		}
+		sessionHandler.close();
 	}
 
-	protected RhClient initRhConnection(Config config, String targetServer) throws IOException, RhException
-	{
-		logger.info("Creating RemoteHand connection to server '{}'...", targetServer);
-		String host = config.getRhUrls().get(targetServer);
-		if (isEmpty(host))
-			throw new RhException(format("Target server '%s' is not initialized", targetServer));
-		return RhUtils.createRhConnection(host);
+	public void dispose() {
+		for (String id : sessions.keySet()) {
+			HandSessionHandler sessionHandler = sessions.remove(id);
+			sessionHandler.close();
+		}
+		gridRemoteHandManager.clearDriverPool();
+	}
+
+
+	private String generateSessionId() {
+		return HandBaseService.RH_SESSION_PREFIX + UUID.randomUUID();
 	}
 }
