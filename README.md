@@ -31,18 +31,18 @@ The `custom.json` file contains RemoteHand URLs map and has the following format
 ```
 {
 	"driversMapping": {
-    		"first" : {
-    			"type" : "web",
-    			"url" : "http://localhost:4444"
-    		},
-    		"second" : {
-    			"type" : "windows",
-    			"url" : "http://localhost:4445"
-    		}
-    	},
-    "rhOptions": {
-        "Browser" : "Chrome"
-    }
+			"first" : {
+				"type" : "web",
+				"url" : "http://localhost:4444"
+			},
+			"second" : {
+				"type" : "windows",
+				"url" : "http://localhost:4445"
+			}
+		},
+	"rhOptions": {
+		"Browser" : "Chrome"
+	}
 }
 ```
 
