@@ -18,6 +18,7 @@ package com.exactpro.th2.hand.services;
 
 import com.exactpro.th2.act.grpc.hand.*;
 import com.exactpro.th2.act.grpc.hand.RhBatchGrpc.RhBatchImplBase;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.*;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.Click.ModifiersList;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
@@ -225,6 +226,10 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						RhWinActionsMessages.WinWait winWait = action.getWinWait();
 						WinActionsBuilder.addWait(printer, winWait);
 						break;
+					case WAIT:
+						Wait wait = action.getWait();
+						addWait(printer, wait);
+						break;
 					case WINTOGGLECHECKBOX:
 						RhWinActionsMessages.WinToggleCheckBox winToggleCheckBox = action.getWinToggleCheckBox();
 						WinActionsBuilder.addToggleCheckBox(printer, winToggleCheckBox);
@@ -271,7 +276,17 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		messageIDS.addAll(messageHandler.onRequest(actionsList, s, createSessionId(sessionId)));
 		return s;
 	}
-	
+
+	private void addWait(CSVPrinter printer, Wait wait) throws IOException
+	{
+		printer.print("#action");
+		printer.print("#seconds");
+		printer.println();
+		printer.print("Wait");
+		printer.print(wait.getSeconds());
+		printer.println();
+	}
+
 	private String createSessionId(String sessionId) {
 		if (sessionId != null && sessionId.startsWith(RH_SESSION_PREFIX)) {
 			return sessionId.substring(RH_SESSION_PREFIX.length());
