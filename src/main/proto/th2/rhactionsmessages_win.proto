@@ -27,6 +27,7 @@ package th2;
 message WinLocator {
   string locator = 1;
   string matcher = 2;
+  google.protobuf.Int32Value matcherIndex = 3;
 }
 
 message WinOpen {

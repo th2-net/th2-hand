@@ -41,6 +41,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WinActionsBuilder {
+	private static final Pair<String, Pair<String, String>> locatorPair
+			= new ImmutablePair<>("#locator", new ImmutablePair<>("#matcher", "#matcherindex"));
+	private static final Pair<String, Pair<String, String>> textLocatorPair
+			= new ImmutablePair<>("#textLocator", new ImmutablePair<>("#textmatcher", "#textmatcherindex"));
+
 
 	private static void addDefaults(String id, String execute, List<String> headers, List<String> values) {
 		addIfNotEmpty("#id", id, headers, values);
@@ -48,29 +53,32 @@ public class WinActionsBuilder {
 	}
 
 	private static void addLocator(List<WinLocator> winLocators, List<String> headers, List<String> values) {
-		addLocator(winLocators, headers, values, new ImmutablePair<>("#locator", "#matcher"));
+		addLocator(winLocators, headers, values, locatorPair);
 	}
-	
+
 	private static void addLocator(List<WinLocator> winLocators, List<String> headers, List<String> values,
-								   Pair<String, String> keys) {
+	                               Pair<String, Pair<String, String>> keys) {
 		if (winLocators == null || winLocators.isEmpty())
 			return;
-		
+
 		int count = 1;
 		for (WinLocator winLocator : winLocators) {
-			
-			if (count == 1) {
-				headers.add(keys.getKey());
-				headers.add(keys.getValue());
-			} else {
-				headers.add(keys.getKey() + count);
-				headers.add(keys.getValue() + count);
-			}
-			
-			++count;
-			
+
+			Pair<String, String> matcherPair = keys.getValue();
+			String paramSuffix = count == 1 ? "" : String.valueOf(count);
+
+			headers.add(keys.getKey() + paramSuffix);
 			values.add(winLocator.getLocator());
+
+			headers.add(matcherPair.getKey() + paramSuffix);
 			values.add(winLocator.getMatcher());
+
+			if (winLocator.hasMatcherIndex()) {
+				headers.add(matcherPair.getValue() + paramSuffix);
+				values.add(String.valueOf(winLocator.getMatcherIndex().getValue()));
+			}
+
+			++count;
 		}
 	}
 
@@ -292,7 +300,7 @@ public class WinActionsBuilder {
 
 		addDefaults(scrollUsingText.getId(), scrollUsingText.getExecute(), headers, values);
 		addLocator(scrollUsingText.getLocatorsList(), headers, values);
-		addLocator(scrollUsingText.getTextLocatorsList(), headers, values, new ImmutablePair<>("#textLocator", "#textMatcher"));
+		addLocator(scrollUsingText.getTextLocatorsList(), headers, values, textLocatorPair);
 
 		addIfNotEmpty("#textToSend", scrollUsingText.getTextToSend(), headers, values);
 		addIfNotEmpty("#maxIterations", scrollUsingText.getMaxIterations(), headers, values);
