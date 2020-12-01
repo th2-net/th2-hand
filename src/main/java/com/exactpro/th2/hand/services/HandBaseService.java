@@ -208,6 +208,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 					case GETELEMENTINNERHTML:
 						GetElementInnerHtml getElementInnerHtml = action.getGetElementInnerHtml();
 						addGetElementInnerHtml(printer, getElementInnerHtml);
+						break;
 
 						// win actions
 					case WINOPEN:

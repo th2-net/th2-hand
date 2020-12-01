@@ -2,7 +2,7 @@ variables:
   APP_NAME: "th2-hand"
   MAJOR_VERSION: "1"
   MINOR_VERSION: "2"
-  MAINTENANCE_VERSION: "6"
+  MAINTENANCE_VERSION: "7"
 
 include:
   - project: 'vivarium/th2/pipelines'
