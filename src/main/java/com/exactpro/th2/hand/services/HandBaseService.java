@@ -201,7 +201,15 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						ScrollDivUntil scrollDivUntil = action.getScrollDivUntil();
 						addScrollDivUntil(printer, scrollDivUntil);
 						break;
+					case WAIT:
+						Wait wait = action.getWait();
+						addWait(printer, wait);
+						break;
+					case GETELEMENTINNERHTML:
+						GetElementInnerHtml getElementInnerHtml = action.getGetElementInnerHtml();
+						addGetElementInnerHtml(printer, getElementInnerHtml);
 
+						// win actions
 					case WINOPEN:
 						RhWinActionsMessages.WinOpen winOpen = action.getWinOpen();
 						WinActionsBuilder.addOpen(printer, winOpen);
@@ -225,10 +233,6 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 					case WINWAIT:
 						RhWinActionsMessages.WinWait winWait = action.getWinWait();
 						WinActionsBuilder.addWait(printer, winWait);
-						break;
-					case WAIT:
-						Wait wait = action.getWait();
-						addWait(printer, wait);
 						break;
 					case WINTOGGLECHECKBOX:
 						RhWinActionsMessages.WinToggleCheckBox winToggleCheckBox = action.getWinToggleCheckBox();
@@ -477,6 +481,22 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		printer.print(String.valueOf(getElementValue.getWait()));
 		printer.print(readLocator(getElementValue.getLocator()));
 		printer.print(getElementValue.getMatcher());
+		printer.println();
+	}
+
+	private void addGetElementInnerHtml(CSVPrinter printer, GetElementInnerHtml getElementInnerHtml) throws IOException
+	{
+		// #action,#wait,#locator,#matcher
+		printer.print("#action");
+		printer.print("#wait");
+		printer.print("#locator");
+		printer.print("#matcher");
+		printer.println();
+
+		printer.print("GetElementInnerHtml");
+		printer.print(String.valueOf(getElementInnerHtml.getWait()));
+		printer.print(readLocator(getElementInnerHtml.getLocator()));
+		printer.print(getElementInnerHtml.getMatcher());
 		printer.println();
 	}
 
