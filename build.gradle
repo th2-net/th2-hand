@@ -45,11 +45,6 @@ repositories {
 	}
 
 	maven {
-		name 'Nexus'
-		url 'https://th2-oss.exactpro.com/repository/oss-maven/'
-	}
-
-	maven {
 		name 'Bintray'
 		url 'https://dl.bintray.com/exactpro/th2'
 	}
@@ -75,7 +70,7 @@ dependencies {
 
 	compile "com.rabbitmq:amqp-client"
 
-	compile "com.exactprosystems.remotehand:remotehand:1.0.2"
+	compile "com.exactprosystems.remotehand:remotehand:1.0.4"
 	implementation "com.exactpro.th2:grpc-hand:2.1.0"
 	implementation "com.exactpro.th2:grpc-common"
     implementation "com.exactpro.th2:common"
