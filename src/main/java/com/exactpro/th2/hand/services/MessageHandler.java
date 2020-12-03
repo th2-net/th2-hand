@@ -38,6 +38,7 @@ import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Int32Value;
 import com.google.protobuf.StringValue;
 import com.google.protobuf.Timestamp;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,14 +126,9 @@ public class MessageHandler{
 	}
 
 	public MessageID onResponse(RhScriptResult response, String sessionId, String rhSessionId) {
-		Map<String, Object> fields = new LinkedHashMap<>();
-		fields.put("ScriptOutputCode", RhResponseCode.byCode(response.getCode()).toString());
-		fields.put("ErrorText", response.getErrorMessage() == null ? "" : response.getErrorMessage());
-		fields.put("Text out", String.join("|", response.getTextOutput()));
-		fields.put("RhSessionId", rhSessionId);
-		
+		RhResponseMsgBody body = new RhResponseMsgBody(response, rhSessionId);
 		try {
-			PairMessage message = new PairMessage(fields, Direction.FIRST, sessionId, System.nanoTime());
+			PairMessage message = new PairMessage(body, Direction.FIRST, sessionId, System.nanoTime());
 			this.rabbitMqConnection.sendMessages(message);
 			return message.getMessageId();
 		} catch (Exception e) {
@@ -249,9 +245,48 @@ public class MessageHandler{
 			this.message = buildParsedMessage(fields, rawMessage);
 			this.valid = rawMessage != null && message != null;
 		}
-		
+
+		public PairMessage(RhResponseMsgBody body, Direction direction, String sessionId, Long sq)
+		{
+			this(body.getFields(), direction, sessionId, sq);
+		}
+
 		private MessageID getMessageId() {
 			return valid ? rawMessage.getMetadata().getId() : null;
+		}
+	}
+
+	private static class RhResponseMsgBody
+	{
+		private final String scriptOutputCode;
+		private final String errorOut;
+		private final String textOut;
+		private final String rhSessionId;
+
+		public RhResponseMsgBody(String scriptOutputCode, String errorOut, String textOut, String rhSessionId)
+		{
+			this.scriptOutputCode = StringUtils.defaultString(scriptOutputCode);
+			this.errorOut = StringUtils.defaultString(errorOut);
+			this.textOut = StringUtils.defaultString(textOut);
+			this.rhSessionId = StringUtils.defaultString(rhSessionId);
+		}
+
+		public RhResponseMsgBody(RhScriptResult rhScriptresult, String rhSessionId)
+		{
+			this(RhResponseCode.byCode(rhScriptresult.getCode()).toString(),
+					rhScriptresult.getErrorMessage(), 
+					String.join("|", rhScriptresult.getTextOutput()), rhSessionId);
+		}
+
+		public Map<String, Object> getFields()
+		{
+			Map<String, Object> value = new LinkedHashMap<>();
+			value.put("ScriptOutputCode", scriptOutputCode);
+			value.put("ErrorText", errorOut);
+			value.put("Text out", textOut);
+			value.put("RhSessionId", rhSessionId);
+
+			return value;
 		}
 	}
 }
