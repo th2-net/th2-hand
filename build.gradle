@@ -43,10 +43,6 @@ repositories {
 		name 'MavenLocal'
 		url sharedDir
 	}
-	maven {
-    name 'Nexus'
-    url 'https://th2-oss.exactpro.com/repository/oss-maven/'
-  }
 
 	maven {
 		name 'Bintray'
