@@ -18,36 +18,21 @@ package com.exactpro.th2.hand.services;
 
 import com.exactpro.th2.act.grpc.hand.RhAction;
 import com.exactpro.th2.act.grpc.hand.RhActionsList;
-import com.exactpro.th2.common.schema.factory.CommonFactory;
-import com.exactpro.th2.common.grpc.ConnectionID;
-import com.exactpro.th2.common.grpc.Direction;
 import com.exactpro.th2.common.grpc.ListValue;
 import com.exactpro.th2.common.grpc.Message;
-import com.exactpro.th2.common.grpc.MessageID;
-import com.exactpro.th2.common.grpc.MessageMetadata;
-import com.exactpro.th2.common.grpc.RawMessage;
-import com.exactpro.th2.common.grpc.RawMessageMetadata;
 import com.exactpro.th2.common.grpc.Value;
-import com.exactprosystems.remotehand.rhdata.RhResponseCode;
+import com.exactpro.th2.common.grpc.*;
+import com.exactpro.th2.common.schema.factory.CommonFactory;
+import com.exactpro.th2.hand.messages.RhResponseMessageBody;
 import com.exactprosystems.remotehand.rhdata.RhScriptResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.Descriptors;
-import com.google.protobuf.GeneratedMessageV3;
-import com.google.protobuf.Int32Value;
-import com.google.protobuf.StringValue;
-import com.google.protobuf.Timestamp;
+import com.google.protobuf.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class MessageHandler{
@@ -125,15 +110,10 @@ public class MessageHandler{
 	}
 
 	public MessageID onResponse(RhScriptResult response, String sessionId, String rhSessionId) {
-		Map<String, Object> fields = new LinkedHashMap<>();
-		fields.put("ScriptOutputCode", RhResponseCode.byCode(response.getCode()).toString());
-		fields.put("ErrorText", response.getErrorMessage() == null ? "" : response.getErrorMessage());
-		fields.put("Text out", String.join("|", response.getTextOutput()));
-		fields.put("RhSessionId", rhSessionId);
-		
+		RhResponseMessageBody body = RhResponseMessageBody.fromRhScriptResult(response).setRhSessionId(rhSessionId);
 		try {
-			PairMessage message = new PairMessage(fields, Direction.FIRST, sessionId, System.nanoTime());
-			this.rabbitMqConnection.sendMessages(message);
+			PairMessage message = new PairMessage(body, Direction.FIRST, sessionId, System.nanoTime());
+			rabbitMqConnection.sendMessages(message);
 			return message.getMessageId();
 		} catch (Exception e) {
 			logger.error("Cannot send message to message-storage", e);
@@ -141,7 +121,7 @@ public class MessageHandler{
 		
 		return null;
 	}
-
+	
 	public RawMessage buildMessage(byte[] bytes, Direction direction, String sessionId, Long sq) {
 		ConnectionID connectionID = ConnectionID.newBuilder().setSessionAlias(sessionId).build();
 		MessageID messageID = MessageID.newBuilder()
@@ -249,7 +229,12 @@ public class MessageHandler{
 			this.message = buildParsedMessage(fields, rawMessage);
 			this.valid = rawMessage != null && message != null;
 		}
-		
+
+		public PairMessage(RhResponseMessageBody body, Direction direction, String sessionId, Long sq)
+		{
+			this(body.getFields(), direction, sessionId, sq);
+		}
+
 		private MessageID getMessageId() {
 			return valid ? rawMessage.getMetadata().getId() : null;
 		}
