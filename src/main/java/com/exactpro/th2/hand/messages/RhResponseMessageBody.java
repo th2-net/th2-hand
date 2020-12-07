@@ -87,7 +87,7 @@ public class RhResponseMessageBody
 		Map<String, Object> value = new LinkedHashMap<>();
 		value.put("ScriptOutputCode", scriptOutputCode);
 		value.put("ErrorText", errorOut);
-		value.put("Text out", textOut);
+		value.put("TextOut", textOut);
 		value.put("RhSessionId", rhSessionId);
 
 		return value;
