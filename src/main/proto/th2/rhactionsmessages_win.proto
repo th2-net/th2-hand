@@ -44,12 +44,20 @@ message WinClick {
     MIDDLE = 2;
     DOUBLE = 3;
   }
+  enum AttachedBorder {
+      NONE = 0;
+      LEFT_TOP = 1;
+      LEFT_BOTTOM = 2;
+      RIGHT_TOP = 3;
+      RIGHT_BOTTOM = 4;
+  }
   repeated WinLocator locators = 1;
   string id = 2;
   string execute = 3;
   Button button = 4;
   google.protobuf.Int32Value xOffset = 5;
   google.protobuf.Int32Value yOffset = 6;
+  AttachedBorder attachedBorder = 7;
 }
 
 message WinSendText {

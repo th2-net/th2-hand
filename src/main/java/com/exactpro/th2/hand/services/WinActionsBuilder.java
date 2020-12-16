@@ -93,7 +93,7 @@ public class WinActionsBuilder {
 		addLocator(clickAction.getLocatorsList(), headers, values);
 		
 		WinClick.Button button = clickAction.getButton();
-		if (button != null && button != WinClick.Button.UNRECOGNIZED) {
+		if (button != WinClick.Button.UNRECOGNIZED) {
 			headers.add("#button");
 			values.add(button.name().toLowerCase());
 		}
@@ -106,6 +106,11 @@ public class WinActionsBuilder {
 		if (clickAction.hasYOffset()) {
 			headers.add("#yOffset");
 			values.add(String.valueOf(clickAction.getYOffset().getValue()));
+		}
+
+		if (clickAction.getAttachedBorder() != WinClick.AttachedBorder.NONE) {
+			headers.add("#attachedBorder");
+			values.add(String.valueOf(clickAction.getAttachedBorder()).toLowerCase());
 		}
 		
 		printer.printRecord(headers);
