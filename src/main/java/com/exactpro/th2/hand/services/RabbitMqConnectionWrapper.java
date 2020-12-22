@@ -16,7 +16,7 @@
 
 package com.exactpro.th2.hand.services;
 
-import com.exactpro.th2.common.grpc.MessageBatch;
+import com.exactpro.th2.common.grpc.RawMessage;
 import com.exactpro.th2.common.grpc.RawMessageBatch;
 import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.common.schema.message.MessageRouter;
@@ -34,11 +34,9 @@ public class RabbitMqConnectionWrapper {
 
 	private static final Logger logger = LoggerFactory.getLogger(RabbitMqConnectionWrapper.class);
 	
-    private final MessageRouter<MessageBatch> messageRouterParsedBatch;
     private final MessageRouter<RawMessageBatch> messageRouterRawBatch;
 
 	public RabbitMqConnectionWrapper(CommonFactory factory) {
-		messageRouterParsedBatch = factory.getMessageRouterParsedBatch();
 		messageRouterRawBatch = factory.getMessageRouterRawBatch();
 		writeToLogAboutConnection(factory);
 	}
@@ -64,18 +62,16 @@ public class RabbitMqConnectionWrapper {
 		logger.info(connectionInfo.toString());
 	}
 
-    public void sendMessages(MessageHandler.PairMessage messages) throws Exception {
-		this.sendMessages(Collections.singleton(messages));
+    public void sendMessages(RawMessage messages) throws Exception {
+		sendMessages(Collections.singleton(messages));
 	}
 
-	public void sendMessages(Collection<MessageHandler.PairMessage> messages) throws Exception {
-		MessageBatch.Builder builder = MessageBatch.newBuilder();
+	public void sendMessages(Collection<RawMessage> messages) throws Exception {
 		RawMessageBatch.Builder rawBuilder = RawMessageBatch.newBuilder();
 		int count = 0;
-		for (MessageHandler.PairMessage message : messages) {
-			if (message.valid) {
-				builder.addMessages(message.message);
-				rawBuilder.addMessages(message.rawMessage);
+		for (RawMessage message : messages) {
+			if (message != null) {
+				rawBuilder.addMessages(message);
 				count++;
 			}
 		}
@@ -85,14 +81,10 @@ public class RabbitMqConnectionWrapper {
 			return;
 		}
 
-		MessageBatch parsed = builder.build();
 		RawMessageBatch raw = rawBuilder.build();
-		messageRouterParsedBatch.sendAll(parsed);
 		messageRouterRawBatch.sendAll(raw);
 		if (logger.isDebugEnabled()) {
-			String msgTemplate = "Array with {} bytes size sent to {} queue";
-			logger.debug(msgTemplate, parsed.toByteArray().length, QueueAttribute.PARSED);
-			logger.debug(msgTemplate, raw.toByteArray().length, QueueAttribute.RAW);
+			logger.debug("Array with {} bytes size sent to {} queue", raw.toByteArray().length, QueueAttribute.RAW);
 		}
 	}
 	

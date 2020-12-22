@@ -72,7 +72,7 @@ public class MessageHandler{
 	}
 
 	public List<MessageID> onRequest(RhActionsList actionsList, String scriptText, String sessionId) {
-		List<PairMessage> messages = new ArrayList<>();
+		List<RawMessage> messages = new ArrayList<>();
 		long sq = System.nanoTime();
 		List<Map<String, Object>> allMessages = new ArrayList<>();
 		for (RhAction rhAction : actionsList.getRhActionList()) {
@@ -97,24 +97,24 @@ public class MessageHandler{
 				}
 			}
 		}
-		messages.add(new PairMessage(allMessages, Direction.SECOND, sessionId, sq++));
-		messages.add(new PairMessage("ScriptText", scriptText, Direction.SECOND, sessionId, sq++));
+		messages.add(buildMessage(Collections.singletonMap("messages", allMessages), Direction.SECOND, sessionId, sq++));
+		messages.add(buildMessage(scriptText.getBytes(), Direction.SECOND, sessionId, sq++));
 		
 		try {
-			this.rabbitMqConnection.sendMessages(messages);
+			rabbitMqConnection.sendMessages(messages);
 		} catch (Exception e) {
 			logger.error("Cannot send message to message-storage", e);
 		}
 		
-		return messages.stream().filter(Objects::nonNull).map(PairMessage::getMessageId).collect(Collectors.toList());
+		return messages.stream().filter(Objects::nonNull).map(m -> m.getMetadata().getId()).collect(Collectors.toList());
 	}
 
 	public MessageID onResponse(RhScriptResult response, String sessionId, String rhSessionId) {
 		RhResponseMessageBody body = RhResponseMessageBody.fromRhScriptResult(response).setRhSessionId(rhSessionId);
 		try {
-			PairMessage message = new PairMessage(body, Direction.FIRST, sessionId, System.nanoTime());
+			RawMessage message = buildMessage(body.getFields(), Direction.FIRST, sessionId, System.nanoTime());
 			rabbitMqConnection.sendMessages(message);
-			return message.getMessageId();
+			return message.getMetadata().getId();
 		} catch (Exception e) {
 			logger.error("Cannot send message to message-storage", e);
 		}
@@ -149,23 +149,6 @@ public class MessageHandler{
 		}
 	}
 
-	public Message buildParsedMessage(Map<String, Object> fileds, RawMessage rawMessage) {
-		if (rawMessage == null)
-			return null;
-		
-		RawMessageMetadata metadata1 = rawMessage.getMetadata();
-
-		MessageMetadata metadata = MessageMetadata.newBuilder()
-				.setId(metadata1.getId())
-				.setTimestamp(metadata1.getTimestamp())
-				.setMessageType(metadata1.getId().getDirection() == Direction.SECOND ?
-						"from act to hand": "from hand to act").build();
-
-		Message.Builder builder = buildParsedMessage(fileds);
-		builder.setMetadata(metadata);
-		return builder.build();
-	}
-	
 	private Value parseObj(Object value) {
 		if (value instanceof List) {
 			ListValue.Builder listValueBuilder = ListValue.newBuilder();
@@ -187,15 +170,6 @@ public class MessageHandler{
 		}
 	}
 	
-	public Message.Builder buildParsedMessage(Map<String, Object> fileds) {
-		Map<String, Value> messageFields = new LinkedHashMap<>(fileds.size());
-		for (Map.Entry<String, Object> entry : fileds.entrySet()) {
-			messageFields.put(entry.getKey(), parseObj(entry.getValue()));
-		}
-		
-		return Message.newBuilder().putAllFields(messageFields);
-	}
-
 	private static Timestamp getTimestamp(Instant instant) {
 		return Timestamp.newBuilder()
 				.setSeconds(instant.getEpochSecond())
@@ -203,40 +177,4 @@ public class MessageHandler{
 				.build();
 	}
 
-	public class PairMessage {
-		public final RawMessage rawMessage;
-		public final Message message;
-		public final boolean valid;
-
-		private PairMessage(RawMessage rawMessage, Message message, boolean valid) {
-			this.rawMessage = rawMessage;
-			this.message = message;
-			this.valid = valid;
-		}
-
-		private PairMessage(String name, String text, Direction direction, String sessionId, Long sq) {
-			this.rawMessage = buildMessage(text.getBytes(), direction, sessionId, sq);
-			this.message = buildParsedMessage(Collections.singletonMap(name, text), rawMessage);
-			this.valid = rawMessage != null && message != null;
-		}
-
-		private PairMessage(List<Map<String, Object>> fields, Direction direction, String sessionId, Long sq) {
-			this(Collections.singletonMap("messages", fields), direction, sessionId, sq);
-		}
-
-		private PairMessage(Map<String, Object> fields, Direction direction, String sessionId, Long sq) {
-			this.rawMessage = buildMessage(fields, direction, sessionId, sq);
-			this.message = buildParsedMessage(fields, rawMessage);
-			this.valid = rawMessage != null && message != null;
-		}
-
-		public PairMessage(RhResponseMessageBody body, Direction direction, String sessionId, Long sq)
-		{
-			this(body.getFields(), direction, sessionId, sq);
-		}
-
-		private MessageID getMessageId() {
-			return valid ? rawMessage.getMetadata().getId() : null;
-		}
-	}
 }
