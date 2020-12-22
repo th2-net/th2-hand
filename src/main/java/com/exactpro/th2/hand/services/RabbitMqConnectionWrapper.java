@@ -84,8 +84,7 @@ public class RabbitMqConnectionWrapper {
 		RawMessageBatch raw = rawBuilder.build();
 		messageRouterRawBatch.sendAll(raw);
 		if (logger.isDebugEnabled()) {
-			String msgTemplate = "Array with {} bytes size sent to {} queue";
-			logger.debug(msgTemplate, raw.toByteArray().length, QueueAttribute.RAW);
+			logger.debug("Array with {} bytes size sent to {} queue", raw.toByteArray().length, QueueAttribute.RAW);
 		}
 	}
 	
