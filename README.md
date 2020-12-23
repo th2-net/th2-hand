@@ -28,8 +28,10 @@ This project uses the Schema API to get its settings.
 For local run it needs `custom.json`, `grpc.json`, `rabbitMQ.json` and `mq.json` files.
 
 The `custom.json` file contains RemoteHand URLs map and has the following format:
+- **session-alias == "th2-hand" by default**
 ```
 {
+    "session-alias": "aliasName",
 	"driversMapping": {
 			"first" : {
 				"type" : "web",
@@ -70,12 +72,6 @@ Example of `mq.json`:
 			"queue": "send_raw_queue",
 			"exchange": "default_general_exchange",
 			"attributes": ["raw", "publish"]
-		},
-		"send_parsed" : {
-			"name" : "default_general_decode_in",
-			"queue": "send_parsed_queue",
-			"exchange": "default_general_exchange",
-			"attributes": ["parsed", "publish"]
 		}
 	}
 }

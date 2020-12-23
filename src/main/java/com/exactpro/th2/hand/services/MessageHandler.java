@@ -22,7 +22,7 @@ import com.exactpro.th2.common.grpc.ListValue;
 import com.exactpro.th2.common.grpc.Message;
 import com.exactpro.th2.common.grpc.Value;
 import com.exactpro.th2.common.grpc.*;
-import com.exactpro.th2.common.schema.factory.CommonFactory;
+import com.exactpro.th2.hand.Config;
 import com.exactpro.th2.hand.messages.RhResponseMessageBody;
 import com.exactprosystems.remotehand.rhdata.RhScriptResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -40,9 +40,11 @@ public class MessageHandler{
 	private static final Logger logger = LoggerFactory.getLogger(MessageHandler.class);
 
 	private final RabbitMqConnectionWrapper rabbitMqConnection;
+	private final Config config;
 
-	public MessageHandler(CommonFactory factory) {
-		this.rabbitMqConnection = new RabbitMqConnectionWrapper(factory);
+	public MessageHandler(Config config) {
+		this.config = config;
+		this.rabbitMqConnection = new RabbitMqConnectionWrapper(config.getFactory());
 	}
 	
 	private String valueToString(Object object) {
@@ -123,7 +125,7 @@ public class MessageHandler{
 	}
 	
 	public RawMessage buildMessage(byte[] bytes, Direction direction, String sessionId, Long sq) {
-		ConnectionID connectionID = ConnectionID.newBuilder().setSessionAlias(sessionId).build();
+		ConnectionID connectionID = ConnectionID.newBuilder().setSessionAlias(config.getSessionAlias()).build();
 		MessageID messageID = MessageID.newBuilder()
 				.setConnectionId(connectionID)
 				.setDirection(direction)

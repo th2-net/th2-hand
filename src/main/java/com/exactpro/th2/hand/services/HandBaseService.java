@@ -52,15 +52,16 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 
 	public static final String RH_SESSION_PREFIX = "/Ses";
 
+	private Config config;
 	private RhConnectionManager rhConnManager;
 	private MessageHandler messageHandler;
-	
 
 	@Override
 	public void init(Config config, RhConnectionManager rhConnManager) throws Exception
 	{
+		this.config = config;
 		this.rhConnManager = rhConnManager;
-		this.messageHandler = new MessageHandler(config.getFactory());
+		this.messageHandler = new MessageHandler(config);
 	}
 	
 	@Override
@@ -71,7 +72,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		} catch (Exception e) {
 			logger.error("Error while creating session", e);
 		}
-		RhSessionID result = RhSessionID.newBuilder().setId(sessionId).build();
+		RhSessionID result = RhSessionID.newBuilder().setId(sessionId).setSessionAlias(config.getSessionAlias()).build();
 		responseObserver.onNext(result);
 		responseObserver.onCompleted();
 	}
