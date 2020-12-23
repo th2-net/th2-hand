@@ -71,6 +71,11 @@ public class Config {
 		}
 		return rhOptions;
 	}
+	
+	public String getSessionAlias()
+	{
+		return customConfiguration.getSessionAlias();
+	}
 
 	public static class DriverMapping {
 		

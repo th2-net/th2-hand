@@ -21,7 +21,11 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class CustomConfiguration {
+	private static final String DEFAULT_SESSION_ALIAS = "th2-hand";
 
+	@JsonProperty(value="session-alias", required = true, defaultValue = DEFAULT_SESSION_ALIAS)
+	private String sessionAlias = DEFAULT_SESSION_ALIAS;
+	
 	@JsonProperty(value="driversMapping")
 	private Map<String, Map<String, String>> driversMapping;
 	
@@ -34,5 +38,10 @@ public class CustomConfiguration {
 
 	public Map<String, String> getRhOptions() {
 		return rhOptions;
+	}
+
+	public String getSessionAlias()
+	{
+		return sessionAlias;
 	}
 }
