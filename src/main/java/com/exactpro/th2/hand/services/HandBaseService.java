@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.*;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.Click.ModifiersList;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 import com.exactpro.th2.hand.Config;
+import com.exactpro.th2.hand.HandException;
 import com.exactpro.th2.hand.IHandService;
 import com.exactpro.th2.hand.RhConnectionManager;
 import com.exactpro.th2.hand.utils.Utils;
@@ -66,14 +67,15 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 	
 	@Override
 	public void register(RhTargetServer targetServer, StreamObserver<RhSessionID> responseObserver) {
-		String sessionId = null;
 		try {
-			sessionId = rhConnManager.createSessionHandler(targetServer.getTarget()).getId();
+			String sessionId = rhConnManager.createSessionHandler(targetServer.getTarget()).getId();
+			RhSessionID result = RhSessionID.newBuilder().setId(sessionId).setSessionAlias(config.getSessionAlias()).build();
+			responseObserver.onNext(result);
 		} catch (Exception e) {
 			logger.error("Error while creating session", e);
+			Exception responseException = new HandException("Error while creating session", e);
+			responseObserver.onError(responseException);
 		}
-		RhSessionID result = RhSessionID.newBuilder().setId(sessionId).setSessionAlias(config.getSessionAlias()).build();
-		responseObserver.onNext(result);
 		responseObserver.onCompleted();
 	}
 	
@@ -148,16 +150,16 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 	}
 	
 	private RhBatchResponse.ScriptExecutionStatus getScriptExecutionStatus(RhResponseCode code) {
-
-		//TODO fill others codes
+		//TODO need more enum values for RhBatchResponse.ScriptExecutionStatus !
 		switch (code) {
 			case SUCCESS: return RhBatchResponse.ScriptExecutionStatus.SUCCESS;
-			case EXECUTION_ERROR: return RhBatchResponse.ScriptExecutionStatus.EXECUTION_ERROR;
 			case COMPILE_ERROR: return RhBatchResponse.ScriptExecutionStatus.COMPILE_ERROR;
-			default: return RhBatchResponse.ScriptExecutionStatus.UNRECOGNIZED;
+			case EXECUTION_ERROR:
+			case RH_ERROR:
+			case TOOL_BUSY:
+			case INCORRECT_REQUEST:
+			default: return RhBatchResponse.ScriptExecutionStatus.EXECUTION_ERROR;
 		}
-		
-		
 	}
 
 	private String buildScript(RhActionsList actionsList, List<MessageID> messageIDS, String sessionId) throws IOException
