@@ -163,6 +163,9 @@ public class WinActionsBuilder {
 		
 		headers.add("#windowname");
 		values.add(getActiveWindow.getWindowName());
+
+		headers.add("#accessibilityid");
+		values.add(getActiveWindow.getAccessibilityId());
 		
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -179,6 +182,9 @@ public class WinActionsBuilder {
 
 		headers.add("#windowname");
 		values.add(getWindow.getWindowName());
+		
+		headers.add("#accessibilityid");
+		values.add(getWindow.getAccessibilityId());
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
