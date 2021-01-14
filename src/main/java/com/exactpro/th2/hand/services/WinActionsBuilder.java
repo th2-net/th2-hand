@@ -160,13 +160,19 @@ public class WinActionsBuilder {
 		values.add("GetActiveWindow");
 
 		addDefaults(getActiveWindow.getId(), getActiveWindow.getExecute(), headers, values);
-		
-		headers.add("#windowname");
-		values.add(getActiveWindow.getWindowName());
 
-		headers.add("#accessibilityid");
-		values.add(getActiveWindow.getAccessibilityId());
-		
+		String windowName = getActiveWindow.getWindowName();
+		if (StringUtils.isNotEmpty(windowName))
+		{
+			headers.add("#windowname");
+			values.add(windowName);
+		}
+		else
+		{
+			headers.add("#accessibilityid");
+			values.add(getActiveWindow.getAccessibilityId());
+		} 
+
 		printer.printRecord(headers);
 		printer.printRecord(values);
 	}
@@ -180,12 +186,19 @@ public class WinActionsBuilder {
 
 		addDefaults(getWindow.getId(), getWindow.getExecute(), headers, values);
 
-		headers.add("#windowname");
-		values.add(getWindow.getWindowName());
+		String windowName = getWindow.getWindowName();
+		if (StringUtils.isNotEmpty(windowName))
+		{
+			headers.add("#windowname");
+			values.add(windowName);	
+		}
+		else
+		{
+			headers.add("#accessibilityid");
+			values.add(getWindow.getAccessibilityId());
+		} 
 		
-		headers.add("#accessibilityid");
-		values.add(getWindow.getAccessibilityId());
-
+		
 		printer.printRecord(headers);
 		printer.printRecord(values);
 	}

@@ -74,6 +74,7 @@ public class RhConnectionManager {
 			return;
 		}
 		sessionHandler.close();
+		logger.info("Closed session <{}>", sessionId);
 	}
 
 	public void dispose() {
