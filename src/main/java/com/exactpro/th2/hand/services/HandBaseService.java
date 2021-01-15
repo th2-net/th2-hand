@@ -280,12 +280,12 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		}
 		
 		String scriptText = sb.toString();
-		messageIDS.addAll(getMessageIDS(actionsList, sessionId, scriptText));
+		messageIDS.addAll(getMessageIds(actionsList, sessionId, scriptText));
 		
 		return scriptText;
 	}
 
-	protected List<MessageID> getMessageIDS(RhActionsList actionsList, String sessionId, String s)
+	protected List<MessageID> getMessageIds(RhActionsList actionsList, String sessionId, String s)
 	{
 		return messageHandler.onRequest(actionsList, s, createSessionId(sessionId));
 	}
