@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WinActionsBuilder {
+	private static final String WINDOWNAME = "#windowname", ACCESSIBILITY_ID = "#accessibilityid", ACTION = "#action";
 	private static final Pair<String, Pair<String, String>> locatorPair
 			= new ImmutablePair<>("#locator", new ImmutablePair<>("#matcher", "#matcherindex"));
 	private static final Pair<String, Pair<String, String>> textLocatorPair
@@ -86,7 +87,7 @@ public class WinActionsBuilder {
 	{
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 		
-		headers.add("#action");
+		headers.add(ACTION);
 		values.add("Click");
 
 		addDefaults(clickAction.getId(), clickAction.getExecute(), headers, values);
@@ -121,7 +122,7 @@ public class WinActionsBuilder {
 	{
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 		
-		headers.add("#action");
+		headers.add(ACTION);
 		values.add("Open");
 
 		addDefaults(openAction.getId(), openAction.getExecute(), headers, values);
@@ -138,7 +139,7 @@ public class WinActionsBuilder {
 	{
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 		
-		headers.add("#action");
+		headers.add(ACTION);
 		values.add("SendText");
 
 		addDefaults(sendTextAction.getId(), sendTextAction.getExecute(), headers, values);
@@ -156,14 +157,23 @@ public class WinActionsBuilder {
 	{
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 		
-		headers.add("#action");
+		headers.add(ACTION);
 		values.add("GetActiveWindow");
 
 		addDefaults(getActiveWindow.getId(), getActiveWindow.getExecute(), headers, values);
-		
-		headers.add("#windowname");
-		values.add(getActiveWindow.getWindowName());
-		
+
+		String windowName = getActiveWindow.getWindowName();
+		if (StringUtils.isNotEmpty(windowName))
+		{
+			headers.add(WINDOWNAME);
+			values.add(windowName);
+		}
+		else
+		{
+			headers.add(ACCESSIBILITY_ID);
+			values.add(getActiveWindow.getAccessibilityId());
+		} 
+
 		printer.printRecord(headers);
 		printer.printRecord(values);
 	}
@@ -172,14 +182,24 @@ public class WinActionsBuilder {
 	{
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 
-		headers.add("#action");
+		headers.add(ACTION);
 		values.add("GetWindow");
 
 		addDefaults(getWindow.getId(), getWindow.getExecute(), headers, values);
 
-		headers.add("#windowname");
-		values.add(getWindow.getWindowName());
-
+		String windowName = getWindow.getWindowName();
+		if (StringUtils.isNotEmpty(windowName))
+		{
+			headers.add(WINDOWNAME);
+			values.add(windowName);	
+		}
+		else
+		{
+			headers.add(ACCESSIBILITY_ID);
+			values.add(getWindow.getAccessibilityId());
+		} 
+		
+		
 		printer.printRecord(headers);
 		printer.printRecord(values);
 	}
@@ -188,7 +208,7 @@ public class WinActionsBuilder {
 	{
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 		
-		headers.add("#action");
+		headers.add(ACTION);
 		values.add("GetElementAttribute");
 
 		addDefaults(getElementAttribute.getId(), getElementAttribute.getExecute(), headers, values);
@@ -205,7 +225,7 @@ public class WinActionsBuilder {
 	{
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 		
-		headers.add("#action");
+		headers.add(ACTION);
 		values.add("Wait");
 
 		addDefaults(winWait.getId(), winWait.getExecute(), headers, values);
@@ -221,7 +241,7 @@ public class WinActionsBuilder {
 	{
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 		
-		headers.add("#action");
+		headers.add(ACTION);
 		values.add("ToggleCheckBox");
 
 		addDefaults(toggleCheckBoxAction.getId(), toggleCheckBoxAction.getExecute(), headers, values);
@@ -238,7 +258,7 @@ public class WinActionsBuilder {
 	{
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 		
-		headers.add("#action");
+		headers.add(ACTION);
 		values.add("ClickContextMenu");
 
 		addDefaults(clickContextMenu.getId(), clickContextMenu.getExecute(), headers, values);
@@ -252,7 +272,7 @@ public class WinActionsBuilder {
 	{
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 
-		headers.add("#action");
+		headers.add(ACTION);
 		values.add("CheckElement");
 
 		addDefaults(checkElement.getId(), checkElement.getExecute(), headers, values);
@@ -266,7 +286,7 @@ public class WinActionsBuilder {
 	{
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 
-		headers.add("#action");
+		headers.add(ACTION);
 		values.add("SearchElement");
 
 		addDefaults(searchElement.getId(), searchElement.getExecute(), headers, values);
@@ -280,7 +300,7 @@ public class WinActionsBuilder {
 	{
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 
-		headers.add("#action");
+		headers.add(ACTION);
 		values.add("WaitForAttribute");
 
 		addDefaults(waitForAttribute.getId(), waitForAttribute.getExecute(), headers, values);
@@ -300,7 +320,7 @@ public class WinActionsBuilder {
 	{
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 
-		headers.add("#action");
+		headers.add(ACTION);
 		values.add("ScrollUsingText");
 
 		addDefaults(scrollUsingText.getId(), scrollUsingText.getExecute(), headers, values);
@@ -318,7 +338,7 @@ public class WinActionsBuilder {
 	{
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 
-		headers.add("#action");
+		headers.add(ACTION);
 		values.add("GetDataFromClipboard");
 
 		addDefaults(scrollUsingText.getId(), scrollUsingText.getExecute(), headers, values);
@@ -330,7 +350,7 @@ public class WinActionsBuilder {
 	public static void addWinTableClick(CSVPrinter printer, RhWinActionsMessages.WinTableClick winTableClick) throws IOException {
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 
-		headers.add("#action");
+		headers.add(ACTION);
 		values.add("TableClick");
 
 		addDefaults(winTableClick.getId(), winTableClick.getExecute(), headers, values);

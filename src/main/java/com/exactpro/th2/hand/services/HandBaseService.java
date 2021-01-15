@@ -18,7 +18,6 @@ package com.exactpro.th2.hand.services;
 
 import com.exactpro.th2.act.grpc.hand.*;
 import com.exactpro.th2.act.grpc.hand.RhBatchGrpc.RhBatchImplBase;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.*;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.Click.ModifiersList;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
@@ -162,7 +161,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		}
 	}
 
-	private String buildScript(RhActionsList actionsList, List<MessageID> messageIDS, String sessionId) throws IOException
+	protected String buildScript(RhActionsList actionsList, List<MessageID> messageIDS, String sessionId) throws IOException
 	{
 		StringBuilder sb = new StringBuilder();
 		List<RhAction> actionList = actionsList.getRhActionList();
@@ -280,9 +279,15 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 			}
 		}
 		
-		String s = sb.toString();
-		messageIDS.addAll(messageHandler.onRequest(actionsList, s, createSessionId(sessionId)));
-		return s;
+		String scriptText = sb.toString();
+		messageIDS.addAll(getMessageIds(actionsList, sessionId, scriptText));
+		
+		return scriptText;
+	}
+
+	protected List<MessageID> getMessageIds(RhActionsList actionsList, String sessionId, String s)
+	{
+		return messageHandler.onRequest(actionsList, s, createSessionId(sessionId));
 	}
 
 	private void addWait(CSVPrinter printer, Wait wait) throws IOException
