@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class CustomConfiguration {
 	private static final String DEFAULT_SESSION_ALIAS = "th2-hand";
+	private static final int DEFAULT_RESPONSE_TIMEOUT = 120;
 
 	@JsonProperty(value="session-alias", required = true, defaultValue = DEFAULT_SESSION_ALIAS)
 	private String sessionAlias = DEFAULT_SESSION_ALIAS;
@@ -31,6 +32,9 @@ public class CustomConfiguration {
 	
 	@JsonProperty(value="rhOptions")
 	private Map<String, String> rhOptions;
+	
+	@JsonProperty(value="responseTimeoutSec")
+	private int responseTimeout = DEFAULT_RESPONSE_TIMEOUT;
 
 	public Map<String, Map<String, String>> getDriversMapping() {
 		return driversMapping;
@@ -43,5 +47,9 @@ public class CustomConfiguration {
 	public String getSessionAlias()
 	{
 		return sessionAlias;
+	}
+
+	public int getResponseTimeout() {
+		return responseTimeout;
 	}
 }

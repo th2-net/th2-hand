@@ -55,11 +55,13 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 	private Config config;
 	private RhConnectionManager rhConnManager;
 	private MessageHandler messageHandler;
+	private int responseTimeout;
 
 	@Override
 	public void init(Config config, RhConnectionManager rhConnManager) throws Exception
 	{
 		this.config = config;
+		this.responseTimeout = config.getResponseTimeout();
 		this.rhConnManager = rhConnManager;
 		this.messageHandler = new MessageHandler(config);
 	}
@@ -98,7 +100,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 			sessionId = request.getSessionId().getId();
 			HandSessionHandler sessionHandler = rhConnManager.getSessionHandler(sessionId);
 			sessionHandler.handle(new ExecutionRequest(buildScript(request, messageIDS, sessionId)), HandSessionExchange.getStub());
-			scriptResult = sessionHandler.waitAndGet(120);
+			scriptResult = sessionHandler.waitAndGet(this.responseTimeout);
 		}
 		catch (Exception e)
 		{
