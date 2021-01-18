@@ -24,6 +24,8 @@ import com.exactprosystems.remotehand.sessions.SessionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
+
 public class HandSessionHandler extends SessionHandler {
 	private static final Logger logger = LoggerFactory.getLogger(HandSessionHandler.class);
 
@@ -34,7 +36,7 @@ public class HandSessionHandler extends SessionHandler {
 
 
 	public RhScriptResult waitAndGet(int waitInSeconds) throws ScriptExecuteException {
-		long timeOut = System.currentTimeMillis() + waitInSeconds * 1000;
+		long timeOut = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(waitInSeconds);
 		while (scriptProcessor.isBusy()) {
 			try {
 				Thread.sleep(1000);

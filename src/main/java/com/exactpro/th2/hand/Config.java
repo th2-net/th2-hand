@@ -72,6 +72,10 @@ public class Config {
 		return rhOptions;
 	}
 	
+	public int getResponseTimeout() {
+		return customConfiguration.getResponseTimeout();
+	}
+	
 	public String getSessionAlias()
 	{
 		return customConfiguration.getSessionAlias();
