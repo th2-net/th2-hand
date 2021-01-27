@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ *  Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -363,6 +363,22 @@ public class WinActionsBuilder {
 		values.add(winTableClick.getTargetColumn());
 
 		addIfNotEmpty("#index", winTableClick.getColumnIndex(), headers, values);
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+
+	public static void addWaitForElement(CSVPrinter printer, RhWinActionsMessages.WinWaitForElement waitForElement) throws IOException {
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add(ACTION);
+		values.add("WaitForElement");
+
+		addDefaults(waitForElement.getId(), waitForElement.getExecute(), headers, values);
+		addLocator(waitForElement.getLocatorsList(), headers, values);
+
+		addIfNotEmpty("#timeout", waitForElement.getTimeout(), headers, values);
+		addIfNotEmpty("#fromRoot", waitForElement.getFromRoot(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
