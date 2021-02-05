@@ -279,6 +279,9 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						RhWinActionsMessages.WinWaitForElement winWaitForElement = action.getWinWaitForElement();
 						WinActionsBuilder.addWaitForElement(printer, winWaitForElement);
 						break;
+					case WINMAXIMIZEMAINWINDOW:
+						WinActionsBuilder.addMaximizeMainWindow(printer, action.getWinMaximizeMainWindow());
+						break;
 					default:
 						logger.warn("Unsupported action: " + action.getActionCase());
 						break;
