@@ -129,6 +129,7 @@ public class WinActionsBuilder {
 
 		addIfNotEmpty("#workdir", openAction.getWorkDir(), headers, values);
 		addIfNotEmpty("#execfile", openAction.getAppFile(), headers, values);
+		addIfNotEmpty("#appArgs", openAction.getAppArgs(), headers, values);
 		
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -347,6 +348,7 @@ public class WinActionsBuilder {
 		printer.printRecord(values);
 	}
 
+	@Deprecated
 	public static void addWinTableClick(CSVPrinter printer, RhWinActionsMessages.WinTableClick winTableClick) throws IOException {
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 
@@ -363,6 +365,34 @@ public class WinActionsBuilder {
 		values.add(winTableClick.getTargetColumn());
 
 		addIfNotEmpty("#index", winTableClick.getColumnIndex(), headers, values);
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+
+	public static void addWinTableSearch(CSVPrinter printer, RhWinActionsMessages.WinTableSearch winTableSearch) throws IOException
+	{
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add(ACTION);
+		values.add("TableSearch");
+
+		addDefaults(winTableSearch.getId(), winTableSearch.getExecute(), headers, values);
+		addLocator(winTableSearch.getLocatorsList(), headers, values);
+
+		headers.add("#filter");
+		values.add(winTableSearch.getSearchParams());
+
+		headers.add("#column");
+		values.add(winTableSearch.getTargetColumn());
+
+		headers.add("#firstrowindex");
+		values.add(winTableSearch.getFirstRowIndex());
+
+		addIfNotEmpty("#index", winTableSearch.getColumnIndex(), headers, values);
+		addIfNotEmpty("#rownameformat", winTableSearch.getRowNameFormat(), headers, values);
+		addIfNotEmpty("#rowelementnameformat", winTableSearch.getRowElementNameFormat(), headers, values);
+		addIfNotEmpty("#rowelementvalueformat", winTableSearch.getRowElementValueFormat(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);

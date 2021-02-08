@@ -275,6 +275,10 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						RhWinActionsMessages.WinTableClick winTableClick = action.getWinTableClick();
 						WinActionsBuilder.addWinTableClick(printer, winTableClick);
 						break;
+					case WINTABLESEARCH:
+						RhWinActionsMessages.WinTableSearch winTableSearch = action.getWinTableSearch();
+						WinActionsBuilder.addWinTableSearch(printer, winTableSearch);
+						break;
 					case WINWAITFORELEMENT:
 						RhWinActionsMessages.WinWaitForElement winWaitForElement = action.getWinWaitForElement();
 						WinActionsBuilder.addWaitForElement(printer, winWaitForElement);
