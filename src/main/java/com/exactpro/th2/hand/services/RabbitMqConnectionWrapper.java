@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ *  Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package com.exactpro.th2.hand.services;
 
+import com.exactpro.th2.common.grpc.AnyMessage;
+import com.exactpro.th2.common.grpc.MessageGroup;
+import com.exactpro.th2.common.grpc.MessageGroupBatch;
 import com.exactpro.th2.common.grpc.RawMessage;
-import com.exactpro.th2.common.grpc.RawMessageBatch;
 import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.common.schema.message.MessageRouter;
-import com.exactpro.th2.common.schema.message.QueueAttribute;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -34,10 +35,10 @@ public class RabbitMqConnectionWrapper {
 
 	private static final Logger logger = LoggerFactory.getLogger(RabbitMqConnectionWrapper.class);
 	
-    private final MessageRouter<RawMessageBatch> messageRouterRawBatch;
+    private final MessageRouter<MessageGroupBatch> messageRouterGroupBatch;
 
 	public RabbitMqConnectionWrapper(CommonFactory factory) {
-		messageRouterRawBatch = factory.getMessageRouterRawBatch();
+		messageRouterGroupBatch = factory.getMessageRouterMessageGroupBatch();
 		writeToLogAboutConnection(factory);
 	}
 
@@ -67,11 +68,11 @@ public class RabbitMqConnectionWrapper {
 	}
 
 	public void sendMessages(Collection<RawMessage> messages) throws Exception {
-		RawMessageBatch.Builder rawBuilder = RawMessageBatch.newBuilder();
+		MessageGroup.Builder messageGroupBuilder = MessageGroup.newBuilder();
 		int count = 0;
 		for (RawMessage message : messages) {
 			if (message != null) {
-				rawBuilder.addMessages(message);
+				messageGroupBuilder.addMessages(AnyMessage.newBuilder().setRawMessage(message));
 				count++;
 			}
 		}
@@ -81,10 +82,9 @@ public class RabbitMqConnectionWrapper {
 			return;
 		}
 
-		RawMessageBatch raw = rawBuilder.build();
-		messageRouterRawBatch.sendAll(raw);
+		this.messageRouterGroupBatch.sendAll(MessageGroupBatch.newBuilder().addGroups(messageGroupBuilder).build());
 		if (logger.isDebugEnabled()) {
-			logger.debug("Array with {} bytes size sent to {} queue", raw.toByteArray().length, QueueAttribute.RAW);
+			logger.debug("Group with {} message to mstore was sent", count);
 		}
 	}
 	
