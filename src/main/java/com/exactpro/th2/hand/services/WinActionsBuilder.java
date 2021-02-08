@@ -386,9 +386,7 @@ public class WinActionsBuilder {
 		headers.add("#column");
 		values.add(winTableSearch.getTargetColumn());
 
-		headers.add("#firstrowindex");
-		values.add(winTableSearch.getFirstRowIndex());
-
+		addIfNotEmpty("#firstrowindex", winTableSearch.getFirstRowIndex(), headers, values);
 		addIfNotEmpty("#index", winTableSearch.getColumnIndex(), headers, values);
 		addIfNotEmpty("#rownameformat", winTableSearch.getRowNameFormat(), headers, values);
 		addIfNotEmpty("#rowelementnameformat", winTableSearch.getRowElementNameFormat(), headers, values);
