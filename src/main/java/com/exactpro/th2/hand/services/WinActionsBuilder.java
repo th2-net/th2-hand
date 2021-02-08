@@ -173,7 +173,12 @@ public class WinActionsBuilder {
 		{
 			headers.add(ACCESSIBILITY_ID);
 			values.add(getActiveWindow.getAccessibilityId());
-		} 
+		}
+		
+		if (getActiveWindow.getMaxTimeout() > 0) {
+			headers.add("#maxTimeout");
+			values.add(String.valueOf(getActiveWindow.getMaxTimeout()));
+		}
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -407,6 +412,18 @@ public class WinActionsBuilder {
 
 		addIfNotEmpty("#timeout", waitForElement.getTimeout(), headers, values);
 		addIfNotEmpty("#fromRoot", waitForElement.getFromRoot(), headers, values);
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+
+	public static void addMaximizeMainWindow(CSVPrinter printer, RhWinActionsMessages.MaximizeMainWindow maximizeMainWindow) throws IOException {
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add(ACTION);
+		values.add("MaximizeMainWindow");
+
+		addDefaults(maximizeMainWindow.getId(), maximizeMainWindow.getExecute(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
