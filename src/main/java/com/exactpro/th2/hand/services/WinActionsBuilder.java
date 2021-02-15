@@ -396,6 +396,7 @@ public class WinActionsBuilder {
 		addIfNotEmpty("#rownameformat", winTableSearch.getRowNameFormat(), headers, values);
 		addIfNotEmpty("#rowelementnameformat", winTableSearch.getRowElementNameFormat(), headers, values);
 		addIfNotEmpty("#rowelementvalueformat", winTableSearch.getRowElementValueFormat(), headers, values);
+		addIfNotEmpty("#saveresult", winTableSearch.getSaveResult(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
