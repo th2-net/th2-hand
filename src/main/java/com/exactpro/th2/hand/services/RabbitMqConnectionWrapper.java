@@ -68,11 +68,13 @@ public class RabbitMqConnectionWrapper {
 	}
 
 	public void sendMessages(Collection<RawMessage> messages) throws Exception {
-		MessageGroup.Builder messageGroupBuilder = MessageGroup.newBuilder();
+		MessageGroupBatch.Builder mgBatchBuilder = MessageGroupBatch.newBuilder();
 		int count = 0;
 		for (RawMessage message : messages) {
 			if (message != null) {
-				messageGroupBuilder.addMessages(AnyMessage.newBuilder().setRawMessage(message));
+				MessageGroup.Builder mgBuilder = MessageGroup.newBuilder()
+						.addMessages(AnyMessage.newBuilder().setRawMessage(message));
+				mgBatchBuilder.addGroups(mgBuilder);
 				count++;
 			}
 		}
@@ -82,7 +84,7 @@ public class RabbitMqConnectionWrapper {
 			return;
 		}
 
-		this.messageRouterGroupBatch.sendAll(MessageGroupBatch.newBuilder().addGroups(messageGroupBuilder).build());
+		this.messageRouterGroupBatch.sendAll(mgBatchBuilder.build());
 		if (logger.isDebugEnabled()) {
 			logger.debug("Group with {} message to mstore was sent", count);
 		}
