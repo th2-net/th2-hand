@@ -213,6 +213,10 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						GetElementInnerHtml getElementInnerHtml = action.getGetElementInnerHtml();
 						addGetElementInnerHtml(printer, getElementInnerHtml);
 						break;
+					case GETSCREENSHOT:
+						GetScreenshot screenshot = action.getGetScreenshot();
+						addGetScreenshot(printer, screenshot);
+						break;
 
 						// win actions
 					case WINOPEN:
@@ -520,6 +524,18 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		printer.print(String.valueOf(getElementInnerHtml.getWait()));
 		printer.print(readLocator(getElementInnerHtml.getLocator()));
 		printer.print(getElementInnerHtml.getMatcher());
+		printer.println();
+	}
+
+	private void addGetScreenshot(CSVPrinter printer, GetScreenshot getScreenshot) throws IOException
+	{
+		// #action,#wait,#locator,#matcher
+		printer.print("#action");
+		printer.print("#name");
+		printer.println();
+
+		printer.print("GetScreenshot");
+		printer.print(getScreenshot.getName());
 		printer.println();
 	}
 

@@ -35,7 +35,7 @@ public class HandSessionExchange implements SessionExchange {
 	}
 
 	@Override
-	public void sendFile(int i, File file, String s, String s1) throws IOException {
+	public void sendFile(int code, File file, String type, String filename) throws IOException {
 
 	}
 

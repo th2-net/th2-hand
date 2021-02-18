@@ -72,7 +72,7 @@ dependencies {
 
 
 	compile "com.exactprosystems.remotehand:remotehand:1.4.3"
-	implementation "com.exactpro.th2:grpc-hand:2.5.4"
+	implementation "com.exactpro.th2:grpc-hand:2.5.4-th2-1514-578968581"
 	implementation "com.exactpro.th2:grpc-common"
 	implementation "com.exactpro.th2:common"
 
