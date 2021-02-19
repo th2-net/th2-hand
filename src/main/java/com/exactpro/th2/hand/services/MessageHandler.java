@@ -25,12 +25,18 @@ import com.exactpro.th2.common.grpc.*;
 import com.exactpro.th2.hand.Config;
 import com.exactpro.th2.hand.messages.RhResponseMessageBody;
 import com.exactprosystems.remotehand.rhdata.RhScriptResult;
+import com.exactprosystems.remotehand.web.WebConfiguration;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -110,6 +116,37 @@ public class MessageHandler{
 		
 		return messages.stream().filter(Objects::nonNull).map(m -> m.getMetadata().getId()).collect(Collectors.toList());
 	}
+	
+	public List<MessageID> storeScreenshots(List<String> screenshotIds) {
+		if (screenshotIds == null || screenshotIds.isEmpty()) {
+			logger.debug("No screenshots to store");
+			return Collections.emptyList();
+		}
+		
+		List<MessageID> messageIDS = new ArrayList<>();
+		List<RawMessage> rawMessages = new ArrayList<>();
+		long l = System.nanoTime();
+		Path dir = Paths.get(WebConfiguration.SCREENSHOTS_DIR_NAME);
+		for (String screenshotId : screenshotIds) {
+			logger.debug("Storing screenshot id {}", screenshotId);
+			Path screenPath = dir.resolve(screenshotId);
+			if (Files.exists(screenPath)) {
+				RawMessage rawMessage = buildMessageFromFile(screenPath, Direction.FIRST, l++);
+				if (rawMessage != null) {
+					messageIDS.add(rawMessage.getMetadata().getId());
+					rawMessages.add(rawMessage);
+				}
+			} else {
+				logger.warn("Screenshot with id {} does not exists", screenshotId);
+			}
+		}
+		try {
+			rabbitMqConnection.sendMessages(rawMessages);
+		} catch (Exception e) {
+			logger.error("Cannot store to mstore", e);
+		}
+		return messageIDS;
+	}
 
 	public MessageID onResponse(RhScriptResult response, String sessionId, String rhSessionId) {
 		RhResponseMessageBody body = RhResponseMessageBody.fromRhScriptResult(response).setRhSessionId(rhSessionId);
@@ -122,6 +159,28 @@ public class MessageHandler{
 		}
 		
 		return null;
+	}
+
+	public RawMessage buildMessageFromFile(Path path, Direction direction, Long sq) {
+		ConnectionID connectionID = ConnectionID.newBuilder().setSessionAlias(config.getScreenshotSessionAlias()).build();
+		MessageID messageID = MessageID.newBuilder()
+				.setConnectionId(connectionID)
+				.setDirection(direction)
+				// TODO to replace it with sequence number from 1 to ...
+				.setSequence(sq)
+				.build();
+		RawMessageMetadata messageMetadata = RawMessageMetadata.newBuilder()
+				.setId(messageID)
+				.setTimestamp(getTimestamp(Instant.now()))
+				.setProtocol("image/png")
+				.build();
+
+		try (InputStream is = Files.newInputStream(path)) {
+			return RawMessage.newBuilder().setMetadata(messageMetadata).setBody(ByteString.readFrom(is)).build();
+		} catch (IOException e) {
+			logger.error("Cannot encode screenshot", e);
+			return null;
+		}
 	}
 	
 	public RawMessage buildMessage(byte[] bytes, Direction direction, String sessionId, Long sq) {

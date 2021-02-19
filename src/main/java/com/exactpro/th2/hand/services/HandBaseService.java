@@ -112,6 +112,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		}
 		
 		messageIDS.add(messageHandler.onResponse(scriptResult, createSessionId(sessionId), sessionId));
+		messageIDS.addAll(messageHandler.storeScreenshots(scriptResult.getScreenshotIds()));
 		
 		RhBatchResponse response = RhBatchResponse.newBuilder()
 				.setScriptStatus(getScriptExecutionStatus(RhResponseCode.byCode(scriptResult.getCode())))

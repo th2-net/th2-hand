@@ -26,6 +26,8 @@ public class CustomConfiguration {
 
 	@JsonProperty(value="session-alias", required = true, defaultValue = DEFAULT_SESSION_ALIAS)
 	private String sessionAlias = DEFAULT_SESSION_ALIAS;
+	private String screenshotSessionAlias = null;
+	
 	
 	@JsonProperty(value="driversMapping")
 	private Map<String, Map<String, String>> driversMapping;
@@ -51,5 +53,12 @@ public class CustomConfiguration {
 
 	public int getResponseTimeout() {
 		return responseTimeout;
+	}
+
+	public String getScreenshotSessionAlias() {
+		if (this.screenshotSessionAlias == null) {
+			this.screenshotSessionAlias = this.sessionAlias + "_screenshots";
+		}
+		return this.screenshotSessionAlias;
 	}
 }
