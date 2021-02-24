@@ -111,8 +111,8 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 			logger.warn(errMsg, e);
 		}
 		
-		messageIDS.add(messageHandler.onResponse(scriptResult, createSessionId(sessionId), sessionId));
-		messageIDS.addAll(messageHandler.storeScreenshots(scriptResult.getScreenshotIds()));
+		messageIDS.add(messageHandler.onResponse(scriptResult, config.getSessionAlias(), sessionId));
+		messageIDS.addAll(messageHandler.storeScreenshots(scriptResult.getScreenshotIds(), config.getScreenshotSessionAlias()));
 		
 		RhBatchResponse response = RhBatchResponse.newBuilder()
 				.setScriptStatus(getScriptExecutionStatus(RhResponseCode.byCode(scriptResult.getCode())))
@@ -299,14 +299,14 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		}
 		
 		String scriptText = sb.toString();
-		messageIDS.addAll(getMessageIds(actionsList, sessionId, scriptText));
+		messageIDS.addAll(getMessageIds(actionsList, scriptText));
 		
 		return scriptText;
 	}
 
-	protected List<MessageID> getMessageIds(RhActionsList actionsList, String sessionId, String s)
+	protected List<MessageID> getMessageIds(RhActionsList actionsList, String s)
 	{
-		return messageHandler.onRequest(actionsList, s, createSessionId(sessionId));
+		return messageHandler.onRequest(actionsList, s, config.getSessionAlias());
 	}
 
 	private void addWait(CSVPrinter printer, Wait wait) throws IOException
@@ -317,13 +317,6 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		printer.print("Wait");
 		printer.print(wait.getSeconds());
 		printer.println();
-	}
-
-	private String createSessionId(String sessionId) {
-		if (sessionId != null && sessionId.startsWith(RH_SESSION_PREFIX)) {
-			return sessionId.substring(RH_SESSION_PREFIX.length());
-		}
-		return sessionId;
 	}
 
 	private void addOpen(CSVPrinter printer, Open open) throws IOException

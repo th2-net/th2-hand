@@ -45,12 +45,12 @@ public class MessageHandler{
 
 	private static final Logger logger = LoggerFactory.getLogger(MessageHandler.class);
 
-	private final RabbitMqConnectionWrapper rabbitMqConnection;
+	private final MStoreSender rabbitMqConnection;
 	private final Config config;
 
 	public MessageHandler(Config config) {
 		this.config = config;
-		this.rabbitMqConnection = new RabbitMqConnectionWrapper(config.getFactory());
+		this.rabbitMqConnection = new MStoreSender(config.getFactory());
 	}
 	
 	private String valueToString(Object object) {
@@ -117,7 +117,7 @@ public class MessageHandler{
 		return messages.stream().filter(Objects::nonNull).map(m -> m.getMetadata().getId()).collect(Collectors.toList());
 	}
 	
-	public List<MessageID> storeScreenshots(List<String> screenshotIds) {
+	public List<MessageID> storeScreenshots(List<String> screenshotIds, String sessionAlias) {
 		if (screenshotIds == null || screenshotIds.isEmpty()) {
 			logger.debug("No screenshots to store");
 			return Collections.emptyList();
@@ -125,17 +125,19 @@ public class MessageHandler{
 		
 		List<MessageID> messageIDS = new ArrayList<>();
 		List<RawMessage> rawMessages = new ArrayList<>();
+		List<Path> files = new ArrayList<>();
 		long l = System.nanoTime();
 		Path dir = Paths.get(WebConfiguration.SCREENSHOTS_DIR_NAME);
 		for (String screenshotId : screenshotIds) {
 			logger.debug("Storing screenshot id {}", screenshotId);
 			Path screenPath = dir.resolve(screenshotId);
 			if (Files.exists(screenPath)) {
-				RawMessage rawMessage = buildMessageFromFile(screenPath, Direction.FIRST, l++);
+				RawMessage rawMessage = buildMessageFromFile(screenPath, Direction.FIRST, sessionAlias, l++);
 				if (rawMessage != null) {
 					messageIDS.add(rawMessage.getMetadata().getId());
 					rawMessages.add(rawMessage);
 				}
+				files.add(screenPath);
 			} else {
 				logger.warn("Screenshot with id {} does not exists", screenshotId);
 			}
@@ -145,6 +147,15 @@ public class MessageHandler{
 		} catch (Exception e) {
 			logger.error("Cannot store to mstore", e);
 		}
+
+		for (Path file : files) {
+			try {
+				Files.delete(file);
+			} catch (IOException e) {
+				logger.warn("Error deleting file: " + file.toAbsolutePath().toString(), e);
+			}
+		}
+		
 		return messageIDS;
 	}
 
@@ -161,42 +172,34 @@ public class MessageHandler{
 		return null;
 	}
 
-	public RawMessage buildMessageFromFile(Path path, Direction direction, Long sq) {
-		ConnectionID connectionID = ConnectionID.newBuilder().setSessionAlias(config.getScreenshotSessionAlias()).build();
-		MessageID messageID = MessageID.newBuilder()
-				.setConnectionId(connectionID)
-				.setDirection(direction)
-				// TODO to replace it with sequence number from 1 to ...
-				.setSequence(sq)
-				.build();
-		RawMessageMetadata messageMetadata = RawMessageMetadata.newBuilder()
-				.setId(messageID)
-				.setTimestamp(getTimestamp(Instant.now()))
-				.setProtocol("image/png")
-				.build();
+	public RawMessage buildMessageFromFile(Path path, Direction direction, String sessionId, long sq) {
+		RawMessageMetadata messageMetadata = buildMetaData(direction, sessionId, "image/png", sq);
 
 		try (InputStream is = Files.newInputStream(path)) {
-			return RawMessage.newBuilder().setMetadata(messageMetadata).setBody(ByteString.readFrom(is)).build();
+			return RawMessage.newBuilder().setMetadata(messageMetadata).setBody(ByteString.readFrom(is, 0x1000)).build();
 		} catch (IOException e) {
 			logger.error("Cannot encode screenshot", e);
 			return null;
 		}
 	}
 	
-	public RawMessage buildMessage(byte[] bytes, Direction direction, String sessionId, Long sq) {
-		ConnectionID connectionID = ConnectionID.newBuilder().setSessionAlias(config.getSessionAlias()).build();
-		MessageID messageID = MessageID.newBuilder()
-				.setConnectionId(connectionID)
-				.setDirection(direction)
-				// TODO to replace it with sequence number from 1 to ...
-				.setSequence(sq)
-				.build();
-		RawMessageMetadata messageMetadata = RawMessageMetadata.newBuilder()
-				.setId(messageID)
-				.setTimestamp(getTimestamp(Instant.now()))
-				.build();
-
+	public RawMessage buildMessage(byte[] bytes, Direction direction, String sessionId, long sq) {
+		RawMessageMetadata messageMetadata = buildMetaData(direction, sessionId, null, sq);
 		return RawMessage.newBuilder().setMetadata(messageMetadata).setBody(ByteString.copyFrom(bytes)).build();
+	}
+	
+	private RawMessageMetadata buildMetaData(Direction direction, String sessionId, String protocol, long sq) {
+		ConnectionID connectionID = ConnectionID.newBuilder().setSessionAlias(sessionId).build();
+		MessageID messageID = MessageID.newBuilder().setConnectionId(connectionID).setDirection(direction)
+				// TODO to replace it with sequence number from 1 to ...
+				.setSequence(sq).build();
+		RawMessageMetadata.Builder builder = RawMessageMetadata.newBuilder();
+		builder.setId(messageID);
+		builder.setTimestamp(getTimestamp(Instant.now()));
+		if (protocol != null) {
+			builder.setProtocol(protocol);
+		}
+		return builder.build();
 	}
 
 	public RawMessage buildMessage(Map<String, Object> fields, Direction direction, String sessionId, Long sq) {
@@ -207,27 +210,6 @@ public class MessageHandler{
 		} catch (JsonProcessingException e) {
 			logger.error("Could not encode message as JSON", e);
 			return null;
-		}
-	}
-
-	private Value parseObj(Object value) {
-		if (value instanceof List) {
-			ListValue.Builder listValueBuilder = ListValue.newBuilder();
-			for (Object o : ((List<?>) value)) {
-
-				if (o instanceof Map) {
-					Message.Builder msgBuilder = Message.newBuilder();
-					for (Map.Entry<?, ?> o1 : ((Map<?, ?>) o).entrySet()) {
-						msgBuilder.putFields(String.valueOf(o1.getKey()), parseObj(o1.getValue()));
-					}
-					listValueBuilder.addValues(Value.newBuilder().setMessageValue(msgBuilder.build()));
-				} else {
-					listValueBuilder.addValues(Value.newBuilder().setSimpleValue(String.valueOf(o)));
-				}
-			}
-			return Value.newBuilder().setListValue(listValueBuilder).build();
-		} else {
-			return Value.newBuilder().setSimpleValue(String.valueOf(value)).build();
 		}
 	}
 	

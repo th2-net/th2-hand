@@ -22,31 +22,38 @@ import com.exactpro.th2.common.grpc.MessageGroupBatch;
 import com.exactpro.th2.common.grpc.RawMessage;
 import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.common.schema.message.MessageRouter;
+import com.exactpro.th2.hand.schema.CustomConfiguration;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
-public class RabbitMqConnectionWrapper {
+public class MStoreSender {
 
-	private static final Logger logger = LoggerFactory.getLogger(RabbitMqConnectionWrapper.class);
+	private static final Logger logger = LoggerFactory.getLogger(MStoreSender.class);
 	
     private final MessageRouter<MessageGroupBatch> messageRouterGroupBatch;
+    
+    private final long batchLimit;
 
-	public RabbitMqConnectionWrapper(CommonFactory factory) {
+	public MStoreSender(CommonFactory factory) {
 		messageRouterGroupBatch = factory.getMessageRouterMessageGroupBatch();
+		CustomConfiguration customConfiguration = factory.getCustomConfiguration(CustomConfiguration.class);
+		this.batchLimit = customConfiguration.getMessageBatchLimit();
 		writeToLogAboutConnection(factory);
 	}
 
 	private void writeToLogAboutConnection(CommonFactory factory) {
 		if (!logger.isInfoEnabled())
 			return;
-		StringBuilder connectionInfo = new StringBuilder("Connection to RbbitMQ with ");
-		connectionInfo.append(factory.getRabbitMqConfiguration()).append(" established \n");
+		StringBuilder connectionInfo = new StringBuilder("Connection to RabbitMQ with ");
+		connectionInfo.append(factory.getRabbitMqConfiguration()).append(" is established \n");
 		connectionInfo.append("Queues: \n");
 		factory.getMessageRouterConfiguration().getQueues().forEach((name, queue) -> {
 			connectionInfo.append(name).append(" : ");
@@ -68,15 +75,39 @@ public class RabbitMqConnectionWrapper {
 	}
 
 	public void sendMessages(Collection<RawMessage> messages) throws Exception {
-		MessageGroupBatch.Builder mgBatchBuilder = MessageGroupBatch.newBuilder();
+		List<MessageGroupBatch> batches = null;
+		MessageGroupBatch.Builder currentBatchBuilder = MessageGroupBatch.newBuilder();
+		long currentBatchLength = 0;
+		long totalLength = 0;
 		int count = 0;
 		for (RawMessage message : messages) {
-			if (message != null) {
-				MessageGroup.Builder mgBuilder = MessageGroup.newBuilder()
-						.addMessages(AnyMessage.newBuilder().setRawMessage(message));
-				mgBatchBuilder.addGroups(mgBuilder);
-				count++;
+			if (message == null) 
+				continue;
+
+			long size = this.calculateSize(message);
+			
+			MessageGroup.Builder mgBuilder = MessageGroup.newBuilder()
+					.addMessages(AnyMessage.newBuilder().setRawMessage(message));
+			//if batchlimit has incorrect value, sender should pack each message to batch
+			if (currentBatchLength + size > batchLimit) {
+				if (batches == null) {
+					batches = new ArrayList<>();
+				}
+				batches.add(currentBatchBuilder.build());
+				currentBatchBuilder = MessageGroupBatch.newBuilder();
+				currentBatchLength = 0;
 			}
+			
+			currentBatchBuilder.addGroups(mgBuilder);
+			currentBatchLength += size;
+			totalLength += size;
+			count++;
+		}
+		
+		if (batches == null) {
+			batches = Collections.singletonList(currentBatchBuilder.build());
+		} else {
+			batches.add(currentBatchBuilder.build());
 		}
 
 		if (count == 0) {
@@ -84,10 +115,17 @@ public class RabbitMqConnectionWrapper {
 			return;
 		}
 
-		this.messageRouterGroupBatch.sendAll(mgBatchBuilder.build());
-		if (logger.isDebugEnabled()) {
-			logger.debug("Group with {} message to mstore was sent", count);
+		for (MessageGroupBatch batch : batches) {
+			this.messageRouterGroupBatch.sendAll(batch);
 		}
+		if (logger.isDebugEnabled()) {
+			logger.debug("Group with {} message(s) separated by {} batches to mstore was sent ({} bytes)",
+					count, batches.size(), totalLength);
+		}
+	}
+	
+	private long calculateSize(RawMessage message) {
+		return message.getBody().size();
 	}
 	
 }

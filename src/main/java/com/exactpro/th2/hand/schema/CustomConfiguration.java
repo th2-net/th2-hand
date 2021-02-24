@@ -20,14 +20,18 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 public class CustomConfiguration {
 	private static final String DEFAULT_SESSION_ALIAS = "th2-hand";
 	private static final int DEFAULT_RESPONSE_TIMEOUT = 120;
+	private static final long DEFAULT_MESSAGE_BATCH_LIMIT = 1048576; //1MB = 1 * 1024 * 1024
 
 	@JsonProperty(value="session-alias", required = true, defaultValue = DEFAULT_SESSION_ALIAS)
 	private String sessionAlias = DEFAULT_SESSION_ALIAS;
 	private String screenshotSessionAlias = null;
-	
+
+	@JsonProperty(value="message-batch-limit")
+	private long messageBatchLimit = DEFAULT_MESSAGE_BATCH_LIMIT;
 	
 	@JsonProperty(value="driversMapping")
 	private Map<String, Map<String, String>> driversMapping;
@@ -60,5 +64,9 @@ public class CustomConfiguration {
 			this.screenshotSessionAlias = this.sessionAlias + "_screenshots";
 		}
 		return this.screenshotSessionAlias;
+	}
+
+	public long getMessageBatchLimit() {
+		return messageBatchLimit;
 	}
 }
