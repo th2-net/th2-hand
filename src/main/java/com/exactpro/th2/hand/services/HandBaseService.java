@@ -218,6 +218,10 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						GetScreenshot screenshot = action.getGetScreenshot();
 						addGetScreenshot(printer, screenshot);
 						break;
+					case GETELEMENTSCREENSHOT:
+						GetElementScreenshot elementScreenshot = action.getGetElementScreenshot();
+						addGetElementScreenshot(printer, elementScreenshot);
+						break;
 
 						// win actions
 					case WINOPEN:
@@ -290,6 +294,9 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						break;
 					case WINMAXIMIZEMAINWINDOW:
 						WinActionsBuilder.addMaximizeMainWindow(printer, action.getWinMaximizeMainWindow());
+						break;
+					case WINGETSCREENSHOT:
+						WinActionsBuilder.addGetScreenshot(printer, action.getWinGetScreenshot());
 						break;
 					default:
 						logger.warn("Unsupported action: " + action.getActionCase());
@@ -530,6 +537,24 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 
 		printer.print("GetScreenshot");
 		printer.print(getScreenshot.getName());
+		printer.println();
+	}
+
+	private void addGetElementScreenshot(CSVPrinter printer, GetElementScreenshot getScreenshot) throws IOException
+	{
+		// #action,#wait,#locator,#matcher
+		printer.print("#action");
+		printer.print("#name");
+		printer.print("#wait");
+		printer.print("#locator");
+		printer.print("#matcher");
+		printer.println();
+
+		printer.print("GetElementScreenshot");
+		printer.print(getScreenshot.getName());
+		printer.print(String.valueOf(getScreenshot.getWait()));
+		printer.print(readLocator(getScreenshot.getLocator()));
+		printer.print(getScreenshot.getMatcher());
 		printer.println();
 	}
 
