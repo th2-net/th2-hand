@@ -79,8 +79,7 @@ public class MessageHandler{
 		return processed;
 	}
 
-	public List<MessageID> onRequest(RhActionsList actionsList, String scriptText, String sessionId) {
-		List<RawMessage> messages = new ArrayList<>();
+	public List<MessageID> onRequest(RhActionsList actionsList, String sessionId) {
 		long sq = System.nanoTime();
 		List<Map<String, Object>> allMessages = new ArrayList<>();
 		for (RhAction rhAction : actionsList.getRhActionList()) {
@@ -105,16 +104,22 @@ public class MessageHandler{
 				}
 			}
 		}
-		messages.add(buildMessage(Collections.singletonMap("messages", allMessages), Direction.SECOND, sessionId, sq++));
-		messages.add(buildMessage(scriptText.getBytes(), Direction.SECOND, sessionId, sq++));
 		
-		try {
-			rabbitMqConnection.sendMessages(messages);
-		} catch (Exception e) {
-			logger.error("Cannot send message to message-storage", e);
+		RawMessage message = buildMessage(Collections.singletonMap("messages", allMessages),
+				Direction.SECOND, sessionId, sq);
+		
+		if (message != null) {
+			try {
+				rabbitMqConnection.sendMessages(message);
+			} catch (Exception e) {
+				logger.error("Cannot send message to message-storage", e);
+			}
+
+			return Collections.singletonList(message.getMetadata().getId());
+		} else {
+			logger.debug("Nothing to store to mstore");
+			return Collections.emptyList();
 		}
-		
-		return messages.stream().filter(Objects::nonNull).map(m -> m.getMetadata().getId()).collect(Collectors.toList());
 	}
 	
 	public List<MessageID> storeScreenshots(List<String> screenshotIds, String sessionAlias) {

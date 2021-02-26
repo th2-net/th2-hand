@@ -306,14 +306,14 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		}
 		
 		String scriptText = sb.toString();
-		messageIDS.addAll(getMessageIds(actionsList, scriptText));
+		messageIDS.addAll(getMessageIds(actionsList));
 		
 		return scriptText;
 	}
 
-	protected List<MessageID> getMessageIds(RhActionsList actionsList, String s)
+	protected List<MessageID> getMessageIds(RhActionsList actionsList)
 	{
-		return messageHandler.onRequest(actionsList, s, config.getSessionAlias());
+		return messageHandler.onRequest(actionsList, config.getSessionAlias());
 	}
 
 	private void addWait(CSVPrinter printer, Wait wait) throws IOException
