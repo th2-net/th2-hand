@@ -280,10 +280,6 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						RhWinActionsMessages.WinGetDataFromClipboard dataFromClipboard = action.getWinGetDataFromClipboard();
 						WinActionsBuilder.addGetDataFromClipboard(printer, dataFromClipboard);
 						break;
-					case WINTABLECLICK:
-						RhWinActionsMessages.WinTableClick winTableClick = action.getWinTableClick();
-						WinActionsBuilder.addWinTableClick(printer, winTableClick);
-						break;
 					case WINTABLESEARCH:
 						RhWinActionsMessages.WinTableSearch winTableSearch = action.getWinTableSearch();
 						WinActionsBuilder.addWinTableSearch(printer, winTableSearch);
