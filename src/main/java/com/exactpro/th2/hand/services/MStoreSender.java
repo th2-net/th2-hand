@@ -75,11 +75,11 @@ public class MStoreSender {
 	}
 
 	public void sendMessages(Collection<RawMessage> messages) throws Exception {
-		List<MessageGroupBatch> batches = null;
 		MessageGroupBatch.Builder currentBatchBuilder = MessageGroupBatch.newBuilder();
 		long currentBatchLength = 0;
 		long totalLength = 0;
 		int count = 0;
+		int batchesCount = 0;
 		for (RawMessage message : messages) {
 			if (message == null) 
 				continue;
@@ -89,13 +89,12 @@ public class MStoreSender {
 			MessageGroup.Builder mgBuilder = MessageGroup.newBuilder()
 					.addMessages(AnyMessage.newBuilder().setRawMessage(message));
 			//if batchlimit has incorrect value, sender should pack each message to batch
-			if (currentBatchLength + size > batchLimit) {
-				if (batches == null) {
-					batches = new ArrayList<>();
-				}
-				batches.add(currentBatchBuilder.build());
+			//if one message is bigger that batchLimit it is should send to mstore anyway and reject by it
+			if (currentBatchLength + size > batchLimit && currentBatchLength != 0) {
+				this.messageRouterGroupBatch.sendAll(currentBatchBuilder.build());
 				currentBatchBuilder = MessageGroupBatch.newBuilder();
 				currentBatchLength = 0;
+				batchesCount++;
 			}
 			
 			currentBatchBuilder.addGroups(mgBuilder);
@@ -104,24 +103,18 @@ public class MStoreSender {
 			count++;
 		}
 		
-		if (batches == null) {
-			batches = Collections.singletonList(currentBatchBuilder.build());
-		} else {
-			batches.add(currentBatchBuilder.build());
+		if (currentBatchLength != 0) {
+			this.messageRouterGroupBatch.sendAll(currentBatchBuilder.build());
+			batchesCount++;
 		}
 
 		if (count == 0) {
 			logger.debug("There are no valid messages to send");
 			return;
 		}
-
-		for (MessageGroupBatch batch : batches) {
-			this.messageRouterGroupBatch.sendAll(batch);
-		}
-		if (logger.isDebugEnabled()) {
-			logger.debug("Group with {} message(s) separated by {} batches to mstore was sent ({} bytes)",
-					count, batches.size(), totalLength);
-		}
+		
+		logger.debug("Group with {} message(s) separated by {} batches to mstore was sent ({} bytes)", 
+				count, batchesCount, totalLength);
 	}
 	
 	private long calculateSize(RawMessage message) {
