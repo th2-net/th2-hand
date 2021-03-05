@@ -18,9 +18,6 @@ package com.exactpro.th2.hand.services;
 
 import com.exactpro.th2.act.grpc.hand.RhAction;
 import com.exactpro.th2.act.grpc.hand.RhActionsList;
-import com.exactpro.th2.common.grpc.ListValue;
-import com.exactpro.th2.common.grpc.Message;
-import com.exactpro.th2.common.grpc.Value;
 import com.exactpro.th2.common.grpc.*;
 import com.exactpro.th2.hand.Config;
 import com.exactpro.th2.hand.messages.RhResponseMessageBody;
@@ -39,7 +36,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class MessageHandler{
 
@@ -127,40 +123,27 @@ public class MessageHandler{
 			logger.debug("No screenshots to store");
 			return Collections.emptyList();
 		}
-		
+
 		List<MessageID> messageIDS = new ArrayList<>();
 		List<RawMessage> rawMessages = new ArrayList<>();
-		List<Path> files = new ArrayList<>();
 		long l = System.nanoTime();
 		Path dir = Paths.get(WebConfiguration.SCREENSHOTS_DIR_NAME);
 		for (String screenshotId : screenshotIds) {
 			logger.debug("Storing screenshot id {}", screenshotId);
 			Path screenPath = dir.resolve(screenshotId);
-			if (Files.exists(screenPath)) {
-				RawMessage rawMessage = buildMessageFromFile(screenPath, Direction.FIRST, sessionAlias, l++);
-				if (rawMessage != null) {
-					messageIDS.add(rawMessage.getMetadata().getId());
-					rawMessages.add(rawMessage);
-				}
-				files.add(screenPath);
-			} else {
+			if (!Files.exists(screenPath)) {
 				logger.warn("Screenshot with id {} does not exists", screenshotId);
+				continue;
 			}
+			RawMessage rawMessage = buildMessageFromFile(screenPath, Direction.FIRST, sessionAlias, l++);
+			if (rawMessage != null) {
+				messageIDS.add(rawMessage.getMetadata().getId());
+				rawMessages.add(rawMessage);
+			}
+			removeScreenshot(screenPath);
 		}
-		try {
-			rabbitMqConnection.sendMessages(rawMessages);
-		} catch (Exception e) {
-			logger.error("Cannot store to mstore", e);
-		}
+		sendRawMessages(rawMessages);
 
-		for (Path file : files) {
-			try {
-				Files.delete(file);
-			} catch (IOException e) {
-				logger.warn("Error deleting file: " + file.toAbsolutePath().toString(), e);
-			}
-		}
-		
 		return messageIDS;
 	}
 
@@ -217,7 +200,25 @@ public class MessageHandler{
 			return null;
 		}
 	}
-	
+
+
+	private void removeScreenshot(Path file) {
+		try {
+			Files.delete(file);
+		} catch (IOException e) {
+			logger.warn("Error deleting file: " + file.toAbsolutePath().toString(), e);
+		}
+	}
+
+	private void sendRawMessages(List<RawMessage> rawMessages) {
+		try {
+			rabbitMqConnection.sendMessages(rawMessages);
+		} catch (Exception e) {
+			logger.error("Cannot store to mstore", e);
+		}
+	}
+
+
 	private static Timestamp getTimestamp(Instant instant) {
 		return Timestamp.newBuilder()
 				.setSeconds(instant.getEpochSecond())
