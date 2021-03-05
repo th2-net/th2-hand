@@ -111,7 +111,8 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 			logger.warn(errMsg, e);
 		}
 		
-		messageIDS.add(messageHandler.onResponse(scriptResult, createSessionId(sessionId), sessionId));
+		messageIDS.add(messageHandler.onResponse(scriptResult, config.getSessionAlias(), sessionId));
+		messageIDS.addAll(messageHandler.storeScreenshots(scriptResult.getScreenshotIds(), config.getScreenshotSessionAlias()));
 		
 		RhBatchResponse response = RhBatchResponse.newBuilder()
 				.setScriptStatus(getScriptExecutionStatus(RhResponseCode.byCode(scriptResult.getCode())))
@@ -213,6 +214,14 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						GetElementInnerHtml getElementInnerHtml = action.getGetElementInnerHtml();
 						addGetElementInnerHtml(printer, getElementInnerHtml);
 						break;
+					case GETSCREENSHOT:
+						GetScreenshot screenshot = action.getGetScreenshot();
+						addGetScreenshot(printer, screenshot);
+						break;
+					case GETELEMENTSCREENSHOT:
+						GetElementScreenshot elementScreenshot = action.getGetElementScreenshot();
+						addGetElementScreenshot(printer, elementScreenshot);
+						break;
 
 						// win actions
 					case WINOPEN:
@@ -282,6 +291,9 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 					case WINMAXIMIZEMAINWINDOW:
 						WinActionsBuilder.addMaximizeMainWindow(printer, action.getWinMaximizeMainWindow());
 						break;
+					case WINGETSCREENSHOT:
+						WinActionsBuilder.addGetScreenshot(printer, action.getWinGetScreenshot());
+						break;
 					default:
 						logger.warn("Unsupported action: " + action.getActionCase());
 						break;
@@ -290,14 +302,14 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		}
 		
 		String scriptText = sb.toString();
-		messageIDS.addAll(getMessageIds(actionsList, sessionId, scriptText));
+		messageIDS.addAll(getMessageIds(actionsList));
 		
 		return scriptText;
 	}
 
-	protected List<MessageID> getMessageIds(RhActionsList actionsList, String sessionId, String s)
+	protected List<MessageID> getMessageIds(RhActionsList actionsList)
 	{
-		return messageHandler.onRequest(actionsList, s, createSessionId(sessionId));
+		return messageHandler.onRequest(actionsList, config.getSessionAlias());
 	}
 
 	private void addWait(CSVPrinter printer, Wait wait) throws IOException
@@ -308,13 +320,6 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		printer.print("Wait");
 		printer.print(wait.getSeconds());
 		printer.println();
-	}
-
-	private String createSessionId(String sessionId) {
-		if (sessionId != null && sessionId.startsWith(RH_SESSION_PREFIX)) {
-			return sessionId.substring(RH_SESSION_PREFIX.length());
-		}
-		return sessionId;
 	}
 
 	private void addOpen(CSVPrinter printer, Open open) throws IOException
@@ -516,6 +521,36 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		printer.print(String.valueOf(getElementInnerHtml.getWait()));
 		printer.print(readLocator(getElementInnerHtml.getLocator()));
 		printer.print(getElementInnerHtml.getMatcher());
+		printer.println();
+	}
+
+	private void addGetScreenshot(CSVPrinter printer, GetScreenshot getScreenshot) throws IOException
+	{
+		// #action,#wait,#locator,#matcher
+		printer.print("#action");
+		printer.print("#name");
+		printer.println();
+
+		printer.print("GetScreenshot");
+		printer.print(getScreenshot.getName());
+		printer.println();
+	}
+
+	private void addGetElementScreenshot(CSVPrinter printer, GetElementScreenshot getScreenshot) throws IOException
+	{
+		// #action,#wait,#locator,#matcher
+		printer.print("#action");
+		printer.print("#name");
+		printer.print("#wait");
+		printer.print("#locator");
+		printer.print("#matcher");
+		printer.println();
+
+		printer.print("GetElementScreenshot");
+		printer.print(getScreenshot.getName());
+		printer.print(String.valueOf(getScreenshot.getWait()));
+		printer.print(readLocator(getScreenshot.getLocator()));
+		printer.print(getScreenshot.getMatcher());
 		printer.println();
 	}
 

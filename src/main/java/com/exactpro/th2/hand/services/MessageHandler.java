@@ -18,33 +18,35 @@ package com.exactpro.th2.hand.services;
 
 import com.exactpro.th2.act.grpc.hand.RhAction;
 import com.exactpro.th2.act.grpc.hand.RhActionsList;
-import com.exactpro.th2.common.grpc.ListValue;
-import com.exactpro.th2.common.grpc.Message;
-import com.exactpro.th2.common.grpc.Value;
 import com.exactpro.th2.common.grpc.*;
 import com.exactpro.th2.hand.Config;
 import com.exactpro.th2.hand.messages.RhResponseMessageBody;
 import com.exactprosystems.remotehand.rhdata.RhScriptResult;
+import com.exactprosystems.remotehand.web.WebConfiguration;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class MessageHandler{
 
 	private static final Logger logger = LoggerFactory.getLogger(MessageHandler.class);
 
-	private final RabbitMqConnectionWrapper rabbitMqConnection;
+	private final MStoreSender rabbitMqConnection;
 	private final Config config;
 
 	public MessageHandler(Config config) {
 		this.config = config;
-		this.rabbitMqConnection = new RabbitMqConnectionWrapper(config.getFactory());
+		this.rabbitMqConnection = new MStoreSender(config.getFactory());
 	}
 	
 	private String valueToString(Object object) {
@@ -73,8 +75,7 @@ public class MessageHandler{
 		return processed;
 	}
 
-	public List<MessageID> onRequest(RhActionsList actionsList, String scriptText, String sessionId) {
-		List<RawMessage> messages = new ArrayList<>();
+	public List<MessageID> onRequest(RhActionsList actionsList, String sessionId) {
 		long sq = System.nanoTime();
 		List<Map<String, Object>> allMessages = new ArrayList<>();
 		for (RhAction rhAction : actionsList.getRhActionList()) {
@@ -99,16 +100,51 @@ public class MessageHandler{
 				}
 			}
 		}
-		messages.add(buildMessage(Collections.singletonMap("messages", allMessages), Direction.SECOND, sessionId, sq++));
-		messages.add(buildMessage(scriptText.getBytes(), Direction.SECOND, sessionId, sq++));
 		
-		try {
-			rabbitMqConnection.sendMessages(messages);
-		} catch (Exception e) {
-			logger.error("Cannot send message to message-storage", e);
+		RawMessage message = buildMessage(Collections.singletonMap("messages", allMessages),
+				Direction.SECOND, sessionId, sq);
+		
+		if (message != null) {
+			try {
+				rabbitMqConnection.sendMessages(message);
+			} catch (Exception e) {
+				logger.error("Cannot send message to message-storage", e);
+			}
+
+			return Collections.singletonList(message.getMetadata().getId());
+		} else {
+			logger.debug("Nothing to store to mstore");
+			return Collections.emptyList();
 		}
-		
-		return messages.stream().filter(Objects::nonNull).map(m -> m.getMetadata().getId()).collect(Collectors.toList());
+	}
+	
+	public List<MessageID> storeScreenshots(List<String> screenshotIds, String sessionAlias) {
+		if (screenshotIds == null || screenshotIds.isEmpty()) {
+			logger.debug("No screenshots to store");
+			return Collections.emptyList();
+		}
+
+		List<MessageID> messageIDS = new ArrayList<>();
+		List<RawMessage> rawMessages = new ArrayList<>();
+		long l = System.nanoTime();
+		Path dir = Paths.get(WebConfiguration.SCREENSHOTS_DIR_NAME);
+		for (String screenshotId : screenshotIds) {
+			logger.debug("Storing screenshot id {}", screenshotId);
+			Path screenPath = dir.resolve(screenshotId);
+			if (!Files.exists(screenPath)) {
+				logger.warn("Screenshot with id {} does not exists", screenshotId);
+				continue;
+			}
+			RawMessage rawMessage = buildMessageFromFile(screenPath, Direction.FIRST, sessionAlias, l++);
+			if (rawMessage != null) {
+				messageIDS.add(rawMessage.getMetadata().getId());
+				rawMessages.add(rawMessage);
+			}
+			removeScreenshot(screenPath);
+		}
+		sendRawMessages(rawMessages);
+
+		return messageIDS;
 	}
 
 	public MessageID onResponse(RhScriptResult response, String sessionId, String rhSessionId) {
@@ -123,21 +159,35 @@ public class MessageHandler{
 		
 		return null;
 	}
-	
-	public RawMessage buildMessage(byte[] bytes, Direction direction, String sessionId, Long sq) {
-		ConnectionID connectionID = ConnectionID.newBuilder().setSessionAlias(config.getSessionAlias()).build();
-		MessageID messageID = MessageID.newBuilder()
-				.setConnectionId(connectionID)
-				.setDirection(direction)
-				// TODO to replace it with sequence number from 1 to ...
-				.setSequence(sq)
-				.build();
-		RawMessageMetadata messageMetadata = RawMessageMetadata.newBuilder()
-				.setId(messageID)
-				.setTimestamp(getTimestamp(Instant.now()))
-				.build();
 
+	public RawMessage buildMessageFromFile(Path path, Direction direction, String sessionId, long sq) {
+		RawMessageMetadata messageMetadata = buildMetaData(direction, sessionId, "image/png", sq);
+
+		try (InputStream is = Files.newInputStream(path)) {
+			return RawMessage.newBuilder().setMetadata(messageMetadata).setBody(ByteString.readFrom(is, 0x1000)).build();
+		} catch (IOException e) {
+			logger.error("Cannot encode screenshot", e);
+			return null;
+		}
+	}
+	
+	public RawMessage buildMessage(byte[] bytes, Direction direction, String sessionId, long sq) {
+		RawMessageMetadata messageMetadata = buildMetaData(direction, sessionId, null, sq);
 		return RawMessage.newBuilder().setMetadata(messageMetadata).setBody(ByteString.copyFrom(bytes)).build();
+	}
+	
+	private RawMessageMetadata buildMetaData(Direction direction, String sessionId, String protocol, long sq) {
+		ConnectionID connectionID = ConnectionID.newBuilder().setSessionAlias(sessionId).build();
+		MessageID messageID = MessageID.newBuilder().setConnectionId(connectionID).setDirection(direction)
+				// TODO to replace it with sequence number from 1 to ...
+				.setSequence(sq).build();
+		RawMessageMetadata.Builder builder = RawMessageMetadata.newBuilder();
+		builder.setId(messageID);
+		builder.setTimestamp(getTimestamp(Instant.now()));
+		if (protocol != null) {
+			builder.setProtocol(protocol);
+		}
+		return builder.build();
 	}
 
 	public RawMessage buildMessage(Map<String, Object> fields, Direction direction, String sessionId, Long sq) {
@@ -151,27 +201,24 @@ public class MessageHandler{
 		}
 	}
 
-	private Value parseObj(Object value) {
-		if (value instanceof List) {
-			ListValue.Builder listValueBuilder = ListValue.newBuilder();
-			for (Object o : ((List<?>) value)) {
 
-				if (o instanceof Map) {
-					Message.Builder msgBuilder = Message.newBuilder();
-					for (Map.Entry<?, ?> o1 : ((Map<?, ?>) o).entrySet()) {
-						msgBuilder.putFields(String.valueOf(o1.getKey()), parseObj(o1.getValue()));
-					}
-					listValueBuilder.addValues(Value.newBuilder().setMessageValue(msgBuilder.build()));
-				} else {
-					listValueBuilder.addValues(Value.newBuilder().setSimpleValue(String.valueOf(o)));
-				}
-			}
-			return Value.newBuilder().setListValue(listValueBuilder).build();
-		} else {
-			return Value.newBuilder().setSimpleValue(String.valueOf(value)).build();
+	private void removeScreenshot(Path file) {
+		try {
+			Files.delete(file);
+		} catch (IOException e) {
+			logger.warn("Error deleting file: " + file.toAbsolutePath().toString(), e);
 		}
 	}
-	
+
+	private void sendRawMessages(List<RawMessage> rawMessages) {
+		try {
+			rabbitMqConnection.sendMessages(rawMessages);
+		} catch (Exception e) {
+			logger.error("Cannot store to mstore", e);
+		}
+	}
+
+
 	private static Timestamp getTimestamp(Instant instant) {
 		return Timestamp.newBuilder()
 				.setSeconds(instant.getEpochSecond())

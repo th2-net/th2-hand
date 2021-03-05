@@ -408,6 +408,21 @@ public class WinActionsBuilder {
 		printer.printRecord(values);
 	}
 
+	public static void addGetScreenshot(CSVPrinter printer, RhWinActionsMessages.WinGetScreenshot getScreenshot) throws IOException {
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add(ACTION);
+		values.add("GetScreenshot");
+
+		addDefaults(getScreenshot.getId(), getScreenshot.getExecute(), headers, values);
+		if (getScreenshot.getLocatorsCount() != 0) {
+			addLocator(getScreenshot.getLocatorsList(), headers, values);
+		}
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+
 
 	private static void addIfNotEmpty(String headerName, String value, List<String> headers, List<String> values) {
 		if (StringUtils.isNotBlank(value)) {

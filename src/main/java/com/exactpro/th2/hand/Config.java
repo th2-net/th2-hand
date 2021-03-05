@@ -81,6 +81,11 @@ public class Config {
 		return customConfiguration.getSessionAlias();
 	}
 
+	public String getScreenshotSessionAlias()
+	{
+		return customConfiguration.getScreenshotSessionAlias();
+	}
+
 	public static class DriverMapping {
 		
 		public final String type;
