@@ -222,6 +222,12 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						GetElementScreenshot elementScreenshot = action.getGetElementScreenshot();
 						addGetElementScreenshot(printer, elementScreenshot);
 						break;
+					case EXECUTEJS:
+						addExecuteJS(printer, action.getExecuteJs());
+						break;
+					case EXECUTEJSELEMENT:
+						addExecuteJSElement(printer, action.getExecuteJsElement());
+						break;
 
 						// win actions
 					case WINOPEN:
@@ -536,6 +542,28 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		printer.println();
 	}
 
+	private void addExecuteJS(CSVPrinter printer, ExecuteJS execJs) throws IOException
+	{
+		printer.print("#action");
+		printer.print("#commands");
+		printer.println();
+
+		printer.print("ExecuteJS");
+		printer.print(execJs.getCommands());
+		printer.println();
+	}
+
+	private void addExecuteJSElement(CSVPrinter printer, ExecuteJS execJs) throws IOException
+	{
+		printer.print("#action");
+		printer.print("#commands");
+		printer.println();
+
+		printer.print("ExecuteJsOnElement");
+		printer.print(execJs.getCommands());
+		printer.println();
+	}
+	
 	private void addGetElementScreenshot(CSVPrinter printer, GetElementScreenshot getScreenshot) throws IOException
 	{
 		// #action,#wait,#locator,#matcher
