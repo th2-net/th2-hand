@@ -16,12 +16,14 @@
 
 package com.exactpro.th2.hand.messages;
 
+import com.exactpro.th2.hand.utils.Utils;
 import com.exactprosystems.remotehand.rhdata.RhResponseCode;
 import com.exactprosystems.remotehand.rhdata.RhScriptResult;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class RhResponseMessageBody
 {
@@ -35,7 +37,8 @@ public class RhResponseMessageBody
 		return new RhResponseMessageBody()
 				.setScriptOutputCode(RhResponseCode.byCode(scriptResult.getCode()).toString())
 				.setErrorOut(scriptResult.getErrorMessage())
-				.setTextOut(String.join("|", scriptResult.getTextOutput()));
+				.setTextOut(scriptResult.getTextOutput().stream().map(Utils::handleRhLineSeparator)
+						.collect(Collectors.joining("|")));
 	}
 	
 	public String getScriptOutputCode()

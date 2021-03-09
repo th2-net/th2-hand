@@ -129,10 +129,8 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		ResultDetails.Builder resultDetailsBuilder = ResultDetails.newBuilder();
 		for (String s : result) {
 			String id = null, detailsStr = s;
-			
-			if (s.contains(Utils.LINE_SEPARATOR)) {
-				s = s.replaceAll(Utils.LINE_SEPARATOR, "\n");
-			}
+
+			s = Utils.handleRhLineSeparator(s);
 			
 			int index = s.indexOf('=');
 			if (index > 0) {

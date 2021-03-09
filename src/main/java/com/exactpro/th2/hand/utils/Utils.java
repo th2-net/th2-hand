@@ -19,12 +19,15 @@ package com.exactpro.th2.hand.utils;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class Utils {
 	public static final String LINE_SEPARATOR = "&#13";
+	private static final Pattern LS_PATTERN = Pattern.compile(LINE_SEPARATOR);
 	public static final String DEFAULT_KEY_VALUE_DELIMITER = "=";
 	public static final String DEFAULT_RECORDS_DELIMITER = ";";
 	public static final String DEFAULT_VALUE_DELIMITER = "@";
@@ -57,5 +60,15 @@ public class Utils {
 		}
 
 		return result;
+	}
+
+	public static String handleRhLineSeparator(String rhScriptTextOut)
+	{
+		if (StringUtils.contains(rhScriptTextOut, LINE_SEPARATOR)) 
+		{
+			return LS_PATTERN.matcher(rhScriptTextOut).replaceAll(StringUtils.LF);
+		}
+		
+		return rhScriptTextOut;
 	}
 }
