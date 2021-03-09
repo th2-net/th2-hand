@@ -553,14 +553,20 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		printer.println();
 	}
 
-	private void addExecuteJSElement(CSVPrinter printer, ExecuteJS execJs) throws IOException
+	private void addExecuteJSElement(CSVPrinter printer, ExecuteJSElement execJs) throws IOException
 	{
 		printer.print("#action");
 		printer.print("#commands");
+		printer.print("#wait");
+		printer.print("#locator");
+		printer.print("#matcher");
 		printer.println();
 
 		printer.print("ExecuteJsOnElement");
 		printer.print(execJs.getCommands());
+		printer.print(String.valueOf(execJs.getWait()));
+		printer.print(readLocator(execJs.getLocator()));
+		printer.print(execJs.getMatcher());
 		printer.println();
 	}
 	
