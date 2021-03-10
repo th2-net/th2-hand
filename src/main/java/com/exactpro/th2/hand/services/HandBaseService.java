@@ -228,6 +228,9 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 					case EXECUTEJSELEMENT:
 						addExecuteJSElement(printer, action.getExecuteJsElement());
 						break;
+					case GETELEMENTATTRIBUTE:
+						addGetElementAttribute(printer, action.getGetElementAttribute());
+						break;
 
 						// win actions
 					case WINOPEN:
@@ -567,6 +570,23 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		printer.print(String.valueOf(execJs.getWait()));
 		printer.print(readLocator(execJs.getLocator()));
 		printer.print(execJs.getMatcher());
+		printer.println();
+	}
+
+	private void addGetElementAttribute(CSVPrinter printer, GetElementAttribute getElAttr) throws IOException
+	{
+		printer.print("#action");
+		printer.print("#attribute");
+		printer.print("#wait");
+		printer.print("#locator");
+		printer.print("#matcher");
+		printer.println();
+
+		printer.print("GetElementAttribute");
+		printer.print(getElAttr.getAttribute());
+		printer.print(String.valueOf(getElAttr.getWait()));
+		printer.print(readLocator(getElAttr.getLocator()));
+		printer.print(getElAttr.getMatcher());
 		printer.println();
 	}
 	
