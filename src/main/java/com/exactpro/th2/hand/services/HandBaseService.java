@@ -222,6 +222,15 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						GetElementScreenshot elementScreenshot = action.getGetElementScreenshot();
 						addGetElementScreenshot(printer, elementScreenshot);
 						break;
+					case EXECUTEJS:
+						addExecuteJS(printer, action.getExecuteJs());
+						break;
+					case EXECUTEJSELEMENT:
+						addExecuteJSElement(printer, action.getExecuteJsElement());
+						break;
+					case GETELEMENTATTRIBUTE:
+						addGetElementAttribute(printer, action.getGetElementAttribute());
+						break;
 
 						// win actions
 					case WINOPEN:
@@ -536,6 +545,51 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		printer.println();
 	}
 
+	private void addExecuteJS(CSVPrinter printer, ExecuteJS execJs) throws IOException
+	{
+		printer.print("#action");
+		printer.print("#commands");
+		printer.println();
+
+		printer.print("ExecuteJS");
+		printer.print(execJs.getCommands());
+		printer.println();
+	}
+
+	private void addExecuteJSElement(CSVPrinter printer, ExecuteJSElement execJs) throws IOException
+	{
+		printer.print("#action");
+		printer.print("#commands");
+		printer.print("#wait");
+		printer.print("#locator");
+		printer.print("#matcher");
+		printer.println();
+
+		printer.print("ExecuteJsOnElement");
+		printer.print(execJs.getCommands());
+		printer.print(String.valueOf(execJs.getWait()));
+		printer.print(readLocator(execJs.getLocator()));
+		printer.print(execJs.getMatcher());
+		printer.println();
+	}
+
+	private void addGetElementAttribute(CSVPrinter printer, GetElementAttribute getElAttr) throws IOException
+	{
+		printer.print("#action");
+		printer.print("#attribute");
+		printer.print("#wait");
+		printer.print("#locator");
+		printer.print("#matcher");
+		printer.println();
+
+		printer.print("GetElementAttribute");
+		printer.print(getElAttr.getAttribute());
+		printer.print(String.valueOf(getElAttr.getWait()));
+		printer.print(readLocator(getElAttr.getLocator()));
+		printer.print(getElAttr.getMatcher());
+		printer.println();
+	}
+	
 	private void addGetElementScreenshot(CSVPrinter printer, GetElementScreenshot getScreenshot) throws IOException
 	{
 		// #action,#wait,#locator,#matcher
