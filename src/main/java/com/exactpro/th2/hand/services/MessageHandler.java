@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 public class MessageHandler{
@@ -41,9 +42,11 @@ public class MessageHandler{
 
 	private final RabbitMqConnectionWrapper rabbitMqConnection;
 	private final Config config;
+	private final AtomicLong seqNum; 
 
-	public MessageHandler(Config config) {
+	public MessageHandler(Config config, AtomicLong seqNum) {
 		this.config = config;
+		this.seqNum = seqNum;
 		this.rabbitMqConnection = new RabbitMqConnectionWrapper(config.getFactory());
 	}
 	
@@ -99,8 +102,8 @@ public class MessageHandler{
 				}
 			}
 		}
-		messages.add(buildMessage(Collections.singletonMap("messages", allMessages), Direction.SECOND, sessionId, sq++));
-		messages.add(buildMessage(scriptText.getBytes(), Direction.SECOND, sessionId, sq++));
+		messages.add(buildMessage(Collections.singletonMap("messages", allMessages), Direction.SECOND, sessionId));
+		messages.add(buildMessage(scriptText.getBytes(), Direction.SECOND, sessionId));
 		
 		try {
 			rabbitMqConnection.sendMessages(messages);
@@ -114,7 +117,7 @@ public class MessageHandler{
 	public MessageID onResponse(RhScriptResult response, String sessionId, String rhSessionId) {
 		RhResponseMessageBody body = RhResponseMessageBody.fromRhScriptResult(response).setRhSessionId(rhSessionId);
 		try {
-			RawMessage message = buildMessage(body.getFields(), Direction.FIRST, sessionId, System.nanoTime());
+			RawMessage message = buildMessage(body.getFields(), Direction.FIRST, sessionId);
 			rabbitMqConnection.sendMessages(message);
 			return message.getMetadata().getId();
 		} catch (Exception e) {
@@ -124,13 +127,12 @@ public class MessageHandler{
 		return null;
 	}
 	
-	public RawMessage buildMessage(byte[] bytes, Direction direction, String sessionId, Long sq) {
+	public RawMessage buildMessage(byte[] bytes, Direction direction, String sessionId) {
 		ConnectionID connectionID = ConnectionID.newBuilder().setSessionAlias(config.getSessionAlias()).build();
 		MessageID messageID = MessageID.newBuilder()
 				.setConnectionId(connectionID)
 				.setDirection(direction)
-				// TODO to replace it with sequence number from 1 to ...
-				.setSequence(sq)
+				.setSequence(seqNum.incrementAndGet())
 				.build();
 		RawMessageMetadata messageMetadata = RawMessageMetadata.newBuilder()
 				.setId(messageID)
@@ -140,11 +142,11 @@ public class MessageHandler{
 		return RawMessage.newBuilder().setMetadata(messageMetadata).setBody(ByteString.copyFrom(bytes)).build();
 	}
 
-	public RawMessage buildMessage(Map<String, Object> fields, Direction direction, String sessionId, Long sq) {
+	public RawMessage buildMessage(Map<String, Object> fields, Direction direction, String sessionId) {
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			byte[] bytes = mapper.writeValueAsBytes(fields);
-			return buildMessage(bytes, direction, sessionId, sq);
+			return buildMessage(bytes, direction, sessionId);
 		} catch (JsonProcessingException e) {
 			logger.error("Could not encode message as JSON", e);
 			return null;
