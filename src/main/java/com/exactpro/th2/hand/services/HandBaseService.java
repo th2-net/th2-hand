@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
@@ -58,12 +59,12 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 	private int responseTimeout;
 
 	@Override
-	public void init(Config config, RhConnectionManager rhConnManager) throws Exception
+	public void init(Config config, RhConnectionManager rhConnManager, AtomicLong seqNumber) throws Exception
 	{
 		this.config = config;
 		this.responseTimeout = config.getResponseTimeout();
 		this.rhConnManager = rhConnManager;
-		this.messageHandler = new MessageHandler(config);
+		this.messageHandler = new MessageHandler(config, seqNumber);
 	}
 	
 	@Override

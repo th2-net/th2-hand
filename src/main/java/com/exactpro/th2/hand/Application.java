@@ -21,6 +21,9 @@ import org.slf4j.LoggerFactory;
 
 import com.exactpro.th2.common.schema.factory.CommonFactory;
 
+import java.time.Instant;
+import java.util.concurrent.TimeUnit;
+
 public class Application
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Application.class);
@@ -29,10 +32,15 @@ public class Application
 		new Application().run(args);
 	}
 
+	public long getCurrentTime() {
+		Instant now = Instant.now();
+		return TimeUnit.SECONDS.toNanos(now.getEpochSecond()) + now.getNano();
+	}
+	
 	public void run(String[] args) {
 		try (CommonFactory factory = CommonFactory.createFromArguments(args)) {
 			Config config = getConfig(factory);
-			final HandServer handServer = new HandServer(config);
+			final HandServer handServer = new HandServer(config, getCurrentTime());
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 				try {
 					LOGGER.info("Disposing Hand server");

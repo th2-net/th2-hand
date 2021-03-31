@@ -18,8 +18,10 @@ package com.exactpro.th2.hand;
 
 import io.grpc.BindableService;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public interface IHandService extends BindableService
 {
-	void init(Config config, RhConnectionManager rhConnection) throws Exception;
+	void init(Config config, RhConnectionManager rhConnection, AtomicLong sequenceNumber) throws Exception;
 	void dispose();
 }
