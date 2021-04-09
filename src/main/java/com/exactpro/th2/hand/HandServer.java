@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.exactprosystems.remotehand.sessions.SessionWatcher;
 import org.slf4j.Logger;
@@ -35,13 +36,15 @@ public class HandServer
 	private final Config config;
 	private final RhConnectionManager rhConnectionManager;
 	private final Server server;
-	private final List<IHandService> services; 
+	private final List<IHandService> services;
+	private final AtomicLong sequences;
 
-	public HandServer(Config config) throws Exception
+	public HandServer(Config config, long startSequences) throws Exception
 	{
 		this.config = config;
 		this.rhConnectionManager = new RhConnectionManager(config);
 		this.services = new ArrayList<>();
+		this.sequences = new AtomicLong(startSequences);
 		this.server = buildServer();
 	}
 
@@ -50,7 +53,7 @@ public class HandServer
 		for (IHandService rhService : ServiceLoader.load(IHandService.class))
 		{
 			services.add(rhService);
-			rhService.init(config, rhConnectionManager);
+			rhService.init(config, rhConnectionManager, this.sequences);
 			logger.info("Service '{}' loaded", rhService.getClass().getName());
 		}
 		

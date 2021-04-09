@@ -36,6 +36,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class MessageHandler{
 
@@ -43,9 +44,11 @@ public class MessageHandler{
 
 	private final MStoreSender rabbitMqConnection;
 	private final Config config;
+	private final AtomicLong seqNum; 
 
-	public MessageHandler(Config config) {
+	public MessageHandler(Config config, AtomicLong seqNum) {
 		this.config = config;
+		this.seqNum = seqNum;
 		this.rabbitMqConnection = new MStoreSender(config.getFactory());
 	}
 	
@@ -102,7 +105,7 @@ public class MessageHandler{
 		}
 		
 		RawMessage message = buildMessage(Collections.singletonMap("messages", allMessages),
-				Direction.SECOND, sessionId, sq);
+				Direction.SECOND, sessionId);
 		
 		if (message != null) {
 			try {
@@ -126,7 +129,6 @@ public class MessageHandler{
 
 		List<MessageID> messageIDS = new ArrayList<>();
 		List<RawMessage> rawMessages = new ArrayList<>();
-		long l = System.nanoTime();
 		Path dir = Paths.get(WebConfiguration.SCREENSHOTS_DIR_NAME);
 		for (String screenshotId : screenshotIds) {
 			logger.debug("Storing screenshot id {}", screenshotId);
@@ -135,7 +137,7 @@ public class MessageHandler{
 				logger.warn("Screenshot with id {} does not exists", screenshotId);
 				continue;
 			}
-			RawMessage rawMessage = buildMessageFromFile(screenPath, Direction.FIRST, sessionAlias, l++);
+			RawMessage rawMessage = buildMessageFromFile(screenPath, Direction.FIRST, sessionAlias);
 			if (rawMessage != null) {
 				messageIDS.add(rawMessage.getMetadata().getId());
 				rawMessages.add(rawMessage);
@@ -150,7 +152,7 @@ public class MessageHandler{
 	public MessageID onResponse(RhScriptResult response, String sessionId, String rhSessionId) {
 		RhResponseMessageBody body = RhResponseMessageBody.fromRhScriptResult(response).setRhSessionId(rhSessionId);
 		try {
-			RawMessage message = buildMessage(body.getFields(), Direction.FIRST, sessionId, System.nanoTime());
+			RawMessage message = buildMessage(body.getFields(), Direction.FIRST, sessionId);
 			rabbitMqConnection.sendMessages(message);
 			return message.getMetadata().getId();
 		} catch (Exception e) {
@@ -160,8 +162,8 @@ public class MessageHandler{
 		return null;
 	}
 
-	public RawMessage buildMessageFromFile(Path path, Direction direction, String sessionId, long sq) {
-		RawMessageMetadata messageMetadata = buildMetaData(direction, sessionId, "image/png", sq);
+	public RawMessage buildMessageFromFile(Path path, Direction direction, String sessionId) {
+		RawMessageMetadata messageMetadata = buildMetaData(direction, sessionId, "image/png");
 
 		try (InputStream is = Files.newInputStream(path)) {
 			return RawMessage.newBuilder().setMetadata(messageMetadata).setBody(ByteString.readFrom(is, 0x1000)).build();
@@ -171,16 +173,15 @@ public class MessageHandler{
 		}
 	}
 	
-	public RawMessage buildMessage(byte[] bytes, Direction direction, String sessionId, long sq) {
-		RawMessageMetadata messageMetadata = buildMetaData(direction, sessionId, null, sq);
+	public RawMessage buildMessage(byte[] bytes, Direction direction, String sessionId) {
+		RawMessageMetadata messageMetadata = buildMetaData(direction, sessionId, null);
 		return RawMessage.newBuilder().setMetadata(messageMetadata).setBody(ByteString.copyFrom(bytes)).build();
 	}
 	
-	private RawMessageMetadata buildMetaData(Direction direction, String sessionId, String protocol, long sq) {
+	private RawMessageMetadata buildMetaData(Direction direction, String sessionId, String protocol) {
 		ConnectionID connectionID = ConnectionID.newBuilder().setSessionAlias(sessionId).build();
 		MessageID messageID = MessageID.newBuilder().setConnectionId(connectionID).setDirection(direction)
-				// TODO to replace it with sequence number from 1 to ...
-				.setSequence(sq).build();
+				.setSequence(seqNum.incrementAndGet()).build();
 		RawMessageMetadata.Builder builder = RawMessageMetadata.newBuilder();
 		builder.setId(messageID);
 		builder.setTimestamp(getTimestamp(Instant.now()));
@@ -190,11 +191,11 @@ public class MessageHandler{
 		return builder.build();
 	}
 
-	public RawMessage buildMessage(Map<String, Object> fields, Direction direction, String sessionId, Long sq) {
+	public RawMessage buildMessage(Map<String, Object> fields, Direction direction, String sessionId) {
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			byte[] bytes = mapper.writeValueAsBytes(fields);
-			return buildMessage(bytes, direction, sessionId, sq);
+			return buildMessage(bytes, direction, sessionId);
 		} catch (JsonProcessingException e) {
 			logger.error("Could not encode message as JSON", e);
 			return null;
