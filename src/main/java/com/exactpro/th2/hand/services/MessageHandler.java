@@ -16,41 +16,154 @@
 
 package com.exactpro.th2.hand.services;
 
-import com.exactpro.th2.act.grpc.hand.RhAction;
-import com.exactpro.th2.act.grpc.hand.RhActionsList;
+import com.exactpro.th2.act.grpc.hand.*;
 import com.exactpro.th2.common.grpc.*;
 import com.exactpro.th2.hand.Config;
+import com.exactpro.th2.hand.HandException;
+import com.exactpro.th2.hand.RhConnectionManager;
 import com.exactpro.th2.hand.messages.RhResponseMessageBody;
+import com.exactpro.th2.hand.messages.payload.EventPayloadMessage;
+import com.exactpro.th2.hand.messages.payload.EventPayloadTable;
+import com.exactpro.th2.hand.utils.ScriptBuilder;
+import com.exactpro.th2.hand.utils.Utils;
 import com.exactprosystems.remotehand.Configuration;
+import com.exactprosystems.remotehand.requests.ExecutionRequest;
+import com.exactprosystems.remotehand.rhdata.RhResponseCode;
 import com.exactprosystems.remotehand.rhdata.RhScriptResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.*;
+import io.grpc.stub.StreamObserver;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
-public class MessageHandler{
+import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 
+public class MessageHandler {
 	private static final Logger logger = LoggerFactory.getLogger(MessageHandler.class);
+	private static final ObjectMapper mapper = new ObjectMapper();
 
-	private MStoreSender rabbitMqConnection;
+	private final MStoreSender mStoreSender;
 	private final Config config;
-	private final AtomicLong seqNum; 
+	private final RhConnectionManager rhConnManager;
+	private final ScriptBuilder scriptBuilder;
+	private final int responseTimeout;
+	private final AtomicLong seqNum;
 
-	public MessageHandler(Config config, AtomicLong seqNum) {
+	public MessageHandler(Config config, RhConnectionManager rhConnManager, AtomicLong seqNum) {
 		this.config = config;
 		this.seqNum = seqNum;
-		this.rabbitMqConnection = new MStoreSender(config.getFactory());
+		this.responseTimeout = config.getResponseTimeout();
+		this.mStoreSender = new MStoreSender(config.getFactory());
+		this.rhConnManager = rhConnManager;
+		this.scriptBuilder = new ScriptBuilder();
 	}
-	
+
+
+	public void handle(EventID parentEventId, String eventName, Consumer<Event.Builder> consumer,
+	                   final MessageOrBuilder request, StreamObserver<?> responseObserver) {
+		logger.info("Event name: '{}', request: '{}'", eventName, TextFormat.shortDebugString(request));
+
+		Instant startTime = Instant.now();
+		EventID eventId = EventID.newBuilder().setId(UUID.randomUUID().toString()).build();
+
+		Event.Builder eventBuilder = Event.newBuilder()
+				.setId(eventId)
+				.setName(eventName)
+				.setStartTimestamp(this.timestampFromInstant(startTime));
+
+		if (parentEventId != null)
+			eventBuilder.setParentId(parentEventId);
+
+		consumer.accept(eventBuilder);
+
+		eventBuilder.setEndTimestamp(timestampFromInstant(Instant.now()));
+		mStoreSender.storeEvent(eventBuilder.build());
+		responseObserver.onCompleted();
+	}
+
+	public void handleRegisterSession(RhTargetServer request, StreamObserver<RhSessionID> responseObserver) {
+		logger.info("Event name: '{}', request: '{}'", "registerSession", TextFormat.shortDebugString(request));
+		try {
+			String sessionId = rhConnManager.createSessionHandler(request.getTarget()).getId();
+			RhSessionID result = RhSessionID.newBuilder().setId(sessionId).setSessionAlias(config.getSessionAlias()).build();
+			responseObserver.onNext(result);
+		} catch (Exception e) {
+			logger.error("Error while creating session", e);
+			Exception responseException = new HandException("Error while creating session", e);
+			responseObserver.onError(responseException);
+		}
+		responseObserver.onCompleted();
+	}
+
+	public void handleUnregisterSession(RhSessionID request, StreamObserver<Empty> responseObserver) {
+		logger.info("Event name: '{}', request: '{}'", "unRegisterSession", TextFormat.shortDebugString(request));
+		rhConnManager.closeSessionHandler(request.getId());
+		responseObserver.onNext(Empty.getDefaultInstance());
+		responseObserver.onCompleted();
+	}
+
+	public void handleExecution(RhActionsList request, StreamObserver<RhBatchResponse> responseObserver) {
+		handle(request.getParentEventId(), request.getEventName(), eventBuilder -> {
+			RhScriptResult scriptResult;
+			List<MessageID> messageIDS = new ArrayList<>();
+			String sessionId = "th2_hand";
+
+			try {
+				sessionId = request.getSessionId().getId();
+				messageIDS.addAll(onRequest(request, config.getSessionAlias()));
+				HandSessionHandler sessionHandler = rhConnManager.getSessionHandler(sessionId);
+				sessionHandler.handle(new ExecutionRequest(scriptBuilder.buildScript(request, sessionId)),
+						HandSessionExchange.getStub());
+				scriptResult = sessionHandler.waitAndGet(this.responseTimeout);
+			} catch (Exception e) {
+				scriptResult = new RhScriptResult();
+				scriptResult.setCode(RhResponseCode.EXECUTION_ERROR.getCode());
+				scriptResult.setErrorMessage(e.getMessage());
+				logger.warn("Error occurred while executing commands", e);
+			}
+			processMessageIDs(messageIDS, scriptResult, sessionId);
+
+			RhBatchResponse.ScriptExecutionStatus scriptStatus = convertToScriptExecutionStatus(
+					RhResponseCode.byCode(scriptResult.getCode()));
+			List<ResultDetails> resultDetails = parseResultDetails(scriptResult.getTextOutput());
+			eventBuilder.setStatus(scriptResult.isSuccess() ? EventStatus.SUCCESS : EventStatus.FAILED)
+					.setBody(createPayload(scriptResult, sessionId, request.getStoreActionMessages(), scriptStatus,
+							resultDetails))
+					.addAllAttachedMessageIds(messageIDS);
+
+			RhBatchResponse response = RhBatchResponse.newBuilder()
+					.setScriptStatus(scriptStatus)
+					.setErrorMessage(defaultIfEmpty(scriptResult.getErrorMessage(), ""))
+					.setSessionId(sessionId)
+					.addAllResult(resultDetails)
+					.build();
+			responseObserver.onNext(response);
+		}, request, responseObserver);
+	}
+
+	public void dispose() {
+		try {
+			this.rhConnManager.dispose();
+		} catch (Exception e) {
+			logger.error("Error while disposing RH manager", e);
+		}
+	}
+
+
 	private String valueToString(Object object) {
 		if (object instanceof Int32Value) {
 			return String.valueOf(((Int32Value) object).getValue());
@@ -77,7 +190,94 @@ public class MessageHandler{
 		return processed;
 	}
 
-	public List<MessageID> onRequest(RhActionsList actionsList, String sessionId) {
+	private void processMessageIDs(List<MessageID> messageIDS, RhScriptResult scriptResult, String sessionId) {
+		messageIDS.add(onResponse(scriptResult, config.getSessionAlias(), sessionId));
+		messageIDS.addAll(storeScreenshots(scriptResult.getScreenshotIds(), config.getScreenshotSessionAlias()));
+	}
+
+	private ByteString createPayload(RhScriptResult scriptResult, String sessionId, boolean storeActionMessages,
+	                                 RhBatchResponse.ScriptExecutionStatus scriptStatus, List<ResultDetails> resultDetails) {
+		List<Object> payload = new ArrayList<>(storeActionMessages ? 4 : 2);
+		processResponsePayload(payload, scriptResult, sessionId, scriptStatus);
+		if (storeActionMessages && !resultDetails.isEmpty()) {
+			Map<String, String> actionMessages = resultDetails.stream().collect(
+					Collectors.toMap(ResultDetails::getActionId, ResultDetails::getResult));
+			processActionMessagesPayload(payload, actionMessages);
+		}
+
+		return ByteString.copyFrom(writePayloadBody(payload));
+	}
+
+	private void processResponsePayload(List<Object> payload, RhScriptResult scriptResult, String sessionId,
+	                                    RhBatchResponse.ScriptExecutionStatus scriptStatus) {
+		Map<String, String> responseMap = new LinkedHashMap<>();
+		responseMap.put("Action status", scriptStatus.name());
+		String errorMessage;
+		if (StringUtils.isNotEmpty(errorMessage = scriptResult.getErrorMessage()))
+			responseMap.put("Errors", errorMessage);
+		responseMap.put("SessionId", sessionId);
+
+		payload.add(new EventPayloadMessage("Response"));
+		payload.add(new EventPayloadTable(responseMap, false));
+	}
+
+	private void processActionMessagesPayload(List<Object> payload, Map<String, String> remoteHandResponse ) {
+		payload.add(new EventPayloadMessage("Action messages"));
+		payload.add(new EventPayloadTable(remoteHandResponse, false));
+	}
+
+	private List<ResultDetails> parseResultDetails(List<String> result) {
+		List<ResultDetails> details = new ArrayList<>(result.size());
+		ResultDetails.Builder resultDetailsBuilder = ResultDetails.newBuilder();
+		for (String s : result) {
+
+			if (s.contains(Utils.LINE_SEPARATOR)) {
+				s = s.replaceAll(Utils.LINE_SEPARATOR, "\n");
+			}
+
+			int index = s.indexOf('=');
+			if (index > 0) {
+				resultDetailsBuilder.clear();
+				resultDetailsBuilder.setActionId(s.substring(0, index));
+				resultDetailsBuilder.setResult(s.substring(index + 1));
+				details.add(resultDetailsBuilder.build());
+			}
+		}
+
+		return details;
+
+	}
+
+	private Timestamp timestampFromInstant(Instant instant) {
+		if (instant == null) {
+			instant = Instant.now();
+		}
+		return Timestamp.newBuilder().setSeconds(instant.getEpochSecond())
+				.setNanos(instant.getNano()).build();
+	}
+
+	private RhBatchResponse.ScriptExecutionStatus convertToScriptExecutionStatus(RhResponseCode code) {
+		switch (code) {
+			case SUCCESS: return RhBatchResponse.ScriptExecutionStatus.SUCCESS;
+			case COMPILE_ERROR: return RhBatchResponse.ScriptExecutionStatus.COMPILE_ERROR;
+			case EXECUTION_ERROR: return RhBatchResponse.ScriptExecutionStatus.EXECUTION_ERROR;
+			case RH_ERROR:
+			case TOOL_BUSY:
+			case INCORRECT_REQUEST:
+			default: return RhBatchResponse.ScriptExecutionStatus.HAND_INTERNAL_ERROR;
+		}
+	}
+
+	private byte[] writePayloadBody(List<Object> payload) {
+		try {
+			return mapper.writeValueAsBytes(payload);
+		} catch (JsonProcessingException e) {
+			logger.error("Error while creating body", e);
+			return e.getMessage().getBytes(StandardCharsets.UTF_8);
+		}
+	}
+
+	private List<MessageID> onRequest(RhActionsList actionsList, String sessionId) {
 		long sq = System.nanoTime();
 		List<Map<String, Object>> allMessages = new ArrayList<>();
 		for (RhAction rhAction : actionsList.getRhActionList()) {
@@ -108,7 +308,7 @@ public class MessageHandler{
 		
 		if (message != null) {
 			try {
-				rabbitMqConnection.sendMessages(message);
+				mStoreSender.sendMessages(message);
 			} catch (Exception e) {
 				logger.error("Cannot send message to message-storage", e);
 			}
@@ -120,7 +320,7 @@ public class MessageHandler{
 		}
 	}
 	
-	public List<MessageID> storeScreenshots(List<String> screenshotIds, String sessionAlias) {
+	private List<MessageID> storeScreenshots(List<String> screenshotIds, String sessionAlias) {
 		if (screenshotIds == null || screenshotIds.isEmpty()) {
 			logger.debug("No screenshots to store");
 			return Collections.emptyList();
@@ -147,11 +347,11 @@ public class MessageHandler{
 		return messageIDS;
 	}
 
-	public MessageID onResponse(RhScriptResult response, String sessionId, String rhSessionId) {
+	private MessageID onResponse(RhScriptResult response, String sessionId, String rhSessionId) {
 		RhResponseMessageBody body = RhResponseMessageBody.fromRhScriptResult(response).setRhSessionId(rhSessionId);
 		try {
 			RawMessage message = buildMessage(body.getFields(), Direction.FIRST, sessionId);
-			rabbitMqConnection.sendMessages(message);
+			mStoreSender.sendMessages(message);
 			return message.getMetadata().getId();
 		} catch (Exception e) {
 			logger.error("Cannot send message to message-storage", e);
@@ -161,8 +361,7 @@ public class MessageHandler{
 	}
 
 	public RawMessage buildMessageFromFile(Path path, Direction direction, String sessionId) {
-		String protocol = "image/" + Configuration.getInstance().getDefaultScreenWriter().getScreenshotExtension();
-		RawMessageMetadata messageMetadata = buildMetaData(direction, sessionId, protocol);
+		RawMessageMetadata messageMetadata = buildMetaData(direction, sessionId, "image/png");
 
 		try (InputStream is = Files.newInputStream(path)) {
 			return RawMessage.newBuilder().setMetadata(messageMetadata).setBody(ByteString.readFrom(is, 0x1000)).build();
@@ -171,8 +370,8 @@ public class MessageHandler{
 			return null;
 		}
 	}
-	
-	public RawMessage buildMessage(byte[] bytes, Direction direction, String sessionId) {
+
+	private RawMessage buildMessage(byte[] bytes, Direction direction, String sessionId) {
 		RawMessageMetadata messageMetadata = buildMetaData(direction, sessionId, null);
 		return RawMessage.newBuilder().setMetadata(messageMetadata).setBody(ByteString.copyFrom(bytes)).build();
 	}
@@ -190,7 +389,7 @@ public class MessageHandler{
 		return builder.build();
 	}
 
-	public RawMessage buildMessage(Map<String, Object> fields, Direction direction, String sessionId) {
+	private RawMessage buildMessage(Map<String, Object> fields, Direction direction, String sessionId) {
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			byte[] bytes = mapper.writeValueAsBytes(fields);
@@ -200,7 +399,6 @@ public class MessageHandler{
 			return null;
 		}
 	}
-
 
 	private void removeScreenshot(Path file) {
 		try {
@@ -212,7 +410,7 @@ public class MessageHandler{
 
 	private void sendRawMessages(List<RawMessage> rawMessages) {
 		try {
-			rabbitMqConnection.sendMessages(rawMessages);
+			mStoreSender.sendMessages(rawMessages);
 		} catch (Exception e) {
 			logger.error("Cannot store to mstore", e);
 		}
@@ -225,5 +423,4 @@ public class MessageHandler{
 				.setNanos(instant.getNano())
 				.build();
 	}
-
 }

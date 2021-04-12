@@ -48,7 +48,17 @@ repositories {
 		name 'Bintray'
 		url 'https://dl.bintray.com/exactpro/th2'
 	}
-	
+
+	maven {
+		name 'Sonatype_snapshots'
+		url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+	}
+
+	maven {
+		name 'Sonatype_releases'
+		url 'https://s01.oss.sonatype.org/content/repositories/releases/'
+	}
+
 	mavenCentral()
 
 	configurations.all {
@@ -71,7 +81,7 @@ dependencies {
 	compile "com.rabbitmq:amqp-client"
 
 	compile "com.exactprosystems.remotehand:remotehand:1.5.0"
-	implementation "com.exactpro.th2:grpc-hand:2.6.3"
+	implementation "com.exactpro.th2:grpc-hand:2.6.5-TH2-1605-755043613-SNAPSHOT"
 	implementation "com.exactpro.th2:grpc-common:3.0.0"
 	implementation "com.exactpro.th2:common:3.0.0"
 
