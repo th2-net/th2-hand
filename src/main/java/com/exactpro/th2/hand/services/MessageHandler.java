@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ *  Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import com.exactpro.th2.act.grpc.hand.RhActionsList;
 import com.exactpro.th2.common.grpc.*;
 import com.exactpro.th2.hand.Config;
 import com.exactpro.th2.hand.messages.RhResponseMessageBody;
+import com.exactprosystems.remotehand.Configuration;
 import com.exactprosystems.remotehand.rhdata.RhScriptResult;
-import com.exactprosystems.remotehand.web.WebConfiguration;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.*;
@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -42,7 +41,7 @@ public class MessageHandler{
 
 	private static final Logger logger = LoggerFactory.getLogger(MessageHandler.class);
 
-	private final MStoreSender rabbitMqConnection;
+	private MStoreSender rabbitMqConnection;
 	private final Config config;
 	private final AtomicLong seqNum; 
 
@@ -129,10 +128,9 @@ public class MessageHandler{
 
 		List<MessageID> messageIDS = new ArrayList<>();
 		List<RawMessage> rawMessages = new ArrayList<>();
-		Path dir = Paths.get(WebConfiguration.SCREENSHOTS_DIR_NAME);
 		for (String screenshotId : screenshotIds) {
 			logger.debug("Storing screenshot id {}", screenshotId);
-			Path screenPath = dir.resolve(screenshotId);
+			Path screenPath = Configuration.SCREENSHOTS_DIR_PATH.resolve(screenshotId);
 			if (!Files.exists(screenPath)) {
 				logger.warn("Screenshot with id {} does not exists", screenshotId);
 				continue;
@@ -163,7 +161,8 @@ public class MessageHandler{
 	}
 
 	public RawMessage buildMessageFromFile(Path path, Direction direction, String sessionId) {
-		RawMessageMetadata messageMetadata = buildMetaData(direction, sessionId, "image/png");
+		String protocol = "image/" + Configuration.getInstance().getDefaultScreenWriter().getScreenshotExtension();
+		RawMessageMetadata messageMetadata = buildMetaData(direction, sessionId, protocol);
 
 		try (InputStream is = Files.newInputStream(path)) {
 			return RawMessage.newBuilder().setMetadata(messageMetadata).setBody(ByteString.readFrom(is, 0x1000)).build();
