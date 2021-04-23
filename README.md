@@ -1,15 +1,15 @@
-# th2-hand
+# th2 hand (3.1.0)
 
 th2-hand is used to interpret and transmit commands from th2-act to Selenium or Windown Application Driver and vice versa.
 All incoming and outgoing data is stored in Cradle as messages.
 
-### Requirements
+## Requirements
 
 * JDK 8+ (OpenJDK 11 is recommended)
 * Gradle (Optional)
 * Docker
 
-### Build
+## Build
 
 This project is built by Gradle.
 You cat use Gradle wrapper to build it:
@@ -22,7 +22,7 @@ e.g.
 docker build -t <image name>:<version> -f Dockerfile .
 ``` 
 
-### Configuration
+## Configuration
 
 This project uses the Schema API to get its settings.
 For local run it needs `custom.json`, `grpc.json`, `rabbitMQ.json` and `mq.json` files.
@@ -89,3 +89,14 @@ Example of `rabbitMQ.json`:
 	"password": "mq_pass"
 }
 ```
+
+## Release Notes
+
+### 3.1.0
+
++ reads dictionaries from the /var/th2/config/dictionary folder
++ uses mq_router, grpc_router, cradle_manager optional JSON configs from the /var/th2/config folder
++ tries to load log4j.properties files from sources in order: '/var/th2/config', '/home/etc', configured path via cmd, default configuration
++ update Cradle version. Introduce async API for storing events
++ removed gRPC event loop handling
++ fixed dictionary reading
