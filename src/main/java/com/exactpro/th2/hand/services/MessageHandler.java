@@ -18,6 +18,7 @@ package com.exactpro.th2.hand.services;
 
 import com.exactpro.th2.act.grpc.hand.*;
 import com.exactpro.th2.common.grpc.*;
+import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.hand.Config;
 import com.exactpro.th2.hand.HandException;
 import com.exactpro.th2.hand.RhConnectionManager;
@@ -57,6 +58,7 @@ public class MessageHandler {
 	private static final ObjectMapper mapper = new ObjectMapper();
 
 	private final MStoreSender mStoreSender;
+	private final EventStoreSender eventStoreSender;
 	private final Config config;
 	private final RhConnectionManager rhConnManager;
 	private final ScriptBuilder scriptBuilder;
@@ -67,7 +69,9 @@ public class MessageHandler {
 		this.config = config;
 		this.seqNum = seqNum;
 		this.responseTimeout = config.getResponseTimeout();
-		this.mStoreSender = new MStoreSender(config.getFactory());
+		CommonFactory factory = config.getFactory();
+		this.mStoreSender = new MStoreSender(factory);
+		this.eventStoreSender = new EventStoreSender(factory);
 		this.rhConnManager = rhConnManager;
 		this.scriptBuilder = new ScriptBuilder();
 	}
@@ -91,7 +95,7 @@ public class MessageHandler {
 		consumer.accept(eventBuilder);
 
 		eventBuilder.setEndTimestamp(timestampFromInstant(Instant.now()));
-		mStoreSender.storeEvent(eventBuilder.build());
+		eventStoreSender.storeEvent(eventBuilder.build());
 		responseObserver.onCompleted();
 	}
 
@@ -147,7 +151,7 @@ public class MessageHandler {
 
 			RhBatchResponse response = RhBatchResponse.newBuilder()
 					.setScriptStatus(scriptStatus)
-					.setErrorMessage(defaultIfEmpty(scriptResult.getErrorMessage(), ""))
+					.setErrorMessage(defaultIfEmpty(scriptResult.getErrorMessage(), StringUtils.EMPTY))
 					.setSessionId(sessionId)
 					.addAllResult(resultDetails)
 					.build();

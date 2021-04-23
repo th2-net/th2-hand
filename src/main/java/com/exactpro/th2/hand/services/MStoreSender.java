@@ -16,7 +16,10 @@
 
 package com.exactpro.th2.hand.services;
 
-import com.exactpro.th2.common.grpc.*;
+import com.exactpro.th2.common.grpc.AnyMessage;
+import com.exactpro.th2.common.grpc.MessageGroup;
+import com.exactpro.th2.common.grpc.MessageGroupBatch;
+import com.exactpro.th2.common.grpc.RawMessage;
 import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.common.schema.message.MessageRouter;
 import com.exactpro.th2.hand.schema.CustomConfiguration;
@@ -25,7 +28,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -34,7 +36,6 @@ public class MStoreSender {
 	private static final Logger logger = LoggerFactory.getLogger(MStoreSender.class);
 	
     private final MessageRouter<MessageGroupBatch> messageRouterGroupBatch;
-    private final MessageRouter<EventBatch> eventBatchRouter;
     
     public static final String RAW_MESSAGE_ATTRIBUTE = "raw";
     
@@ -42,7 +43,6 @@ public class MStoreSender {
 
 	public MStoreSender(CommonFactory factory) {
 		messageRouterGroupBatch = factory.getMessageRouterMessageGroupBatch();
-		eventBatchRouter = factory.getEventBatchRouter();
 		CustomConfiguration customConfiguration = factory.getCustomConfiguration(CustomConfiguration.class);
 		this.batchLimit = customConfiguration.getMessageBatchLimit();
 		writeToLogAboutConnection(factory);
@@ -116,16 +116,7 @@ public class MStoreSender {
 				count, batchesCount, totalLength);
 	}
 
-	public void storeEvent(Event event) {
-		try {
-			this.eventBatchRouter.send(EventBatch.newBuilder().addEvents(event).build(), "publish", "event");
-			logger.info("Event ID = " + event.getId());
-		} catch (IOException e) {
-			logger.warn("Could not store event", e);
-			throw new RuntimeException("Could not store event", e);
-		}
-	}
-	
+
 	private long calculateSize(RawMessage message) {
 		return message.getBody().size();
 	}
