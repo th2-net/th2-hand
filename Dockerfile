@@ -7,9 +7,9 @@ RUN apk add --no-cache make git gcc musl-dev swig \
     && sed -i '17,20d' makefile.unix \
     && make -f makefile.unix CPPFLAGS="-I. -Isrc/ -Wall -fPIC" \
     && cd swig \
-    && mkdir -p java/com/exactprosystems/remotehand/screenwriter \
-    && swig -java -package com.exactprosystems.remotehand.screenwriter \
-        -outdir java/com/exactprosystems/remotehand/screenwriter -o libwebp_java_wrap.c libwebp.swig \
+    && mkdir -p java/com/exactpro/remotehand/screenwriter \
+    && swig -java -package com.exactpro.remotehand.screenwriter \
+        -outdir java/com/exactpro/remotehand/screenwriter -o libwebp_java_wrap.c libwebp.swig \
     && gcc -shared -fPIC -fno-strict-aliasing -O2 -I/opt/java/openjdk/include/ -I/opt/java/openjdk/include/linux \
         -I../src -L../src libwebp_java_wrap.c -lwebp -o libwebp.so
 

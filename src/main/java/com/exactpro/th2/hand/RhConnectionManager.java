@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ *  Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package com.exactpro.th2.hand;
 
+import com.exactpro.remotehand.IRemoteHandManager;
+import com.exactpro.remotehand.RemoteManagerType;
+import com.exactpro.remotehand.RhConfigurationException;
+import com.exactpro.remotehand.grid.GridRemoteHandManager;
 import com.exactpro.th2.hand.services.HandBaseService;
 import com.exactpro.th2.hand.services.HandSessionHandler;
-import com.exactprosystems.remotehand.IRemoteHandManager;
-import com.exactprosystems.remotehand.RemoteManagerType;
-import com.exactprosystems.remotehand.RhConfigurationException;
-import com.exactprosystems.remotehand.grid.GridRemoteHandManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
