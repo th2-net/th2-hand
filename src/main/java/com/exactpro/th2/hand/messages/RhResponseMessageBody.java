@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ *  Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.exactpro.th2.hand.messages;
 
-import com.exactprosystems.remotehand.rhdata.RhResponseCode;
-import com.exactprosystems.remotehand.rhdata.RhScriptResult;
+import com.exactpro.remotehand.rhdata.RhResponseCode;
+import com.exactpro.remotehand.rhdata.RhScriptResult;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.LinkedHashMap;

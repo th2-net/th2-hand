@@ -16,13 +16,13 @@
 
 package com.exactpro.th2.hand.services;
 
+import com.exactpro.remotehand.Configuration;
+import com.exactpro.remotehand.rhdata.RhScriptResult;
 import com.exactpro.th2.act.grpc.hand.RhAction;
 import com.exactpro.th2.act.grpc.hand.RhActionsList;
 import com.exactpro.th2.common.grpc.*;
 import com.exactpro.th2.hand.Config;
 import com.exactpro.th2.hand.messages.RhResponseMessageBody;
-import com.exactprosystems.remotehand.Configuration;
-import com.exactprosystems.remotehand.rhdata.RhScriptResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.*;
