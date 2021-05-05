@@ -45,11 +45,6 @@ repositories {
 	}
 
 	maven {
-		name 'Bintray'
-		url 'https://dl.bintray.com/exactpro/th2'
-	}
-
-	maven {
 		name 'Sonatype_snapshots'
 		url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
 	}
@@ -68,7 +63,7 @@ repositories {
 }
 
 dependencies {
-	api platform('com.exactpro.th2:bom:2.10.1')
+	api platform('com.exactpro.th2:bom:3.0.0')
 
 	compile "org.slf4j:slf4j-api"
 	compile "org.slf4j:slf4j-log4j12"
@@ -80,10 +75,10 @@ dependencies {
 
 	compile "com.rabbitmq:amqp-client"
 
-	compile "com.exactpro.remotehand:remotehand:1.5.1"
-	implementation "com.exactpro.th2:grpc-hand:2.6.3"
-	implementation "com.exactpro.th2:grpc-common:3.1.1"
-	implementation "com.exactpro.th2:common:3.13.1"
+	compile "com.exactpro.remotehand:remotehand:1.5.2"
+	implementation "com.exactpro.th2:grpc-hand:2.7.1"
+	implementation "com.exactpro.th2:grpc-common:3.1.2"
+	implementation "com.exactpro.th2:common:3.13.4"
 
 	compile 'org.apache.commons:commons-lang3'
 	compile 'com.fasterxml.jackson.core:jackson-databind'
