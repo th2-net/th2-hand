@@ -17,20 +17,7 @@
 package com.exactpro.th2.hand.services;
 
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinCheckElement;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinClick;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinClickContextMenu;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinGetActiveWindow;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinGetElementAttribute;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinGetWindow;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinLocator;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinOpen;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinScrollUsingText;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinSearchElement;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinSendText;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinToggleCheckBox;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinWait;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinWaitForAttribute;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.*;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -48,9 +35,10 @@ public class WinActionsBuilder {
 			= new ImmutablePair<>("#textLocator", new ImmutablePair<>("#textmatcher", "#textmatcherindex"));
 
 
-	private static void addDefaults(String id, String execute, List<String> headers, List<String> values) {
-		addIfNotEmpty("#id", id, headers, values);
-		addIfNotEmpty("#execute", execute, headers, values);
+	private static void addDefaults(RhWinActionsMessages.BaseWinParams baseParams, List<String> headers, List<String> values) {
+		addIfNotEmpty("#id", baseParams.getId(), headers, values);
+		addIfNotEmpty("#execute", baseParams.getExecute(), headers, values);
+		addIfNotEmpty("#fromroot", baseParams.getFromRoot(), headers, values);
 	}
 
 	private static void addLocator(List<WinLocator> winLocators, List<String> headers, List<String> values) {
@@ -90,7 +78,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("Click");
 
-		addDefaults(clickAction.getId(), clickAction.getExecute(), headers, values);
+		addDefaults(clickAction.getBaseParams(), headers, values);
 		addLocator(clickAction.getLocatorsList(), headers, values);
 		
 		WinClick.Button button = clickAction.getButton();
@@ -125,7 +113,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("Open");
 
-		addDefaults(openAction.getId(), openAction.getExecute(), headers, values);
+		addDefaults(openAction.getBaseParams(), headers, values);
 
 		addIfNotEmpty("#workdir", openAction.getWorkDir(), headers, values);
 		addIfNotEmpty("#execfile", openAction.getAppFile(), headers, values);
@@ -143,7 +131,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("SendText");
 
-		addDefaults(sendTextAction.getId(), sendTextAction.getExecute(), headers, values);
+		addDefaults(sendTextAction.getBaseParams(), headers, values);
 		addLocator(sendTextAction.getLocatorsList(), headers, values);
 		
 		addIfNotEmpty("#text", sendTextAction.getText(), headers, values);
@@ -161,7 +149,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("GetActiveWindow");
 
-		addDefaults(getActiveWindow.getId(), getActiveWindow.getExecute(), headers, values);
+		addDefaults(getActiveWindow.getBaseParams(), headers, values);
 
 		String windowName = getActiveWindow.getWindowName();
 		if (StringUtils.isNotEmpty(windowName))
@@ -191,7 +179,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("GetWindow");
 
-		addDefaults(getWindow.getId(), getWindow.getExecute(), headers, values);
+		addDefaults(getWindow.getBaseParams(), headers, values);
 
 		String windowName = getWindow.getWindowName();
 		if (StringUtils.isNotEmpty(windowName))
@@ -217,7 +205,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("GetElementAttribute");
 
-		addDefaults(getElementAttribute.getId(), getElementAttribute.getExecute(), headers, values);
+		addDefaults(getElementAttribute.getBaseParams(), headers, values);
 		addLocator(getElementAttribute.getLocatorsList(), headers, values);
 		
 		headers.add("#attributeName");
@@ -234,7 +222,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("Wait");
 
-		addDefaults(winWait.getId(), winWait.getExecute(), headers, values);
+		addDefaults(winWait.getBaseParams(), headers, values);
 		
 		headers.add("#millis");
 		values.add(String.valueOf(winWait.getMillis()));
@@ -250,7 +238,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("ToggleCheckBox");
 
-		addDefaults(toggleCheckBoxAction.getId(), toggleCheckBoxAction.getExecute(), headers, values);
+		addDefaults(toggleCheckBoxAction.getBaseParams(), headers, values);
 		addLocator(toggleCheckBoxAction.getLocatorsList(), headers, values);
 		
 		headers.add("#expectedState");
@@ -267,7 +255,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("ClickContextMenu");
 
-		addDefaults(clickContextMenu.getId(), clickContextMenu.getExecute(), headers, values);
+		addDefaults(clickContextMenu.getBaseParams(), headers, values);
 		addLocator(clickContextMenu.getLocatorsList(), headers, values);
 		
 		printer.printRecord(headers);
@@ -281,7 +269,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("CheckElement");
 
-		addDefaults(checkElement.getId(), checkElement.getExecute(), headers, values);
+		addDefaults(checkElement.getBaseParams(), headers, values);
 		addLocator(checkElement.getLocatorsList(), headers, values);
 
 		printer.printRecord(headers);
@@ -295,7 +283,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("SearchElement");
 
-		addDefaults(searchElement.getId(), searchElement.getExecute(), headers, values);
+		addDefaults(searchElement.getBaseParams(), headers, values);
 		addLocator(searchElement.getLocatorsList(), headers, values);
 
 		printer.printRecord(headers);
@@ -309,14 +297,13 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("WaitForAttribute");
 
-		addDefaults(waitForAttribute.getId(), waitForAttribute.getExecute(), headers, values);
+		addDefaults(waitForAttribute.getBaseParams(), headers, values);
 		addLocator(waitForAttribute.getLocatorsList(), headers, values);
 
 		addIfNotEmpty("#attributeName", waitForAttribute.getAttributeName(), headers, values);
 		addIfNotEmpty("#expectedValue", waitForAttribute.getExpectedValue(), headers, values);
 		addIfNotEmpty("#maxTimeout", waitForAttribute.getMaxTimeout(), headers, values);
 		addIfNotEmpty("#checkInterval", waitForAttribute.getCheckInterval(), headers, values);
-		addIfNotEmpty("#fromRoot", waitForAttribute.getFromRoot(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -329,7 +316,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("ScrollUsingText");
 
-		addDefaults(scrollUsingText.getId(), scrollUsingText.getExecute(), headers, values);
+		addDefaults(scrollUsingText.getBaseParams(), headers, values);
 		addLocator(scrollUsingText.getLocatorsList(), headers, values);
 		addLocator(scrollUsingText.getTextLocatorsList(), headers, values, textLocatorPair);
 
@@ -347,7 +334,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("GetDataFromClipboard");
 
-		addDefaults(scrollUsingText.getId(), scrollUsingText.getExecute(), headers, values);
+		addDefaults(scrollUsingText.getBaseParams(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -360,7 +347,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("TableSearch");
 
-		addDefaults(winTableSearch.getId(), winTableSearch.getExecute(), headers, values);
+		addDefaults(winTableSearch.getBaseParams(), headers, values);
 		addLocator(winTableSearch.getLocatorsList(), headers, values);
 
 		headers.add("#filter");
@@ -386,11 +373,10 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("WaitForElement");
 
-		addDefaults(waitForElement.getId(), waitForElement.getExecute(), headers, values);
+		addDefaults(waitForElement.getBaseParams(), headers, values);
 		addLocator(waitForElement.getLocatorsList(), headers, values);
 
 		addIfNotEmpty("#timeout", waitForElement.getTimeout(), headers, values);
-		addIfNotEmpty("#fromRoot", waitForElement.getFromRoot(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -402,7 +388,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("MaximizeMainWindow");
 
-		addDefaults(maximizeMainWindow.getId(), maximizeMainWindow.getExecute(), headers, values);
+		addDefaults(maximizeMainWindow.getBaseParams(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -414,7 +400,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("GetScreenshot");
 
-		addDefaults(getScreenshot.getId(), getScreenshot.getExecute(), headers, values);
+		addDefaults(getScreenshot.getBaseParams(), headers, values);
 		if (getScreenshot.getLocatorsCount() != 0) {
 			addLocator(getScreenshot.getLocatorsList(), headers, values);
 		}
