@@ -16,24 +16,23 @@
 
 package com.exactpro.th2.hand.services;
 
+import com.exactpro.remotehand.requests.ExecutionRequest;
+import com.exactpro.remotehand.rhdata.RhResponseCode;
+import com.exactpro.remotehand.rhdata.RhScriptResult;
 import com.exactpro.th2.act.grpc.hand.*;
 import com.exactpro.th2.act.grpc.hand.RhBatchGrpc.RhBatchImplBase;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.*;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.Click.ModifiersList;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
+import com.exactpro.th2.common.grpc.MessageID;
 import com.exactpro.th2.hand.Config;
 import com.exactpro.th2.hand.HandException;
 import com.exactpro.th2.hand.IHandService;
 import com.exactpro.th2.hand.RhConnectionManager;
 import com.exactpro.th2.hand.utils.Utils;
-import com.exactpro.th2.common.grpc.MessageID;
-import com.exactprosystems.remotehand.rhdata.RhResponseCode;
-import com.exactprosystems.remotehand.rhdata.RhScriptResult;
-import com.exactprosystems.remotehand.requests.ExecutionRequest;
 import com.google.protobuf.Empty;
 import com.google.protobuf.TextFormat;
 import io.grpc.stub.StreamObserver;
-
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.slf4j.Logger;
@@ -42,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
@@ -58,12 +58,12 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 	private int responseTimeout;
 
 	@Override
-	public void init(Config config, RhConnectionManager rhConnManager) throws Exception
+	public void init(Config config, RhConnectionManager rhConnManager, AtomicLong seqNumber) throws Exception
 	{
 		this.config = config;
 		this.responseTimeout = config.getResponseTimeout();
 		this.rhConnManager = rhConnManager;
-		this.messageHandler = new MessageHandler(config);
+		this.messageHandler = new MessageHandler(config, seqNumber);
 	}
 	
 	@Override

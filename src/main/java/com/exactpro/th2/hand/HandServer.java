@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,17 @@
 
 package com.exactpro.th2.hand;
 
+import com.exactpro.remotehand.sessions.SessionWatcher;
+import io.grpc.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
-
-import com.exactprosystems.remotehand.sessions.SessionWatcher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import io.grpc.Server;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class HandServer
 {
@@ -35,13 +35,15 @@ public class HandServer
 	private final Config config;
 	private final RhConnectionManager rhConnectionManager;
 	private final Server server;
-	private final List<IHandService> services; 
+	private final List<IHandService> services;
+	private final AtomicLong sequences;
 
-	public HandServer(Config config) throws Exception
+	public HandServer(Config config, long startSequences) throws Exception
 	{
 		this.config = config;
 		this.rhConnectionManager = new RhConnectionManager(config);
 		this.services = new ArrayList<>();
+		this.sequences = new AtomicLong(startSequences);
 		this.server = buildServer();
 	}
 
@@ -50,7 +52,7 @@ public class HandServer
 		for (IHandService rhService : ServiceLoader.load(IHandService.class))
 		{
 			services.add(rhService);
-			rhService.init(config, rhConnectionManager);
+			rhService.init(config, rhConnectionManager, this.sequences);
 			logger.info("Service '{}' loaded", rhService.getClass().getName());
 		}
 		

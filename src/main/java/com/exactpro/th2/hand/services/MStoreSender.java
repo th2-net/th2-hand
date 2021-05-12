@@ -40,6 +40,8 @@ public class MStoreSender {
 	
     private final MessageRouter<MessageGroupBatch> messageRouterGroupBatch;
     
+    public static final String RAW_MESSAGE_ATTRIBUTE = "raw";
+    
     private final long batchLimit;
 
 	public MStoreSender(CommonFactory factory) {
@@ -91,7 +93,7 @@ public class MStoreSender {
 			//if batchlimit has incorrect value, sender should pack each message to batch
 			//if one message is bigger that batchLimit it is should send to mstore anyway and reject by it
 			if (currentBatchLength + size > batchLimit && currentBatchLength != 0) {
-				this.messageRouterGroupBatch.sendAll(currentBatchBuilder.build());
+				this.messageRouterGroupBatch.sendAll(currentBatchBuilder.build(), RAW_MESSAGE_ATTRIBUTE);
 				currentBatchBuilder = MessageGroupBatch.newBuilder();
 				currentBatchLength = 0;
 				batchesCount++;
@@ -104,7 +106,7 @@ public class MStoreSender {
 		}
 		
 		if (currentBatchLength != 0) {
-			this.messageRouterGroupBatch.sendAll(currentBatchBuilder.build());
+			this.messageRouterGroupBatch.sendAll(currentBatchBuilder.build(), RAW_MESSAGE_ATTRIBUTE);
 			batchesCount++;
 		}
 
