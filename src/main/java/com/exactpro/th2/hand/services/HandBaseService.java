@@ -303,6 +303,9 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 					case WINGETSCREENSHOT:
 						WinActionsBuilder.addGetScreenshot(printer, action.getWinGetScreenshot());
 						break;
+					case WINGETELEMENTCOLOR:
+						WinActionsBuilder.addGetElementColor(printer, action.getWinGetElementColor());
+						break;
 					default:
 						logger.warn("Unsupported action: " + action.getActionCase());
 						break;

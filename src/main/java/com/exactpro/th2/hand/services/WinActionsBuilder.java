@@ -16,21 +16,9 @@
 
 package com.exactpro.th2.hand.services;
 
+import com.exactpro.remotehand.windows.actions.GetElementColor;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinCheckElement;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinClick;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinClickContextMenu;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinGetActiveWindow;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinGetElementAttribute;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinGetWindow;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinLocator;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinOpen;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinScrollUsingText;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinSearchElement;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinSendText;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinToggleCheckBox;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinWait;
-import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.WinWaitForAttribute;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.*;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -417,6 +405,26 @@ public class WinActionsBuilder {
 		addDefaults(getScreenshot.getId(), getScreenshot.getExecute(), headers, values);
 		if (getScreenshot.getLocatorsCount() != 0) {
 			addLocator(getScreenshot.getLocatorsList(), headers, values);
+		}
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+
+	public static void addGetElementColor(CSVPrinter printer, RhWinActionsMessages.WinGetElementColor getElementColor) throws IOException {
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add(ACTION);
+		values.add(GetElementColor.class.getSimpleName());
+
+		addDefaults(getElementColor.getId(), getElementColor.getExecute(), headers, values);
+		addLocator(getElementColor.getLocatorsList(), headers, values);
+
+		if (getElementColor.hasXOffset() && getElementColor.hasYOffset()) {
+			headers.add("#xOffset");
+			values.add(String.valueOf(getElementColor.getXOffset().getValue()));
+			headers.add("#yOffset");
+			values.add(String.valueOf(getElementColor.getYOffset().getValue()));
 		}
 
 		printer.printRecord(headers);
