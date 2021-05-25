@@ -420,12 +420,9 @@ public class WinActionsBuilder {
 		addDefaults(getElementColor.getId(), getElementColor.getExecute(), headers, values);
 		addLocator(getElementColor.getLocatorsList(), headers, values);
 
-		if (getElementColor.hasXOffset()) {
+		if (getElementColor.hasXOffset() && getElementColor.hasYOffset()) {
 			headers.add("#xOffset");
 			values.add(String.valueOf(getElementColor.getXOffset().getValue()));
-		}
-
-		if (getElementColor.hasYOffset()) {
 			headers.add("#yOffset");
 			values.add(String.valueOf(getElementColor.getYOffset().getValue()));
 		}
