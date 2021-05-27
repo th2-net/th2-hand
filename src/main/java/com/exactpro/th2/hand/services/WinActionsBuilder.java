@@ -138,6 +138,11 @@ public class WinActionsBuilder {
 		addIfNotEmpty("#text", sendTextAction.getText(), headers, values);
 		addIfNotEmpty("#clearBefore", sendTextAction.getClearBefore(), headers, values);
 		addIfNotEmpty("#directSend", sendTextAction.getIsDirectText(), headers, values);
+
+		if (sendTextAction.getNonExperimental()) {
+			headers.add("#isExperimental");
+			values.add(Boolean.FALSE.toString());
+		}
 		
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -273,6 +278,9 @@ public class WinActionsBuilder {
 		addDefaults(checkElement.getBaseParams(), headers, values);
 		addLocator(checkElement.getLocatorsList(), headers, values);
 
+		headers.add("#saveElement");
+		values.add(Boolean.toString(checkElement.getSaveElement()));
+		
 		printer.printRecord(headers);
 		printer.printRecord(values);
 	}
@@ -286,6 +294,14 @@ public class WinActionsBuilder {
 
 		addDefaults(searchElement.getBaseParams(), headers, values);
 		addLocator(searchElement.getLocatorsList(), headers, values);
+		
+		if (searchElement.getNonExperimental()) {
+			headers.add("#isExperimental");
+			values.add(Boolean.FALSE.toString());
+		}
+		
+		headers.add("#multipleElements");
+		values.add(Boolean.toString(searchElement.getMultipleElements()));
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
