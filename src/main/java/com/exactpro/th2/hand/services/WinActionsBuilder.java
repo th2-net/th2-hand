@@ -38,7 +38,8 @@ public class WinActionsBuilder {
 	private static void addDefaults(RhWinActionsMessages.BaseWinParams baseParams, List<String> headers, List<String> values) {
 		addIfNotEmpty("#id", baseParams.getId(), headers, values);
 		addIfNotEmpty("#execute", baseParams.getExecute(), headers, values);
-		addIfNotEmpty("#fromroot", baseParams.getFromRoot(), headers, values);
+		addIfNotEmpty("#fromRoot", String.valueOf(baseParams.getFromRoot()), headers, values);
+		addIfNotEmpty("#isExperimental", String.valueOf(baseParams.getExperimentalDriver()), headers, values);
 	}
 
 	private static void addLocator(List<WinLocator> winLocators, List<String> headers, List<String> values) {
