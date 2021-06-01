@@ -416,6 +416,18 @@ public class WinActionsBuilder {
 		printer.printRecord(values);
 	}
 
+	public static void addRestartDriver(CSVPrinter printer, RhWinActionsMessages.WinRestartDriver restartDriver) throws IOException {
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add(ACTION);
+		values.add("RestartDriver");
+
+		addDefaults(restartDriver.getBaseParams(), headers, values);
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+
 
 	private static void addIfNotEmpty(String headerName, String value, List<String> headers, List<String> values) {
 		if (StringUtils.isNotBlank(value)) {
