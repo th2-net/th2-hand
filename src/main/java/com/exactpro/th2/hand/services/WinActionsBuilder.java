@@ -16,7 +16,10 @@
 
 package com.exactpro.th2.hand.services;
 
+import com.exactpro.remotehand.windows.actions.Click;
+import com.exactpro.remotehand.windows.actions.DragAndDropElement;
 import com.exactpro.remotehand.windows.actions.GetElementColor;
+import com.exactpro.remotehand.windows.actions.ScrollToElement;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.*;
 import org.apache.commons.csv.CSVPrinter;
@@ -34,6 +37,10 @@ public class WinActionsBuilder {
 			= new ImmutablePair<>("#locator", new ImmutablePair<>("#matcher", "#matcherindex"));
 	private static final Pair<String, Pair<String, String>> textLocatorPair
 			= new ImmutablePair<>("#textLocator", new ImmutablePair<>("#textmatcher", "#textmatcherindex"));
+	private static final Pair<String, Pair<String, String>> toLocatorPair
+			= new ImmutablePair<>("#tolocator", new ImmutablePair<>("#tomatcher", "#tomatcherindex"));
+	private static final Pair<String, Pair<String, String>> actionLocatorPair
+			= new ImmutablePair<>("#actionlocator", new ImmutablePair<>("#actionmatcher", "#actionmatcherindex"));
 
 
 	private static void addDefaults(String id, String execute, List<String> headers, List<String> values) {
@@ -74,9 +81,9 @@ public class WinActionsBuilder {
 	public static void addClick(CSVPrinter printer, WinClick clickAction) throws IOException
 	{
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
-		
+
 		headers.add(ACTION);
-		values.add("Click");
+		values.add(Click.class.getSimpleName());
 
 		addDefaults(clickAction.getId(), clickAction.getExecute(), headers, values);
 		addLocator(clickAction.getLocatorsList(), headers, values);
@@ -86,22 +93,10 @@ public class WinActionsBuilder {
 			headers.add("#button");
 			values.add(button.name().toLowerCase());
 		}
-		
-		if (clickAction.hasXOffset()) {
-			headers.add("#xOffset");
-			values.add(String.valueOf(clickAction.getXOffset().getValue()));
-		}
-		
-		if (clickAction.hasYOffset()) {
-			headers.add("#yOffset");
-			values.add(String.valueOf(clickAction.getYOffset().getValue()));
-		}
 
-		if (clickAction.getAttachedBorder() != WinClick.AttachedBorder.NONE) {
-			headers.add("#attachedBorder");
-			values.add(String.valueOf(clickAction.getAttachedBorder()).toLowerCase());
-		}
-		
+		addIfNotEmpty("#xOffset", clickAction.getXOffset(), headers, values);
+		addIfNotEmpty("#yOffset", clickAction.getYOffset(), headers, values);
+
 		printer.printRecord(headers);
 		printer.printRecord(values);
 	}
@@ -420,17 +415,66 @@ public class WinActionsBuilder {
 		addDefaults(getElementColor.getId(), getElementColor.getExecute(), headers, values);
 		addLocator(getElementColor.getLocatorsList(), headers, values);
 
-		if (getElementColor.hasXOffset() && getElementColor.hasYOffset()) {
-			headers.add("#xOffset");
-			values.add(String.valueOf(getElementColor.getXOffset().getValue()));
-			headers.add("#yOffset");
-			values.add(String.valueOf(getElementColor.getYOffset().getValue()));
-		}
+		addIfNotEmpty("#xOffset", getElementColor.getXOffset(), headers, values);
+		addIfNotEmpty("#yOffset", getElementColor.getXOffset(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
 	}
 
+	public static void addDragAndDrop(CSVPrinter printer, RhWinActionsMessages.WinDragAndDrop dragAndDrop) throws IOException {
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add(ACTION);
+		values.add(DragAndDropElement.class.getSimpleName());
+
+		addDefaults(dragAndDrop.getId(), dragAndDrop.getExecute(), headers, values);
+		addLocator(dragAndDrop.getFromLocatorsList(), headers, values);
+		addLocator(dragAndDrop.getToLocatorsList(), headers, values, toLocatorPair);
+
+		addIfNotEmpty("#fromoffsetx", dragAndDrop.getFromOffsetX(), headers, values);
+		addIfNotEmpty("#fromoffsety", dragAndDrop.getFromOffsetY(), headers, values);
+
+		addIfNotEmpty("#tooffsetx", dragAndDrop.getToOffsetX(), headers, values);
+		addIfNotEmpty("#tooffsety", dragAndDrop.getToOffsetY(), headers, values);
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+
+	public static void addScrollToElement(CSVPrinter printer, RhWinActionsMessages.WinScrollToElement scrollToElement) throws IOException {
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add(ACTION);
+		values.add(ScrollToElement.class.getSimpleName());
+
+		addDefaults(scrollToElement.getId(), scrollToElement.getExecute(), headers, values);
+		addLocator(scrollToElement.getElementLocatorsList(), headers, values);
+		addLocator(scrollToElement.getActionLocatorsList(), headers, values, actionLocatorPair);
+
+		addIfNotEmpty("#clickoffsetx", scrollToElement.getClickOffsetX(), headers, values);
+		addIfNotEmpty("#clickoffsety", scrollToElement.getClickOffsetY(), headers, values);
+
+		headers.add("#scrolltype");
+		values.add(convertScrollType(scrollToElement.getScrollType()));
+
+		addIfNotEmpty("#maxiterations", scrollToElement.getMaxIterations(), headers, values);
+		addIfNotEmpty("#shouldbedisplayed", scrollToElement.getIsElementShouldBeDisplayed(), headers, values);
+		addIfNotEmpty("#elementindom", scrollToElement.getIsElementInTree(), headers, values);
+		addIfNotEmpty("#textvalue", scrollToElement.getTextToSend(), headers, values);
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+
+
+	private static void addIfNotEmpty(String headerName, int value, List<String> headers, List<String> values) {
+		addIfNotEmpty(headerName, String.valueOf(value), headers, values);
+	}
+
+	private static void addIfNotEmpty(String headerName, boolean value, List<String> headers, List<String> values) {
+		addIfNotEmpty(headerName, String.valueOf(value), headers, values);
+	}
 
 	private static void addIfNotEmpty(String headerName, String value, List<String> headers, List<String> values) {
 		if (StringUtils.isNotBlank(value)) {
@@ -438,5 +482,16 @@ public class WinActionsBuilder {
 			values.add(value);
 		}
 	}
-	
+
+	private static String convertScrollType(WinScrollToElement.ScrollType scrollType) {
+		switch (scrollType) {
+			case CLICK:
+				return "Click";
+			case TEXT:
+				return "Text";
+			case UNRECOGNIZED:
+			default:
+				return StringUtils.EMPTY;
+		}
+	}
 }
