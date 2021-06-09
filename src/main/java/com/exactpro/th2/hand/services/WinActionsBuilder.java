@@ -19,6 +19,7 @@ package com.exactpro.th2.hand.services;
 import com.exactpro.remotehand.windows.actions.Click;
 import com.exactpro.remotehand.windows.actions.DragAndDropElement;
 import com.exactpro.remotehand.windows.actions.GetElementColor;
+import com.exactpro.remotehand.windows.actions.RestartDriver;
 import com.exactpro.remotehand.windows.actions.ScrollToElement;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.*;
@@ -245,20 +246,6 @@ public class WinActionsBuilder {
 		printer.printRecord(values);
 	}
 
-	public static void addClickContextMenu(CSVPrinter printer, WinClickContextMenu clickContextMenu) throws IOException
-	{
-		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
-		
-		headers.add(ACTION);
-		values.add("ClickContextMenu");
-
-		addDefaults(clickContextMenu.getBaseParams(), headers, values);
-		addLocator(clickContextMenu.getLocatorsList(), headers, values);
-		
-		printer.printRecord(headers);
-		printer.printRecord(values);
-	}
-
 	public static void addCheckElement(CSVPrinter printer, WinCheckElement checkElement) throws IOException
 	{
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
@@ -418,7 +405,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add(GetElementColor.class.getSimpleName());
 
-		addDefaults(getElementColor.getId(), getElementColor.getExecute(), headers, values);
+		addDefaults(getElementColor.getBaseParams(), headers, values);
 		addLocator(getElementColor.getLocatorsList(), headers, values);
 
 		addIfNotEmpty("#xOffset", getElementColor.getXOffset(), headers, values);
@@ -434,7 +421,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add(DragAndDropElement.class.getSimpleName());
 
-		addDefaults(dragAndDrop.getId(), dragAndDrop.getExecute(), headers, values);
+		addDefaults(dragAndDrop.getBaseParams(), headers, values);
 		addLocator(dragAndDrop.getFromLocatorsList(), headers, values);
 		addLocator(dragAndDrop.getToLocatorsList(), headers, values, toLocatorPair);
 
@@ -454,7 +441,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add(ScrollToElement.class.getSimpleName());
 
-		addDefaults(scrollToElement.getId(), scrollToElement.getExecute(), headers, values);
+		addDefaults(scrollToElement.getBaseParams(), headers, values);
 		addLocator(scrollToElement.getElementLocatorsList(), headers, values);
 		addLocator(scrollToElement.getActionLocatorsList(), headers, values, actionLocatorPair);
 
@@ -477,7 +464,7 @@ public class WinActionsBuilder {
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 
 		headers.add(ACTION);
-		values.add("RestartDriver");
+		values.add(RestartDriver.class.getSimpleName());
 
 		addDefaults(restartDriver.getBaseParams(), headers, values);
 

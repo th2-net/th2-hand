@@ -261,10 +261,6 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						RhWinActionsMessages.WinToggleCheckBox winToggleCheckBox = action.getWinToggleCheckBox();
 						WinActionsBuilder.addToggleCheckBox(printer, winToggleCheckBox);
 						break;
-					case WINCLICKCONTEXTMENU:
-						RhWinActionsMessages.WinClickContextMenu winClickContextMenu = action.getWinClickContextMenu();
-						WinActionsBuilder.addClickContextMenu(printer, winClickContextMenu);
-						break;
 					case WINCHECKELEMENT:
 						RhWinActionsMessages.WinCheckElement winCheckElement = action.getWinCheckElement();
 						WinActionsBuilder.addCheckElement(printer, winCheckElement);
