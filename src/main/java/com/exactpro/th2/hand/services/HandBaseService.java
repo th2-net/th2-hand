@@ -306,6 +306,15 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 					case WINRESTARTDRIVER:
 						WinActionsBuilder.addRestartDriver(printer, action.getWinRestartDriver());
 						break;
+					case WINGETELEMENTCOLOR:
+						WinActionsBuilder.addGetElementColor(printer, action.getWinGetElementColor());
+						break;
+					case WINDRAGANDDROP:
+						WinActionsBuilder.addDragAndDrop(printer, action.getWinDragAndDrop());
+						break;
+					case WINSCROLLTOELEMENT:
+						WinActionsBuilder.addScrollToElement(printer, action.getWinScrollToElement());
+						break;
 					default:
 						logger.warn("Unsupported action: " + action.getActionCase());
 						break;
