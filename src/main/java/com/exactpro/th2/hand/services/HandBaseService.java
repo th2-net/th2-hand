@@ -311,6 +311,9 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 					case WINSCROLLTOELEMENT:
 						WinActionsBuilder.addScrollToElement(printer, action.getWinScrollToElement());
 						break;
+					case WINCOLORSCOLLECTOR:
+						WinActionsBuilder.addColorsCollector(printer, action.getWinColorsCollector());
+						break;
 					default:
 						logger.warn("Unsupported action: " + action.getActionCase());
 						break;

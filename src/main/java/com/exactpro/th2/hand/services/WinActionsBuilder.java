@@ -16,11 +16,7 @@
 
 package com.exactpro.th2.hand.services;
 
-import com.exactpro.remotehand.windows.actions.Click;
-import com.exactpro.remotehand.windows.actions.DragAndDropElement;
-import com.exactpro.remotehand.windows.actions.GetElementColor;
-import com.exactpro.remotehand.windows.actions.RestartDriver;
-import com.exactpro.remotehand.windows.actions.ScrollToElement;
+import com.exactpro.remotehand.windows.actions.*;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.*;
 import org.apache.commons.csv.CSVPrinter;
@@ -99,6 +95,7 @@ public class WinActionsBuilder {
 
 		addIfNotEmpty("#xOffset", clickAction.getXOffset(), headers, values);
 		addIfNotEmpty("#yOffset", clickAction.getYOffset(), headers, values);
+		addIfNotEmpty("#modifiers", clickAction.getModifiers(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -467,6 +464,23 @@ public class WinActionsBuilder {
 		values.add(RestartDriver.class.getSimpleName());
 
 		addDefaults(restartDriver.getBaseParams(), headers, values);
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+
+	public static void addColorsCollector(CSVPrinter printer, WinColorsCollector colorsCollector) throws IOException {
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add(ACTION);
+		values.add(ColorsCollector.class.getSimpleName());
+		addDefaults(colorsCollector.getBaseParams(), headers, values);
+
+		addIfNotEmpty("#startxoffset", colorsCollector.getStartXOffset(), headers, values);
+		addIfNotEmpty("#startyoffset", colorsCollector.getStartYOffset(), headers, values);
+
+		addIfNotEmpty("#endxoffset", colorsCollector.getEndXOffset(), headers, values);
+		addIfNotEmpty("#endyoffset", colorsCollector.getEndYOffset(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
