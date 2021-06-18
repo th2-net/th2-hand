@@ -261,10 +261,6 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						RhWinActionsMessages.WinToggleCheckBox winToggleCheckBox = action.getWinToggleCheckBox();
 						WinActionsBuilder.addToggleCheckBox(printer, winToggleCheckBox);
 						break;
-					case WINCLICKCONTEXTMENU:
-						RhWinActionsMessages.WinClickContextMenu winClickContextMenu = action.getWinClickContextMenu();
-						WinActionsBuilder.addClickContextMenu(printer, winClickContextMenu);
-						break;
 					case WINCHECKELEMENT:
 						RhWinActionsMessages.WinCheckElement winCheckElement = action.getWinCheckElement();
 						WinActionsBuilder.addCheckElement(printer, winCheckElement);
@@ -303,6 +299,9 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 					case WINGETSCREENSHOT:
 						WinActionsBuilder.addGetScreenshot(printer, action.getWinGetScreenshot());
 						break;
+					case WINRESTARTDRIVER:
+						WinActionsBuilder.addRestartDriver(printer, action.getWinRestartDriver());
+						break;
 					case WINGETELEMENTCOLOR:
 						WinActionsBuilder.addGetElementColor(printer, action.getWinGetElementColor());
 						break;
@@ -311,6 +310,9 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 						break;
 					case WINSCROLLTOELEMENT:
 						WinActionsBuilder.addScrollToElement(printer, action.getWinScrollToElement());
+						break;
+					case WINCOLORSCOLLECTOR:
+						WinActionsBuilder.addColorsCollector(printer, action.getWinColorsCollector());
 						break;
 					default:
 						logger.warn("Unsupported action: " + action.getActionCase());

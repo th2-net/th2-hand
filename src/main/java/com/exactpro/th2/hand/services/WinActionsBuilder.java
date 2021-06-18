@@ -16,10 +16,7 @@
 
 package com.exactpro.th2.hand.services;
 
-import com.exactpro.remotehand.windows.actions.Click;
-import com.exactpro.remotehand.windows.actions.DragAndDropElement;
-import com.exactpro.remotehand.windows.actions.GetElementColor;
-import com.exactpro.remotehand.windows.actions.ScrollToElement;
+import com.exactpro.remotehand.windows.actions.*;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.*;
 import org.apache.commons.csv.CSVPrinter;
@@ -43,9 +40,11 @@ public class WinActionsBuilder {
 			= new ImmutablePair<>("#actionlocator", new ImmutablePair<>("#actionmatcher", "#actionmatcherindex"));
 
 
-	private static void addDefaults(String id, String execute, List<String> headers, List<String> values) {
-		addIfNotEmpty("#id", id, headers, values);
-		addIfNotEmpty("#execute", execute, headers, values);
+	private static void addDefaults(RhWinActionsMessages.BaseWinParams baseParams, List<String> headers, List<String> values) {
+		addIfNotEmpty("#id", baseParams.getId(), headers, values);
+		addIfNotEmpty("#execute", baseParams.getExecute(), headers, values);
+		addIfNotEmpty("#fromRoot", String.valueOf(baseParams.getFromRoot()), headers, values);
+		addIfNotEmpty("#isExperimental", String.valueOf(baseParams.getExperimentalDriver()), headers, values);
 	}
 
 	private static void addLocator(List<WinLocator> winLocators, List<String> headers, List<String> values) {
@@ -85,7 +84,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add(Click.class.getSimpleName());
 
-		addDefaults(clickAction.getId(), clickAction.getExecute(), headers, values);
+		addDefaults(clickAction.getBaseParams(), headers, values);
 		addLocator(clickAction.getLocatorsList(), headers, values);
 		
 		WinClick.Button button = clickAction.getButton();
@@ -96,6 +95,7 @@ public class WinActionsBuilder {
 
 		addIfNotEmpty("#xOffset", clickAction.getXOffset(), headers, values);
 		addIfNotEmpty("#yOffset", clickAction.getYOffset(), headers, values);
+		addIfNotEmpty("#modifiers", clickAction.getModifiers(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -108,7 +108,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("Open");
 
-		addDefaults(openAction.getId(), openAction.getExecute(), headers, values);
+		addDefaults(openAction.getBaseParams(), headers, values);
 
 		addIfNotEmpty("#workdir", openAction.getWorkDir(), headers, values);
 		addIfNotEmpty("#execfile", openAction.getAppFile(), headers, values);
@@ -126,7 +126,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("SendText");
 
-		addDefaults(sendTextAction.getId(), sendTextAction.getExecute(), headers, values);
+		addDefaults(sendTextAction.getBaseParams(), headers, values);
 		addLocator(sendTextAction.getLocatorsList(), headers, values);
 		
 		addIfNotEmpty("#text", sendTextAction.getText(), headers, values);
@@ -144,7 +144,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("GetActiveWindow");
 
-		addDefaults(getActiveWindow.getId(), getActiveWindow.getExecute(), headers, values);
+		addDefaults(getActiveWindow.getBaseParams(), headers, values);
 
 		String windowName = getActiveWindow.getWindowName();
 		if (StringUtils.isNotEmpty(windowName))
@@ -174,7 +174,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("GetWindow");
 
-		addDefaults(getWindow.getId(), getWindow.getExecute(), headers, values);
+		addDefaults(getWindow.getBaseParams(), headers, values);
 
 		String windowName = getWindow.getWindowName();
 		if (StringUtils.isNotEmpty(windowName))
@@ -200,7 +200,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("GetElementAttribute");
 
-		addDefaults(getElementAttribute.getId(), getElementAttribute.getExecute(), headers, values);
+		addDefaults(getElementAttribute.getBaseParams(), headers, values);
 		addLocator(getElementAttribute.getLocatorsList(), headers, values);
 		
 		headers.add("#attributeName");
@@ -217,7 +217,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("Wait");
 
-		addDefaults(winWait.getId(), winWait.getExecute(), headers, values);
+		addDefaults(winWait.getBaseParams(), headers, values);
 		
 		headers.add("#millis");
 		values.add(String.valueOf(winWait.getMillis()));
@@ -233,25 +233,11 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("ToggleCheckBox");
 
-		addDefaults(toggleCheckBoxAction.getId(), toggleCheckBoxAction.getExecute(), headers, values);
+		addDefaults(toggleCheckBoxAction.getBaseParams(), headers, values);
 		addLocator(toggleCheckBoxAction.getLocatorsList(), headers, values);
 		
 		headers.add("#expectedState");
 		values.add(String.valueOf(toggleCheckBoxAction.getExpectedState()));
-		
-		printer.printRecord(headers);
-		printer.printRecord(values);
-	}
-
-	public static void addClickContextMenu(CSVPrinter printer, WinClickContextMenu clickContextMenu) throws IOException
-	{
-		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
-		
-		headers.add(ACTION);
-		values.add("ClickContextMenu");
-
-		addDefaults(clickContextMenu.getId(), clickContextMenu.getExecute(), headers, values);
-		addLocator(clickContextMenu.getLocatorsList(), headers, values);
 		
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -264,9 +250,12 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("CheckElement");
 
-		addDefaults(checkElement.getId(), checkElement.getExecute(), headers, values);
+		addDefaults(checkElement.getBaseParams(), headers, values);
 		addLocator(checkElement.getLocatorsList(), headers, values);
 
+		headers.add("#saveElement");
+		values.add(Boolean.toString(checkElement.getSaveElement()));
+		
 		printer.printRecord(headers);
 		printer.printRecord(values);
 	}
@@ -278,8 +267,11 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("SearchElement");
 
-		addDefaults(searchElement.getId(), searchElement.getExecute(), headers, values);
+		addDefaults(searchElement.getBaseParams(), headers, values);
 		addLocator(searchElement.getLocatorsList(), headers, values);
+		
+		headers.add("#multipleElements");
+		values.add(Boolean.toString(searchElement.getMultipleElements()));
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -292,14 +284,13 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("WaitForAttribute");
 
-		addDefaults(waitForAttribute.getId(), waitForAttribute.getExecute(), headers, values);
+		addDefaults(waitForAttribute.getBaseParams(), headers, values);
 		addLocator(waitForAttribute.getLocatorsList(), headers, values);
 
 		addIfNotEmpty("#attributeName", waitForAttribute.getAttributeName(), headers, values);
 		addIfNotEmpty("#expectedValue", waitForAttribute.getExpectedValue(), headers, values);
 		addIfNotEmpty("#maxTimeout", waitForAttribute.getMaxTimeout(), headers, values);
 		addIfNotEmpty("#checkInterval", waitForAttribute.getCheckInterval(), headers, values);
-		addIfNotEmpty("#fromRoot", waitForAttribute.getFromRoot(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -312,7 +303,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("ScrollUsingText");
 
-		addDefaults(scrollUsingText.getId(), scrollUsingText.getExecute(), headers, values);
+		addDefaults(scrollUsingText.getBaseParams(), headers, values);
 		addLocator(scrollUsingText.getLocatorsList(), headers, values);
 		addLocator(scrollUsingText.getTextLocatorsList(), headers, values, textLocatorPair);
 
@@ -330,7 +321,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("GetDataFromClipboard");
 
-		addDefaults(scrollUsingText.getId(), scrollUsingText.getExecute(), headers, values);
+		addDefaults(scrollUsingText.getBaseParams(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -343,7 +334,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("TableSearch");
 
-		addDefaults(winTableSearch.getId(), winTableSearch.getExecute(), headers, values);
+		addDefaults(winTableSearch.getBaseParams(), headers, values);
 		addLocator(winTableSearch.getLocatorsList(), headers, values);
 
 		headers.add("#filter");
@@ -369,11 +360,10 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("WaitForElement");
 
-		addDefaults(waitForElement.getId(), waitForElement.getExecute(), headers, values);
+		addDefaults(waitForElement.getBaseParams(), headers, values);
 		addLocator(waitForElement.getLocatorsList(), headers, values);
 
 		addIfNotEmpty("#timeout", waitForElement.getTimeout(), headers, values);
-		addIfNotEmpty("#fromRoot", waitForElement.getFromRoot(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -385,7 +375,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("MaximizeMainWindow");
 
-		addDefaults(maximizeMainWindow.getId(), maximizeMainWindow.getExecute(), headers, values);
+		addDefaults(maximizeMainWindow.getBaseParams(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
@@ -397,7 +387,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add("GetScreenshot");
 
-		addDefaults(getScreenshot.getId(), getScreenshot.getExecute(), headers, values);
+		addDefaults(getScreenshot.getBaseParams(), headers, values);
 		if (getScreenshot.getLocatorsCount() != 0) {
 			addLocator(getScreenshot.getLocatorsList(), headers, values);
 		}
@@ -412,7 +402,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add(GetElementColor.class.getSimpleName());
 
-		addDefaults(getElementColor.getId(), getElementColor.getExecute(), headers, values);
+		addDefaults(getElementColor.getBaseParams(), headers, values);
 		addLocator(getElementColor.getLocatorsList(), headers, values);
 
 		addIfNotEmpty("#xOffset", getElementColor.getXOffset(), headers, values);
@@ -428,7 +418,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add(DragAndDropElement.class.getSimpleName());
 
-		addDefaults(dragAndDrop.getId(), dragAndDrop.getExecute(), headers, values);
+		addDefaults(dragAndDrop.getBaseParams(), headers, values);
 		addLocator(dragAndDrop.getFromLocatorsList(), headers, values);
 		addLocator(dragAndDrop.getToLocatorsList(), headers, values, toLocatorPair);
 
@@ -448,7 +438,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add(ScrollToElement.class.getSimpleName());
 
-		addDefaults(scrollToElement.getId(), scrollToElement.getExecute(), headers, values);
+		addDefaults(scrollToElement.getBaseParams(), headers, values);
 		addLocator(scrollToElement.getElementLocatorsList(), headers, values);
 		addLocator(scrollToElement.getActionLocatorsList(), headers, values, actionLocatorPair);
 
@@ -462,6 +452,36 @@ public class WinActionsBuilder {
 		addIfNotEmpty("#shouldbedisplayed", scrollToElement.getIsElementShouldBeDisplayed(), headers, values);
 		addIfNotEmpty("#elementindom", scrollToElement.getIsElementInTree(), headers, values);
 		addIfNotEmpty("#textvalue", scrollToElement.getTextToSend(), headers, values);
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+
+	public static void addRestartDriver(CSVPrinter printer, RhWinActionsMessages.WinRestartDriver restartDriver) throws IOException {
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add(ACTION);
+		values.add(RestartDriver.class.getSimpleName());
+
+		addDefaults(restartDriver.getBaseParams(), headers, values);
+
+		printer.printRecord(headers);
+		printer.printRecord(values);
+	}
+
+	public static void addColorsCollector(CSVPrinter printer, WinColorsCollector colorsCollector) throws IOException {
+		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
+
+		headers.add(ACTION);
+		values.add(ColorsCollector.class.getSimpleName());
+		addDefaults(colorsCollector.getBaseParams(), headers, values);
+		addLocator(colorsCollector.getLocatorsList(), headers, values);
+
+		addIfNotEmpty("#startxoffset", colorsCollector.getStartXOffset(), headers, values);
+		addIfNotEmpty("#startyoffset", colorsCollector.getStartYOffset(), headers, values);
+
+		addIfNotEmpty("#endxoffset", colorsCollector.getEndXOffset(), headers, values);
+		addIfNotEmpty("#endyoffset", colorsCollector.getEndYOffset(), headers, values);
 
 		printer.printRecord(headers);
 		printer.printRecord(values);
