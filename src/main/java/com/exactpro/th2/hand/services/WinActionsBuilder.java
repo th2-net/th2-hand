@@ -475,6 +475,7 @@ public class WinActionsBuilder {
 		headers.add(ACTION);
 		values.add(ColorsCollector.class.getSimpleName());
 		addDefaults(colorsCollector.getBaseParams(), headers, values);
+		addLocator(colorsCollector.getLocatorsList(), headers, values);
 
 		addIfNotEmpty("#startxoffset", colorsCollector.getStartXOffset(), headers, values);
 		addIfNotEmpty("#startyoffset", colorsCollector.getStartYOffset(), headers, values);
