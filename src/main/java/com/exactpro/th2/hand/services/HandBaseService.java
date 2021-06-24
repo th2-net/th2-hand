@@ -231,6 +231,9 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 					case GETELEMENTATTRIBUTE:
 						addGetElementAttribute(printer, action.getGetElementAttribute());
 						break;
+					case WAITFORELEMENT:
+						addWaitForElement(printer, action.getWaitForElement());
+						break;
 
 						// win actions
 					case WINOPEN:
@@ -598,6 +601,22 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		printer.print(String.valueOf(getElAttr.getWait()));
 		printer.print(readLocator(getElAttr.getLocator()));
 		printer.print(getElAttr.getMatcher());
+		printer.println();
+	}
+
+	private void addWaitForElement(CSVPrinter printer, WaitForElement waitForElement) throws IOException
+	{
+		printer.print("#action");
+		printer.print("#locator");
+		printer.print("#matcher");
+		printer.print("#seconds");
+		printer.println();
+
+		printer.print(com.exactpro.remotehand.web.actions.WaitForElement.class.getSimpleName());
+		printer.print(readLocator(waitForElement.getLocator()));
+		printer.print(waitForElement.getMatcher());
+		printer.print(waitForElement.getSeconds());
+		
 		printer.println();
 	}
 	
