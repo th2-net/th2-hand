@@ -47,6 +47,6 @@ public class WinDragAndDropBuilder extends WinBaseBuilder<RhWinActionsMessages.W
 
 	@Override
 	protected RhWinActionsMessages.BaseWinParams getBaseParams(RhWinActionsMessages.WinDragAndDrop message) {
-		return null;
+		return message.getBaseParams();
 	}
 }
