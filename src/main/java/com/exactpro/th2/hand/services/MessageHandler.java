@@ -18,39 +18,103 @@ package com.exactpro.th2.hand.services;
 
 import com.exactpro.remotehand.Configuration;
 import com.exactpro.remotehand.rhdata.RhScriptResult;
+import com.exactpro.th2.act.grpc.hand.ResultDetails;
 import com.exactpro.th2.act.grpc.hand.RhAction;
 import com.exactpro.th2.act.grpc.hand.RhActionsList;
+import com.exactpro.th2.act.grpc.hand.RhBatchResponse;
 import com.exactpro.th2.common.grpc.*;
+import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.hand.Config;
+import com.exactpro.th2.hand.RhConnectionManager;
 import com.exactpro.th2.hand.messages.RhResponseMessageBody;
+import com.exactpro.th2.hand.messages.eventpayload.EventPayloadMessage;
+import com.exactpro.th2.hand.messages.eventpayload.EventPayloadTable;
+import com.exactpro.th2.hand.messages.responseexecutor.ActionsBatchExecutorResponse;
+import com.exactpro.th2.hand.requestexecutors.ActionsBatchExecutor;
+import com.exactpro.th2.hand.scriptbuilders.ScriptBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.*;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
-public class MessageHandler{
-
+public class MessageHandler implements AutoCloseable {
 	private static final Logger logger = LoggerFactory.getLogger(MessageHandler.class);
 
-	private MStoreSender rabbitMqConnection;
+	private static final ObjectMapper mapper = new ObjectMapper();
+
 	private final Config config;
+	private final MessageStoreSender messageStoreSender;
+	private final EventStoreSender eventStoreSender;
+	private final RhConnectionManager rhConnectionManager;
 	private final AtomicLong seqNum; 
+	private final ScriptBuilder scriptBuilder = new ScriptBuilder();
 
 	public MessageHandler(Config config, AtomicLong seqNum) {
 		this.config = config;
+		rhConnectionManager = new RhConnectionManager(config);
 		this.seqNum = seqNum;
-		this.rabbitMqConnection = new MStoreSender(config.getFactory());
+		CommonFactory factory = config.getFactory();
+		this.messageStoreSender = new MessageStoreSender(factory);
+		this.eventStoreSender = new EventStoreSender(factory);
 	}
-	
+
+
+	public ScriptBuilder getScriptBuilder() {
+		return scriptBuilder;
+	}
+
+	public Config getConfig() {
+		return config;
+	}
+
+	public RhConnectionManager getRhConnectionManager() {
+		return rhConnectionManager;
+	}
+
+	public RhBatchResponse handleActionsBatchRequest(RhActionsList request) {
+		ActionsBatchExecutor actionsBatchExecutor = new ActionsBatchExecutor(this);
+		ActionsBatchExecutorResponse response = actionsBatchExecutor.execute(request);
+		eventStoreSender.storeEvent(buildEvent(request, response));
+		return response.getResponse();
+	}
+
+
+	private Event buildEvent(RhActionsList request, ActionsBatchExecutorResponse executorResponse) {
+		Instant startTime = Instant.now();
+		EventID eventId = EventID.newBuilder().setId(UUID.randomUUID().toString()).build();
+
+		Event.Builder eventBuilder = Event.newBuilder()
+				.setId(eventId)
+				.setName(request.getEventName())
+				.setStartTimestamp(getTimestamp(startTime));
+
+		if (request.hasParentEventId())
+			eventBuilder.setParentId(request.getParentEventId());
+
+		RhScriptResult scriptResult = executorResponse.getScriptResult();
+		RhBatchResponse response = executorResponse.getResponse();
+		eventBuilder.setStatus(scriptResult.isSuccess() ? EventStatus.SUCCESS : EventStatus.FAILED);
+		ByteString payload = createPayload(scriptResult, response.getSessionId(), request.getStoreActionMessages(),
+				response.getScriptStatus(), response.getResultList());
+		eventBuilder.setBody(payload);
+		eventBuilder.addAllAttachedMessageIds(executorResponse.getMessageIds());
+		eventBuilder.setEndTimestamp(getTimestamp(Instant.now()));
+
+		return eventBuilder.build();
+	}
+
 	private String valueToString(Object object) {
 		if (object instanceof Int32Value) {
 			return String.valueOf(((Int32Value) object).getValue());
@@ -78,7 +142,6 @@ public class MessageHandler{
 	}
 
 	public List<MessageID> onRequest(RhActionsList actionsList, String sessionId) {
-		long sq = System.nanoTime();
 		List<Map<String, Object>> allMessages = new ArrayList<>();
 		for (RhAction rhAction : actionsList.getRhActionList()) {
 			for (Map.Entry<Descriptors.FieldDescriptor, Object> entry : rhAction.getAllFields().entrySet()) {
@@ -108,7 +171,7 @@ public class MessageHandler{
 		
 		if (message != null) {
 			try {
-				rabbitMqConnection.sendMessages(message);
+				messageStoreSender.sendMessages(message);
 			} catch (Exception e) {
 				logger.error("Cannot send message to message-storage", e);
 			}
@@ -151,7 +214,7 @@ public class MessageHandler{
 		RhResponseMessageBody body = RhResponseMessageBody.fromRhScriptResult(response).setRhSessionId(rhSessionId);
 		try {
 			RawMessage message = buildMessage(body.getFields(), Direction.FIRST, sessionId);
-			rabbitMqConnection.sendMessages(message);
+			messageStoreSender.sendMessages(message);
 			return message.getMetadata().getId();
 		} catch (Exception e) {
 			logger.error("Cannot send message to message-storage", e);
@@ -212,7 +275,7 @@ public class MessageHandler{
 
 	private void sendRawMessages(List<RawMessage> rawMessages) {
 		try {
-			rabbitMqConnection.sendMessages(rawMessages);
+			messageStoreSender.sendMessages(rawMessages);
 		} catch (Exception e) {
 			logger.error("Cannot store to mstore", e);
 		}
@@ -226,4 +289,50 @@ public class MessageHandler{
 				.build();
 	}
 
+	private ByteString createPayload(RhScriptResult scriptResult, String sessionId, boolean storeActionMessages,
+	                                 RhBatchResponse.ScriptExecutionStatus scriptStatus, List<ResultDetails> resultDetails) {
+		List<Object> payload = new ArrayList<>(storeActionMessages ? 4 : 2);
+		processResponsePayload(payload, scriptResult, sessionId, scriptStatus);
+		if (storeActionMessages && !resultDetails.isEmpty()) {
+			Map<String, String> actionMessages = resultDetails.stream().collect(
+					Collectors.toMap(ResultDetails::getActionId, ResultDetails::getResult));
+			processActionMessagesPayload(payload, actionMessages);
+		}
+
+		return ByteString.copyFrom(writePayloadBody(payload));
+	}
+
+	private void processResponsePayload(List<Object> payload, RhScriptResult scriptResult, String sessionId,
+	                                    RhBatchResponse.ScriptExecutionStatus scriptStatus) {
+		Map<String, String> responseMap = new LinkedHashMap<>();
+		responseMap.put("Action status", scriptStatus.name());
+		String errorMessage;
+		if (StringUtils.isNotEmpty(errorMessage = scriptResult.getErrorMessage()))
+			responseMap.put("Errors", errorMessage);
+		responseMap.put("SessionId", sessionId);
+
+		payload.add(new EventPayloadMessage("Response"));
+		payload.add(new EventPayloadTable(responseMap, false));
+	}
+
+	private void processActionMessagesPayload(List<Object> payload, Map<String, String> remoteHandResponse ) {
+		payload.add(new EventPayloadMessage("Action messages"));
+		payload.add(new EventPayloadTable(remoteHandResponse, false));
+	}
+
+	private byte[] writePayloadBody(List<Object> payload) {
+		try {
+			return mapper.writeValueAsBytes(payload);
+		} catch (JsonProcessingException e) {
+			logger.error("Error while creating body", e);
+			return e.getMessage().getBytes(StandardCharsets.UTF_8);
+		}
+	}
+
+	@Override
+	public void close() throws Exception {
+		rhConnectionManager.dispose();
+		messageStoreSender.close();
+		eventStoreSender.close();
+	}
 }

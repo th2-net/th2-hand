@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.hand;
+package com.exactpro.th2.hand.requestexecutors;
 
-import com.exactpro.th2.hand.services.MessageHandler;
-import io.grpc.BindableService;
+import com.exactpro.th2.hand.messages.responseexecutor.BaseExecutorResponse;
+import com.google.protobuf.GeneratedMessageV3;
 
-public interface IHandService extends BindableService
-{
-	void init(MessageHandler messageHandler) throws Exception;
-	void dispose();
+public interface RequestExecutor<Req extends GeneratedMessageV3, Res extends BaseExecutorResponse<?>> {
+	Res execute(Req request);
 }

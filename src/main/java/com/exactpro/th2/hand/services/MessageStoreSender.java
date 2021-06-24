@@ -25,26 +25,23 @@ import com.exactpro.th2.common.schema.message.MessageRouter;
 import com.exactpro.th2.hand.schema.CustomConfiguration;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
-public class MStoreSender {
+public class MessageStoreSender implements AutoCloseable {
 
-	private static final Logger logger = LoggerFactory.getLogger(MStoreSender.class);
-	
-    private final MessageRouter<MessageGroupBatch> messageRouterGroupBatch;
-    
-    public static final String RAW_MESSAGE_ATTRIBUTE = "raw";
-    
-    private final long batchLimit;
+	private static final Logger logger = LoggerFactory.getLogger(MessageStoreSender.class);
 
-	public MStoreSender(CommonFactory factory) {
+	private final MessageRouter<MessageGroupBatch> messageRouterGroupBatch;
+
+	public static final String RAW_MESSAGE_ATTRIBUTE = "raw";
+
+	private final long batchLimit;
+
+	public MessageStoreSender(CommonFactory factory) {
 		messageRouterGroupBatch = factory.getMessageRouterMessageGroupBatch();
 		CustomConfiguration customConfiguration = factory.getCustomConfiguration(CustomConfiguration.class);
 		this.batchLimit = customConfiguration.getMessageBatchLimit();
@@ -122,5 +119,9 @@ public class MStoreSender {
 	private long calculateSize(RawMessage message) {
 		return message.getBody().size();
 	}
-	
+
+	@Override
+	public void close() throws Exception {
+		messageRouterGroupBatch.close();
+	}
 }
