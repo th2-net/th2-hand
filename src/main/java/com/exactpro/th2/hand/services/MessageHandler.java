@@ -84,15 +84,14 @@ public class MessageHandler implements AutoCloseable {
 	}
 
 	public RhBatchResponse handleActionsBatchRequest(RhActionsList request) {
+		Instant startTime = Instant.now();
 		ActionsBatchExecutor actionsBatchExecutor = new ActionsBatchExecutor(this);
-		ActionsBatchExecutorResponse response = actionsBatchExecutor.execute(request);
-		eventStoreSender.storeEvent(buildEvent(request, response));
-		return response.getResponse();
+		ActionsBatchExecutorResponse executorResponse = actionsBatchExecutor.execute(request);
+		eventStoreSender.storeEvent(buildEvent(startTime, request, executorResponse));
+		return executorResponse.getHandResponse();
 	}
 
-
-	private Event buildEvent(RhActionsList request, ActionsBatchExecutorResponse executorResponse) {
-		Instant startTime = Instant.now();
+	private Event buildEvent(Instant startTime, RhActionsList request, ActionsBatchExecutorResponse executorResponse) {
 		EventID eventId = EventID.newBuilder().setId(UUID.randomUUID().toString()).build();
 
 		Event.Builder eventBuilder = Event.newBuilder()
@@ -104,7 +103,7 @@ public class MessageHandler implements AutoCloseable {
 			eventBuilder.setParentId(request.getParentEventId());
 
 		RhScriptResult scriptResult = executorResponse.getScriptResult();
-		RhBatchResponse response = executorResponse.getResponse();
+		RhBatchResponse response = executorResponse.getHandResponse();
 		eventBuilder.setStatus(scriptResult.isSuccess() ? EventStatus.SUCCESS : EventStatus.FAILED);
 		ByteString payload = createPayload(scriptResult, response.getSessionId(), request.getStoreActionMessages(),
 				response.getScriptStatus(), response.getResultList());

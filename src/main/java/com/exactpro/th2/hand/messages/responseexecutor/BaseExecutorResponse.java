@@ -19,27 +19,26 @@ package com.exactpro.th2.hand.messages.responseexecutor;
 import com.exactpro.th2.common.grpc.MessageID;
 import com.google.protobuf.GeneratedMessageV3;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class BaseExecutorResponse<T extends GeneratedMessageV3> {
-	protected List<MessageID> messageIDs = new ArrayList<>();
-	protected T response;
+	protected List<MessageID> messageIDs;
+	protected T handResponse;
 
 
-	public BaseExecutorResponse(T response, List<MessageID> messageIDs) {
-		this.response = response;
+	public BaseExecutorResponse(T handResponse, List<MessageID> messageIDs) {
+		this.handResponse = handResponse;
 		this.messageIDs = messageIDs;
 	}
 
-	public T getResponse() {
-		return response;
+	public T getHandResponse() {
+		return handResponse;
 	}
 
 	public List<MessageID> getMessageIds() {
 		return messageIDs;
 	}
-	
+
 	public void addMessage(MessageID messageID) {
 		messageIDs.add(messageID);
 	}
