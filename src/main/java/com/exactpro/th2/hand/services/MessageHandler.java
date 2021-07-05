@@ -16,6 +16,7 @@
 
 package com.exactpro.th2.hand.services;
 
+import com.exactpro.remotehand.ActionResult;
 import com.exactpro.remotehand.Configuration;
 import com.exactpro.remotehand.rhdata.RhScriptResult;
 import com.exactpro.th2.act.grpc.hand.RhAction;
@@ -120,7 +121,7 @@ public class MessageHandler{
 		}
 	}
 	
-	public List<MessageID> storeScreenshots(List<String> screenshotIds, String sessionAlias) {
+	public List<MessageID> storeScreenshots(List<ActionResult> screenshotIds, String sessionAlias) {
 		if (screenshotIds == null || screenshotIds.isEmpty()) {
 			logger.debug("No screenshots to store");
 			return Collections.emptyList();
@@ -128,9 +129,9 @@ public class MessageHandler{
 
 		List<MessageID> messageIDS = new ArrayList<>();
 		List<RawMessage> rawMessages = new ArrayList<>();
-		for (String screenshotId : screenshotIds) {
+		for (ActionResult screenshotId : screenshotIds) {
 			logger.debug("Storing screenshot id {}", screenshotId);
-			Path screenPath = Configuration.SCREENSHOTS_DIR_PATH.resolve(screenshotId);
+			Path screenPath = Configuration.SCREENSHOTS_DIR_PATH.resolve(screenshotId.getData());
 			if (!Files.exists(screenPath)) {
 				logger.warn("Screenshot with id {} does not exists", screenshotId);
 				continue;
