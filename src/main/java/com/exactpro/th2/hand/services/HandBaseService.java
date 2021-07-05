@@ -16,6 +16,7 @@
 
 package com.exactpro.th2.hand.services;
 
+import com.exactpro.remotehand.ActionResult;
 import com.exactpro.remotehand.requests.ExecutionRequest;
 import com.exactpro.remotehand.rhdata.RhResponseCode;
 import com.exactpro.remotehand.rhdata.RhScriptResult;
@@ -117,28 +118,22 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 		RhBatchResponse response = RhBatchResponse.newBuilder()
 				.setScriptStatus(getScriptExecutionStatus(RhResponseCode.byCode(scriptResult.getCode())))
 				.setErrorMessage(defaultIfEmpty(scriptResult.getErrorMessage(), "")).setSessionId(sessionId)
-				.addAllResult(parseResultDetails(scriptResult.getTextOutput())).addAllAttachedMessageIds(messageIDS).build();
+				.addAllResult(parseResultDetails(scriptResult.getActionResults())).addAllAttachedMessageIds(messageIDS).build();
 		
 		responseObserver.onNext(response);
 		responseObserver.onCompleted();
 	}
 	
-	private List<ResultDetails> parseResultDetails(List<String> result) {
-
-		List<ResultDetails> details = new ArrayList<>(result.size());
+	private List<ResultDetails> parseResultDetails(List<ActionResult> actionData) {
+		List<ResultDetails> details = new ArrayList<>(actionData.size());
 		ResultDetails.Builder resultDetailsBuilder = ResultDetails.newBuilder();
-		for (String s : result) {
-			String id = null, detailsStr = s;
+		for (ActionResult data : actionData) {
+			if (!data.hasData())
+				continue;
+			String id = data.getId(), detailsStr = data.getData();
 			
-			if (s.contains(Utils.LINE_SEPARATOR)) {
-				s = s.replaceAll(Utils.LINE_SEPARATOR, "\n");
-			}
-			
-			int index = s.indexOf('=');
-			if (index > 0) {
-				id = s.substring(0, index);
-				detailsStr = s.substring(index + 1);
-			}
+			if (detailsStr.contains(Utils.LINE_SEPARATOR))
+				detailsStr = detailsStr.replaceAll(Utils.LINE_SEPARATOR, "\n");
 
 			resultDetailsBuilder.clear();
 			if (id != null)
@@ -146,9 +141,8 @@ public class HandBaseService extends RhBatchImplBase implements IHandService
 			resultDetailsBuilder.setResult(detailsStr);
 			details.add(resultDetailsBuilder.build());
 		}
-		
+
 		return details;
-		
 	}
 	
 	private RhBatchResponse.ScriptExecutionStatus getScriptExecutionStatus(RhResponseCode code) {
