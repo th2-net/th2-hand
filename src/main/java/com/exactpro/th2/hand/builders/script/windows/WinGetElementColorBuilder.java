@@ -38,7 +38,7 @@ public class WinGetElementColorBuilder extends WinBaseBuilder<RhWinActionsMessag
 		addLocator(message.getLocatorsList(), headers, values);
 
 		addIfNotEmpty("#xOffset", message.getXOffset(), headers, values);
-		addIfNotEmpty("#yOffset", message.getXOffset(), headers, values);
+		addIfNotEmpty("#yOffset", message.getYOffset(), headers, values);
 	}
 
 	@Override
