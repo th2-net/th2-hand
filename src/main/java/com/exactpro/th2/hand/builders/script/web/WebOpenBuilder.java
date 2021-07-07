@@ -14,10 +14,27 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.hand.requestexecutors;
+package com.exactpro.th2.hand.builders.script.web;
 
-import com.exactpro.th2.hand.messages.responseexecutor.BaseExecutorResponse;
+import com.exactpro.th2.act.grpc.hand.RhAction;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages;
 
-public interface RequestExecutor<Req, Res extends BaseExecutorResponse<?>> {
-	Res execute(Req request);
+import java.util.List;
+
+public class WebOpenBuilder extends WebBaseBuilder<RhActionsMessages.Open> {
+	@Override
+	protected RhActionsMessages.Open getMessage(RhAction action) {
+		return action.getOpen();
+	}
+
+	@Override
+	protected String getActionName() {
+		return "Open";
+	}
+
+	@Override
+	protected void createActionDetails(RhActionsMessages.Open message, List<String> headers, List<String> values) {
+		headers.add("#url");
+		values.add(message.getUrl());
+	}
 }

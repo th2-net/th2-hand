@@ -14,10 +14,17 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.hand.requestexecutors;
+package com.exactpro.th2.hand.builders.mstore;
 
-import com.exactpro.th2.hand.messages.responseexecutor.BaseExecutorResponse;
+import com.exactpro.th2.common.grpc.Direction;
 
-public interface RequestExecutor<Req, Res extends BaseExecutorResponse<?>> {
-	Res execute(Req request);
+import java.nio.file.Path;
+import java.util.Map;
+
+public interface MessageStoreBuilder<T> {
+	T buildMessage(Map<String, Object> fields, Direction direction, String sessionId);
+
+	T buildMessage(byte[] bytes, Direction direction, String sessionId);
+
+	T buildMessageFromFile(Path path, Direction direction, String sessionId);
 }

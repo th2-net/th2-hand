@@ -24,15 +24,18 @@ import com.exactpro.th2.act.grpc.hand.ResultDetails;
 import com.exactpro.th2.act.grpc.hand.RhAction;
 import com.exactpro.th2.act.grpc.hand.RhActionsList;
 import com.exactpro.th2.act.grpc.hand.RhBatchResponse;
+import com.exactpro.th2.common.grpc.Event;
 import com.exactpro.th2.common.grpc.MessageID;
 import com.exactpro.th2.hand.messages.responseexecutor.ActionsBatchExecutorResponse;
 import com.exactpro.th2.hand.services.HandSessionExchange;
 import com.exactpro.th2.hand.services.HandSessionHandler;
 import com.exactpro.th2.hand.services.MessageHandler;
+import com.exactpro.th2.hand.services.estore.EventStoreHandler;
 import com.exactpro.th2.hand.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,11 +60,12 @@ public class ActionsBatchExecutor implements RequestExecutor<RhActionsList, Acti
 
 	@Override
 	public ActionsBatchExecutorResponse execute(RhActionsList request) {
+		Instant executionStartTime = Instant.now();
 		RhScriptResult scriptResult;
 		String sessionId = "th2_hand";
 		try {
 			HandSessionHandler sessionHandler = getSessionHandler(request);
-			messageIDs.addAll(messageHandler.onRequest(request, sessionAlias));
+			messageIDs.addAll(messageHandler.getMessageStoreHandler().onRequest(request, sessionAlias));
 			List<RhAction> actions = request.getRhActionList();
 			String script = messageHandler.getScriptBuilder().buildScript(actions);
 			sessionHandler.handle(new ExecutionRequest(script), HandSessionExchange.getStub());
@@ -74,10 +78,12 @@ public class ActionsBatchExecutor implements RequestExecutor<RhActionsList, Acti
 			logger.warn(errMsg, e);
 		}
 
-		messageIDs.add(messageHandler.onResponse(scriptResult, sessionAlias, sessionId));
-		messageIDs.addAll(messageHandler.storeScreenshots(scriptResult.getScreenshotIds(), screenshotSessionAlias));
+		messageIDs.add(messageHandler.getMessageStoreHandler().onResponse(scriptResult, sessionAlias, sessionId));
+		messageIDs.addAll(messageHandler.getMessageStoreHandler().storeScreenshots(scriptResult.getScreenshotIds(), screenshotSessionAlias));
 
-		return createResponse(scriptResult);
+		ActionsBatchExecutorResponse executorResponse = createResponse(scriptResult);
+		buildAndSendEvent(executionStartTime, request, executorResponse);
+		return executorResponse;
 	}
 
 
@@ -131,5 +137,11 @@ public class ActionsBatchExecutor implements RequestExecutor<RhActionsList, Acti
 		}
 
 		return details;
+	}
+
+	private void buildAndSendEvent(Instant startTime, RhActionsList request, ActionsBatchExecutorResponse executorResponse) {
+		EventStoreHandler eventStoreHandler = messageHandler.getEventStoreHandler();
+		Event event = eventStoreHandler.getEventBuilder().buildEvent(startTime, request, executorResponse);
+		eventStoreHandler.getEventStoreSender().storeEvent(event);
 	}
 }

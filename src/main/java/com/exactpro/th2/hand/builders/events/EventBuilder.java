@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.hand.requestexecutors;
+package com.exactpro.th2.hand.builders.events;
 
 import com.exactpro.th2.hand.messages.responseexecutor.BaseExecutorResponse;
 
-public interface RequestExecutor<Req, Res extends BaseExecutorResponse<?>> {
-	Res execute(Req request);
+import java.time.Instant;
+
+public interface EventBuilder<T, R, E extends BaseExecutorResponse<?>> {
+	T buildEvent(R request, E executorResponse);
+
+	T buildEvent(Instant startTime, R request, E executorResponse);
 }
