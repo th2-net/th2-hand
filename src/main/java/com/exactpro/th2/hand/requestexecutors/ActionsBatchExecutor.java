@@ -16,6 +16,7 @@
 
 package com.exactpro.th2.hand.requestexecutors;
 
+import com.exactpro.remotehand.ActionResult;
 import com.exactpro.remotehand.requests.ExecutionRequest;
 import com.exactpro.remotehand.rhdata.RhResponseCode;
 import com.exactpro.remotehand.rhdata.RhScriptResult;
@@ -95,7 +96,7 @@ public class ActionsBatchExecutor implements RequestExecutor<RhActionsList, Acti
 				.setScriptStatus(convertToScriptExecutionStatus(RhResponseCode.byCode(result.getCode())))
 				.setErrorMessage(defaultIfEmpty(result.getErrorMessage(), ""))
 				.setSessionId(sessionId)
-				.addAllResult(parseResultDetails(result.getTextOutput()))
+				.addAllResult(parseResultDetails(result.getActionResults()))
 				.build();
 	}
 
@@ -111,21 +112,16 @@ public class ActionsBatchExecutor implements RequestExecutor<RhActionsList, Acti
 		}
 	}
 
-	private List<ResultDetails> parseResultDetails(List<String> results) {
-		List<ResultDetails> details = new ArrayList<>(results.size());
+	private List<ResultDetails> parseResultDetails(List<ActionResult> actionData) {
+		List<ResultDetails> details = new ArrayList<>(actionData.size());
 		ResultDetails.Builder resultDetailsBuilder = ResultDetails.newBuilder();
-		for (String result : results) {
-			String id = null, detailsStr = result;
+		for (ActionResult data : actionData) {
+			if (!data.hasData())
+				continue;
+			String id = data.getId(), detailsStr = data.getData();
 
-			if (result.contains(Utils.LINE_SEPARATOR)) {
-				result = result.replaceAll(Utils.LINE_SEPARATOR, "\n");
-			}
-
-			int index = result.indexOf('=');
-			if (index > 0) {
-				id = result.substring(0, index);
-				detailsStr = result.substring(index + 1);
-			}
+			if (detailsStr.contains(Utils.LINE_SEPARATOR))
+				detailsStr = detailsStr.replaceAll(Utils.LINE_SEPARATOR, "\n");
 
 			resultDetailsBuilder.clear();
 			if (id != null)
@@ -135,6 +131,5 @@ public class ActionsBatchExecutor implements RequestExecutor<RhActionsList, Acti
 		}
 
 		return details;
-
 	}
 }

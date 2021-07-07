@@ -16,18 +16,21 @@
 
 package com.exactpro.th2.hand.messages;
 
+import com.exactpro.remotehand.ActionResult;
 import com.exactpro.remotehand.rhdata.RhResponseCode;
 import com.exactpro.remotehand.rhdata.RhScriptResult;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class RhResponseMessageBody
 {
 	private String scriptOutputCode = StringUtils.EMPTY;
 	private String errorOut = StringUtils.EMPTY;
-	private String textOut = StringUtils.EMPTY;
+	private List<ActionResult> actionResults = new ArrayList<>();
 	private String rhSessionId = StringUtils.EMPTY;
 
 	public static RhResponseMessageBody fromRhScriptResult(RhScriptResult scriptResult)
@@ -35,7 +38,7 @@ public class RhResponseMessageBody
 		return new RhResponseMessageBody()
 				.setScriptOutputCode(RhResponseCode.byCode(scriptResult.getCode()).toString())
 				.setErrorOut(scriptResult.getErrorMessage())
-				.setTextOut(String.join("|", scriptResult.getTextOutput()));
+				.setActionResults(scriptResult.getActionResults());
 	}
 	
 	public String getScriptOutputCode()
@@ -60,14 +63,14 @@ public class RhResponseMessageBody
 		return this;
 	}
 
-	public String getTextOut()
+	public List<ActionResult> getActionResults()
 	{
-		return textOut;
+		return actionResults;
 	}
 
-	public RhResponseMessageBody setTextOut(String textOut)
+	public RhResponseMessageBody setActionResults(List<ActionResult> actionResults)
 	{
-		this.textOut = StringUtils.defaultString(textOut);
+		this.actionResults = actionResults;
 		return this;
 	}
 
@@ -87,7 +90,7 @@ public class RhResponseMessageBody
 		Map<String, Object> value = new LinkedHashMap<>();
 		value.put("ScriptOutputCode", scriptOutputCode);
 		value.put("ErrorText", errorOut);
-		value.put("TextOut", textOut);
+		value.put("ActionResults", actionResults);
 		value.put("RhSessionId", rhSessionId);
 
 		return value;
