@@ -16,25 +16,23 @@
 
 package com.exactpro.th2.hand.scriptbuilders.windows;
 
+import com.exactpro.remotehand.windows.SearchParams;
 import com.exactpro.th2.act.grpc.hand.RhAction;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 import com.exactpro.th2.hand.scriptbuilders.BaseBuilder;
 import com.google.protobuf.GeneratedMessageV3;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
 
 public abstract class WinBaseBuilder<T extends GeneratedMessageV3> extends BaseBuilder<T> {
 	protected static final String WINDOWNAME = "#windowname", ACCESSIBILITY_ID = "#accessibilityid";
-	protected static final Pair<String, Pair<String, String>> locatorPair
-			= new ImmutablePair<>("#locator", new ImmutablePair<>("#matcher", "#matcherindex"));
-	protected static final Pair<String, Pair<String, String>> textLocatorPair
-			= new ImmutablePair<>("#textLocator", new ImmutablePair<>("#textmatcher", "#textmatcherindex"));
-	protected static final Pair<String, Pair<String, String>> toLocatorPair
-			= new ImmutablePair<>("#tolocator", new ImmutablePair<>("#tomatcher", "#tomatcherindex"));
-	protected static final Pair<String, Pair<String, String>> actionLocatorPair
-			= new ImmutablePair<>("#actionlocator", new ImmutablePair<>("#actionmatcher", "#actionmatcherindex"));
+	protected static final SearchParams.HeaderKeys locatorPair = SearchParams.HeaderKeys.DEFAULT;
+	protected static final SearchParams.HeaderKeys textLocatorPair
+			= new SearchParams.HeaderKeys("#textLocator", "#textmatcher", "#textmatcherindex");
+	protected static final SearchParams.HeaderKeys toLocatorPair
+			= new SearchParams.HeaderKeys("#tolocator", "#tomatcher", "#tomatcherindex");
+	protected static final SearchParams.HeaderKeys actionLocatorPair
+			= new SearchParams.HeaderKeys("#actionlocator", "#actionmatcher", "#actionmatcherindex");
 
 
 	@Override
@@ -59,24 +57,22 @@ public abstract class WinBaseBuilder<T extends GeneratedMessageV3> extends BaseB
 	}
 
 	protected static void addLocator(List<RhWinActionsMessages.WinLocator> winLocators, List<String> headers, List<String> values,
-	                                 Pair<String, Pair<String, String>> keys) {
+	                                 SearchParams.HeaderKeys keys) {
 		if (winLocators == null || winLocators.isEmpty())
 			return;
 
 		int count = 1;
 		for (RhWinActionsMessages.WinLocator winLocator : winLocators) {
-
-			Pair<String, String> matcherPair = keys.getValue();
 			String paramSuffix = count == 1 ? "" : String.valueOf(count);
 
-			headers.add(keys.getKey() + paramSuffix);
+			headers.add(keys.locator + paramSuffix);
 			values.add(winLocator.getLocator());
 
-			headers.add(matcherPair.getKey() + paramSuffix);
+			headers.add(keys.matcher + paramSuffix);
 			values.add(winLocator.getMatcher());
 
 			if (winLocator.hasMatcherIndex()) {
-				headers.add(matcherPair.getValue() + paramSuffix);
+				headers.add(keys.index + paramSuffix);
 				values.add(String.valueOf(winLocator.getMatcherIndex().getValue()));
 			}
 
