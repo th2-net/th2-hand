@@ -17,6 +17,7 @@
 package com.exactpro.th2.hand;
 
 import com.exactpro.remotehand.sessions.SessionWatcher;
+import com.exactpro.th2.hand.services.MessageHandler;
 import io.grpc.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,17 +34,14 @@ public class HandServer
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	private final Config config;
-	private final RhConnectionManager rhConnectionManager;
+	private final MessageHandler messageHandler;
 	private final Server server;
 	private final List<IHandService> services;
-	private final AtomicLong sequences;
 
-	public HandServer(Config config, long startSequences) throws Exception
-	{
+	public HandServer(Config config, long startSequences) throws Exception {
 		this.config = config;
-		this.rhConnectionManager = new RhConnectionManager(config);
+		this.messageHandler = new MessageHandler(config, new AtomicLong(startSequences));
 		this.services = new ArrayList<>();
-		this.sequences = new AtomicLong(startSequences);
 		this.server = buildServer();
 	}
 
@@ -52,7 +50,7 @@ public class HandServer
 		for (IHandService rhService : ServiceLoader.load(IHandService.class))
 		{
 			services.add(rhService);
-			rhService.init(config, rhConnectionManager, this.sequences);
+			rhService.init(messageHandler);
 			logger.info("Service '{}' loaded", rhService.getClass().getName());
 		}
 		

@@ -16,12 +16,14 @@
 
 package com.exactpro.th2.hand.utils;
 
+import com.google.protobuf.Timestamp;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 public class Utils {
 	public static final String LINE_SEPARATOR = "&#13";
@@ -57,5 +59,12 @@ public class Utils {
 		}
 
 		return result;
+	}
+
+	public static Timestamp getTimestamp(Instant instant) {
+		return Timestamp.newBuilder()
+				.setSeconds(instant.getEpochSecond())
+				.setNanos(instant.getNano())
+				.build();
 	}
 }

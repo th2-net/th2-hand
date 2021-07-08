@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.hand;
+package com.exactpro.th2.hand.builders.events;
 
-import com.exactpro.th2.hand.services.MessageHandler;
-import io.grpc.BindableService;
+import com.exactpro.th2.hand.messages.responseexecutor.BaseExecutorResponse;
 
-public interface IHandService extends BindableService
-{
-	void init(MessageHandler messageHandler) throws Exception;
-	void dispose();
+import java.time.Instant;
+
+public interface EventBuilder<T, R, E extends BaseExecutorResponse<?>> {
+	T buildEvent(R request, E executorResponse);
+
+	T buildEvent(Instant startTime, R request, E executorResponse);
 }
