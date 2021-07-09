@@ -45,6 +45,7 @@ public class ActionsMapping {
 		put(RhAction.ActionCase.SENDKEYSTOACTIVE, WebSendKeysToActiveBuilder::new);
 		put(RhAction.ActionCase.SWITCHWINDOW, WebSwitchWindowBuilder::new);
 		put(RhAction.ActionCase.WAIT, WebWaitBuilder::new);
+		put(RhAction.ActionCase.WAITFORELEMENT, WebWaitForElementBuilder::new);
 
 		// Win actions
 		put(RhAction.ActionCase.WINOPEN, WinOpenBuilder::new);
