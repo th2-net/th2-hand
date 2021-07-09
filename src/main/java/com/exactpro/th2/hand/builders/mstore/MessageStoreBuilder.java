@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.hand;
+package com.exactpro.th2.hand.builders.mstore;
 
-import com.exactpro.th2.hand.services.MessageHandler;
-import io.grpc.BindableService;
+import com.exactpro.th2.common.grpc.Direction;
 
-public interface IHandService extends BindableService
-{
-	void init(MessageHandler messageHandler) throws Exception;
-	void dispose();
+import java.nio.file.Path;
+import java.util.Map;
+
+public interface MessageStoreBuilder<T> {
+	T buildMessage(Map<String, Object> fields, Direction direction, String sessionId);
+
+	T buildMessage(byte[] bytes, Direction direction, String sessionId);
+
+	T buildMessageFromFile(Path path, Direction direction, String sessionId);
 }

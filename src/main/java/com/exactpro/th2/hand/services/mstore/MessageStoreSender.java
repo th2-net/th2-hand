@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.exactpro.th2.hand.services;
+package com.exactpro.th2.hand.services.mstore;
 
 import com.exactpro.th2.common.grpc.AnyMessage;
 import com.exactpro.th2.common.grpc.MessageGroup;
@@ -25,58 +25,47 @@ import com.exactpro.th2.common.schema.message.MessageRouter;
 import com.exactpro.th2.hand.schema.CustomConfiguration;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
-public class MStoreSender {
+public class MessageStoreSender implements AutoCloseable {
+	private static final Logger logger = LoggerFactory.getLogger(MessageStoreSender.class);
 
-	private static final Logger logger = LoggerFactory.getLogger(MStoreSender.class);
-	
-    private final MessageRouter<MessageGroupBatch> messageRouterGroupBatch;
-    
-    public static final String RAW_MESSAGE_ATTRIBUTE = "raw";
-    
-    private final long batchLimit;
+	public static final String RAW_MESSAGE_ATTRIBUTE = "raw";
 
-	public MStoreSender(CommonFactory factory) {
+	private final MessageRouter<MessageGroupBatch> messageRouterGroupBatch;
+	private final long batchLimit;
+
+
+	public MessageStoreSender(CommonFactory factory) {
 		messageRouterGroupBatch = factory.getMessageRouterMessageGroupBatch();
 		CustomConfiguration customConfiguration = factory.getCustomConfiguration(CustomConfiguration.class);
 		this.batchLimit = customConfiguration.getMessageBatchLimit();
 		writeToLogAboutConnection(factory);
 	}
 
-	private void writeToLogAboutConnection(CommonFactory factory) {
-		if (!logger.isInfoEnabled())
-			return;
-		StringBuilder connectionInfo = new StringBuilder("Connection to RabbitMQ with ");
-		connectionInfo.append(factory.getRabbitMqConfiguration()).append(" is established \n");
-		connectionInfo.append("Queues: \n");
-		factory.getMessageRouterConfiguration().getQueues().forEach((name, queue) -> {
-			connectionInfo.append(name).append(" : ");
-			try {
-				ObjectMapper mapper = new ObjectMapper();
-				connectionInfo.append(mapper.writeValueAsString(queue));
-			}
-			catch (JsonProcessingException e) {
-				logger.warn("Error occurs while convert QueueConfiguration to JSON string", e);
-				connectionInfo.append("QueueConfiguration is not available");
-			}
-			connectionInfo.append('\n');
-		});
-		logger.info(connectionInfo.toString());
-	}
-
-    public void sendMessages(RawMessage messages) throws Exception {
+    public void sendMessages(RawMessage messages) {
 		sendMessages(Collections.singleton(messages));
 	}
 
-	public void sendMessages(Collection<RawMessage> messages) throws Exception {
+	public void sendMessages(Collection<RawMessage> messages) {
+		try {
+			sendRawMessages(messages);
+		} catch (Exception e) {
+			logger.error("Cannot store to mstore", e);
+		}
+	}
+
+	@Override
+	public void close() throws Exception {
+		messageRouterGroupBatch.close();
+	}
+
+
+	private void sendRawMessages(Collection<RawMessage> messages) throws Exception {
 		MessageGroupBatch.Builder currentBatchBuilder = MessageGroupBatch.newBuilder();
 		long currentBatchLength = 0;
 		long totalLength = 0;
@@ -118,9 +107,29 @@ public class MStoreSender {
 		logger.debug("Group with {} message(s) separated by {} batches to mstore was sent ({} bytes)", 
 				count, batchesCount, totalLength);
 	}
-	
+
 	private long calculateSize(RawMessage message) {
 		return message.getBody().size();
 	}
-	
+
+	private void writeToLogAboutConnection(CommonFactory factory) {
+		if (!logger.isInfoEnabled())
+			return;
+		StringBuilder connectionInfo = new StringBuilder("Connection to RabbitMQ with ");
+		connectionInfo.append(factory.getRabbitMqConfiguration()).append(" is established \n");
+		connectionInfo.append("Queues: \n");
+		factory.getMessageRouterConfiguration().getQueues().forEach((name, queue) -> {
+			connectionInfo.append(name).append(" : ");
+			try {
+				ObjectMapper mapper = new ObjectMapper();
+				connectionInfo.append(mapper.writeValueAsString(queue));
+			}
+			catch (JsonProcessingException e) {
+				logger.warn("Error occurs while convert QueueConfiguration to JSON string", e);
+				connectionInfo.append("QueueConfiguration is not available");
+			}
+			connectionInfo.append('\n');
+		});
+		logger.info(connectionInfo.toString());
+	}
 }

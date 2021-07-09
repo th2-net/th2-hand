@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.hand;
+package com.exactpro.th2.hand.messages.eventpayload;
 
-import com.exactpro.th2.hand.services.MessageHandler;
-import io.grpc.BindableService;
+public class EventPayloadMessage {
+	private final String data;
 
-public interface IHandService extends BindableService
-{
-	void init(MessageHandler messageHandler) throws Exception;
-	void dispose();
+	public EventPayloadMessage(String data) {
+		this.data = data;
+	}
+
+	public String getType() {
+		return "message";
+	}
+
+	public String getData() {
+		return data;
+	}
 }
