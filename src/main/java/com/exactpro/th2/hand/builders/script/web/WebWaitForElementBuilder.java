@@ -37,7 +37,7 @@ public class WebWaitForElementBuilder extends WebBaseBuilder<RhActionsMessages.W
 	@Override
 	protected void createActionDetails(RhActionsMessages.WaitForElement message, List<String> headers, List<String> values) {
 		headers.add("#locator");
-		values.add(String.valueOf(message.getLocator()));
+		values.add(readLocator(message.getLocator()));
 
 		headers.add("#matcher");
 		values.add(message.getMatcher());

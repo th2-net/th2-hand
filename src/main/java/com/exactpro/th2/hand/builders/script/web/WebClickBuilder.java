@@ -39,7 +39,7 @@ public class WebClickBuilder extends WebBaseBuilder<RhActionsMessages.Click> {
 		values.add(String.valueOf(message.getWait()));
 
 		headers.add("#locator");
-		values.add(String.valueOf(message.getLocator()));
+		values.add(readLocator(message.getLocator()));
 		
 		headers.add("#matcher");
 		values.add(message.getMatcher());
