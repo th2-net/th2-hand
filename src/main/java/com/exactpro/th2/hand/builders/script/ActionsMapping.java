@@ -70,6 +70,7 @@ public class ActionsMapping {
 		put(RhAction.ActionCase.WINWAIT, WinWaitBuilder::new);
 		put(RhAction.ActionCase.WINWAITFORATTRIBUTE, WinWaitForAttributeBuilder::new);
 		put(RhAction.ActionCase.WINWAITFORELEMENT, WinWaitForElementBuilder::new);
+		put(RhAction.ActionCase.WINTAKESCREENSHOT, WinTakeScreenshotBuilder::new);
 	}};
 
 
