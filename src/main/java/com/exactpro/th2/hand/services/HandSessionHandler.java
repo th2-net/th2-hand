@@ -21,17 +21,22 @@ import com.exactpro.remotehand.ScriptExecuteException;
 import com.exactpro.remotehand.rhdata.RhResponseCode;
 import com.exactpro.remotehand.rhdata.RhScriptResult;
 import com.exactpro.remotehand.sessions.SessionHandler;
+import com.exactpro.th2.hand.RhConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
 public class HandSessionHandler extends SessionHandler {
+	
 	private static final Logger logger = LoggerFactory.getLogger(HandSessionHandler.class);
 
+	private final RhConnectionManager connectionManager;
+	private volatile boolean closed = false;
 
-	public HandSessionHandler(String id, IRemoteHandManager manager) {
+	public HandSessionHandler(String id, IRemoteHandManager manager, RhConnectionManager connectionManager) {
 		super(id, manager);
+		this.connectionManager = connectionManager;
 	}
 
 
@@ -58,5 +63,14 @@ public class HandSessionHandler extends SessionHandler {
 
 	@Override
 	protected void closeConnection() throws IllegalArgumentException {
+	}
+
+	@Override
+	public void close() {
+		if (!closed) {
+			this.closed = true;
+			super.close();
+			this.connectionManager.closeSessionHandler(getId());
+		}
 	}
 }
