@@ -59,7 +59,7 @@ public class RhConnectionManager {
 
 		String sessionId = generateSessionId();
 		IRemoteHandManager remoteHandManager = gridRemoteHandManager.getRemoteHandManager(remoteManagerType);
-		HandSessionHandler handSessionHandler = new HandSessionHandler(sessionId, remoteHandManager);
+		HandSessionHandler handSessionHandler = new HandSessionHandler(sessionId, remoteHandManager, this);
 		gridRemoteHandManager.saveSession(sessionId, driverSettings.url);
 		sessions.put(sessionId, handSessionHandler);
 
