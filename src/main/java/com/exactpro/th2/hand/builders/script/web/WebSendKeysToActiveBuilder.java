@@ -16,14 +16,14 @@
 
 package com.exactpro.th2.hand.builders.script.web;
 
-import com.exactpro.th2.act.grpc.hand.RhAction;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.RhWebActions;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages;
 
 import java.util.List;
 
 public class WebSendKeysToActiveBuilder extends WebBaseBuilder<RhActionsMessages.SendKeysToActive> {
 	@Override
-	protected RhActionsMessages.SendKeysToActive getMessage(RhAction action) {
+	protected RhActionsMessages.SendKeysToActive getMessage(RhWebActions action) {
 		return action.getSendKeysToActive();
 	}
 

@@ -16,8 +16,8 @@
 
 package com.exactpro.th2.hand.builders.script.web;
 
-import com.exactpro.th2.act.grpc.hand.RhAction;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.RhWebActions;
 import com.exactpro.th2.hand.builders.script.BaseBuilder;
 import com.google.protobuf.GeneratedMessageV3;
 import org.slf4j.Logger;
@@ -25,11 +25,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-public abstract class WebBaseBuilder<T extends GeneratedMessageV3> extends BaseBuilder<T> {
+public abstract class WebBaseBuilder<T extends GeneratedMessageV3> extends BaseBuilder<T, RhWebActions> {
 	private static final Logger logger = LoggerFactory.getLogger(WebBaseBuilder.class);
 
 	@Override
-	protected void buildPayLoad(RhAction action, List<String> headers, List<String> values) {
+	protected void buildPayLoad(RhWebActions action, List<String> headers, List<String> values) {
 		T message = getMessage(action);
 		createActionDetails(message, headers, values);
 	}

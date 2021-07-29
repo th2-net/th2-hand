@@ -16,14 +16,14 @@
 
 package com.exactpro.th2.hand.builders.script.web;
 
-import com.exactpro.th2.act.grpc.hand.RhAction;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.RhWebActions;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages;
 
 import java.util.List;
 
 public class WebFindElementBuilder extends WebBaseBuilder<RhActionsMessages.FindElement> {
 	@Override
-	protected RhActionsMessages.FindElement getMessage(RhAction action) {
+	protected RhActionsMessages.FindElement getMessage(RhWebActions action) {
 		return action.getFindElement();
 	}
 

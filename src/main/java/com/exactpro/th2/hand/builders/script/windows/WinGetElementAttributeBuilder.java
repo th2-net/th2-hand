@@ -16,14 +16,14 @@
 
 package com.exactpro.th2.hand.builders.script.windows;
 
-import com.exactpro.th2.act.grpc.hand.RhAction;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.RhWinActions;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 
 import java.util.List;
 
 public class WinGetElementAttributeBuilder extends WinBaseBuilder<RhWinActionsMessages.WinGetElementAttribute> {
 	@Override
-	protected RhWinActionsMessages.WinGetElementAttribute getMessage(RhAction action) {
+	protected RhWinActionsMessages.WinGetElementAttribute getMessage(RhWinActions action) {
 		return action.getWinGetElementAttribute();
 	}
 

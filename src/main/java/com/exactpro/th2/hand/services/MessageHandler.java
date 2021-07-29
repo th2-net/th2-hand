@@ -16,7 +16,7 @@
 
 package com.exactpro.th2.hand.services;
 
-import com.exactpro.th2.act.grpc.hand.RhActionsList;
+import com.exactpro.th2.act.grpc.hand.RhActionsBatch;
 import com.exactpro.th2.act.grpc.hand.RhBatchResponse;
 import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.hand.Config;
@@ -68,7 +68,7 @@ public class MessageHandler implements AutoCloseable {
 		return rhConnectionManager;
 	}
 
-	public RhBatchResponse handleActionsBatchRequest(RhActionsList request) {
+	public RhBatchResponse handleActionsBatchRequest(RhActionsBatch request) {
 		ActionsBatchExecutor actionsBatchExecutor = new ActionsBatchExecutor(this);
 		return actionsBatchExecutor.execute(request).getHandResponse();
 	}

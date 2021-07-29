@@ -17,14 +17,14 @@
 package com.exactpro.th2.hand.builders.script.windows;
 
 import com.exactpro.remotehand.windows.actions.GetElementColor;
-import com.exactpro.th2.act.grpc.hand.RhAction;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.RhWinActions;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 
 import java.util.List;
 
 public class WinGetElementColorBuilder extends WinBaseBuilder<RhWinActionsMessages.WinGetElementColor> {
 	@Override
-	protected RhWinActionsMessages.WinGetElementColor getMessage(RhAction action) {
+	protected RhWinActionsMessages.WinGetElementColor getMessage(RhWinActions action) {
 		return action.getWinGetElementColor();
 	}
 

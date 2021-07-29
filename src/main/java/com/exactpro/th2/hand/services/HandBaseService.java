@@ -16,7 +16,7 @@
 
 package com.exactpro.th2.hand.services;
 
-import com.exactpro.th2.act.grpc.hand.RhActionsList;
+import com.exactpro.th2.act.grpc.hand.RhActionsBatch;
 import com.exactpro.th2.act.grpc.hand.RhBatchGrpc.RhBatchImplBase;
 import com.exactpro.th2.act.grpc.hand.RhBatchResponse;
 import com.exactpro.th2.act.grpc.hand.RhSessionID;
@@ -63,7 +63,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService {
 	}
 
 	@Override
-	public void executeRhActionsBatch(RhActionsList request, StreamObserver<RhBatchResponse> responseObserver) {
+	public void executeRhActionsBatch(RhActionsBatch request, StreamObserver<RhBatchResponse> responseObserver) {
 		logger.trace("Action: '{}', request: '{}'", "executeRhActionsBatch", TextFormat.shortDebugString(request));
 		responseObserver.onNext(messageHandler.handleActionsBatchRequest(request));
 		responseObserver.onCompleted();

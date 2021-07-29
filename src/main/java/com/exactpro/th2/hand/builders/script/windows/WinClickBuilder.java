@@ -17,14 +17,14 @@
 package com.exactpro.th2.hand.builders.script.windows;
 
 import com.exactpro.remotehand.windows.actions.Click;
-import com.exactpro.th2.act.grpc.hand.RhAction;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.RhWinActions;
 
 import java.util.List;
 
 public class WinClickBuilder extends WinBaseBuilder<RhWinActionsMessages.WinClick> {
 	@Override
-	protected RhWinActionsMessages.WinClick getMessage(RhAction action) {
+	protected RhWinActionsMessages.WinClick getMessage(RhWinActions action) {
 		return action.getWinClick();
 	}
 

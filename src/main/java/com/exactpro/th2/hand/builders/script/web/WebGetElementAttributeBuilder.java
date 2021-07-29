@@ -16,14 +16,14 @@
 
 package com.exactpro.th2.hand.builders.script.web;
 
-import com.exactpro.th2.act.grpc.hand.RhAction;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.RhWebActions;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages;
 
 import java.util.List;
 
 public class WebGetElementAttributeBuilder extends WebBaseBuilder<RhActionsMessages.GetElementAttribute> {
 	@Override
-	protected RhActionsMessages.GetElementAttribute getMessage(RhAction action) {
+	protected RhActionsMessages.GetElementAttribute getMessage(RhWebActions action) {
 		return action.getGetElementAttribute();
 	}
 
