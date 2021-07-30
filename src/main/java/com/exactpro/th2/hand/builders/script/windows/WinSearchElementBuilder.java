@@ -16,14 +16,14 @@
 
 package com.exactpro.th2.hand.builders.script.windows;
 
-import com.exactpro.th2.act.grpc.hand.RhAction;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.RhWinActions;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 
 import java.util.List;
 
 public class WinSearchElementBuilder extends WinBaseBuilder<RhWinActionsMessages.WinSearchElement> {
 	@Override
-	protected RhWinActionsMessages.WinSearchElement getMessage(RhAction action) {
+	protected RhWinActionsMessages.WinSearchElement getMessage(RhWinActions action) {
 		return action.getWinSearchElement();
 	}
 

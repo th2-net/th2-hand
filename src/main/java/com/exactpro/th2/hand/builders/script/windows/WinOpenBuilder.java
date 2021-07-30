@@ -16,14 +16,14 @@
 
 package com.exactpro.th2.hand.builders.script.windows;
 
-import com.exactpro.th2.act.grpc.hand.RhAction;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.RhWinActions;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 
 import java.util.List;
 
 public class WinOpenBuilder extends WinBaseBuilder<RhWinActionsMessages.WinOpen> {
 	@Override
-	protected RhWinActionsMessages.WinOpen getMessage(RhAction action) {
+	protected RhWinActionsMessages.WinOpen getMessage(RhWinActions action) {
 		return action.getWinOpen();
 	}
 

@@ -17,14 +17,14 @@
 package com.exactpro.th2.hand.builders.script.windows;
 
 import com.exactpro.remotehand.windows.actions.DragAndDropElement;
-import com.exactpro.th2.act.grpc.hand.RhAction;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.RhWinActions;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 
 import java.util.List;
 
 public class WinDragAndDropBuilder extends WinBaseBuilder<RhWinActionsMessages.WinDragAndDrop> {
 	@Override
-	protected RhWinActionsMessages.WinDragAndDrop getMessage(RhAction action) {
+	protected RhWinActionsMessages.WinDragAndDrop getMessage(RhWinActions action) {
 		return action.getWinDragAndDrop();
 	}
 

@@ -19,8 +19,8 @@ package com.exactpro.th2.hand.services.mstore;
 import com.exactpro.remotehand.ActionResult;
 import com.exactpro.remotehand.Configuration;
 import com.exactpro.remotehand.rhdata.RhScriptResult;
-import com.exactpro.th2.act.grpc.hand.RhAction;
-import com.exactpro.th2.act.grpc.hand.RhActionsList;
+import com.exactpro.th2.act.grpc.hand.RhActionList;
+import com.exactpro.th2.act.grpc.hand.RhActionsBatch;
 import com.exactpro.th2.common.grpc.Direction;
 import com.exactpro.th2.common.grpc.MessageID;
 import com.exactpro.th2.common.grpc.RawMessage;
@@ -49,11 +49,23 @@ public class MessageStoreHandler implements AutoCloseable {
 		this.messageStoreSender = messageStoreSender;
 		this.messageStoreBuilder = defaultMessageStoreBuilder;
 	}
+	
+	private List<? extends GeneratedMessageV3> getActionsList (RhActionsBatch actionsList) {
+		RhActionList rhActionList = actionsList.getRhAction();
+		switch (rhActionList.getListCase()) {
+			case WIN:
+				return rhActionList.getWin().getWinActionListList();
+			case WEB:
+				return rhActionList.getWeb().getWebActionListList();
+			default:
+				logger.warn("Actions list is not set");
+				return Collections.emptyList();
+		}
+	}
 
-
-	public List<MessageID> onRequest(RhActionsList actionsList, String sessionId) {
+	public List<MessageID> onRequest(RhActionsBatch actionsList, String sessionId) {
 		List<Map<String, Object>> allMessages = new ArrayList<>();
-		for (RhAction rhAction : actionsList.getRhActionList()) {
+		for (GeneratedMessageV3 rhAction : getActionsList(actionsList)) {
 			for (Map.Entry<Descriptors.FieldDescriptor, Object> entry : rhAction.getAllFields().entrySet()) {
 				if (entry != null) {
 					Map<String, Object> fields = new LinkedHashMap<>();

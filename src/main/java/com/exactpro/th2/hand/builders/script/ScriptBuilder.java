@@ -16,45 +16,47 @@
 
 package com.exactpro.th2.hand.builders.script;
 
-import com.exactpro.th2.act.grpc.hand.RhAction;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import com.exactpro.th2.act.grpc.hand.RhActionList;
+import com.exactpro.th2.hand.HandException;
+import com.exactpro.th2.hand.builders.script.web.WebScriptBuilder;
+import com.exactpro.th2.hand.builders.script.windows.WinScriptBuilder;
 
 public class ScriptBuilder {
-	private static final Logger logger = LoggerFactory.getLogger(ScriptBuilder.class);
-	protected final Map<RhAction.ActionCase, BaseBuilder<?>> buildersMap = new ConcurrentHashMap<>(RhAction.ActionCase.values().length);
 
+	private volatile WinScriptBuilder winScriptBuilder;
+	private volatile WebScriptBuilder webScriptBuilder;
 
-	public String buildScript(List<RhAction> actions) {
-		StringBuilder script = new StringBuilder();
-
-		try (CSVPrinter printer = CSVFormat.DEFAULT.print(script)) {
-			for (RhAction action : actions) {
-				BaseBuilder<?> builder = getBuilder(action);
-				if (builder == null)
-					continue;
-				builder.buildScript(printer, action);
-			}
-		} catch (IOException e) {
-			logger.error("An error occurred while script building", e);
+	public String buildScript(RhActionList actions) throws HandException {
+		RhActionList.ListCase type = actions.getListCase();
+		switch (type) {
+			case WEB: return getWebScriptBuilder().buildScript(actions);
+			case WIN: return getWinScriptBuilder().buildScript(actions);
+			default:
+				throw new HandException("Incorrect input message. Expected web or win action list. Received: " 
+						+ type.name());
 		}
-
-		return script.toString();
+	}
+	
+	public WinScriptBuilder getWinScriptBuilder() {
+		if (this.winScriptBuilder == null) {
+			synchronized (this) {
+				if (this.winScriptBuilder == null) {
+					this.winScriptBuilder = new WinScriptBuilder();
+				}
+			}
+		}
+		return this.winScriptBuilder;
 	}
 
-
-	protected BaseBuilder<?> getBuilder(RhAction.ActionCase type) {
-		return buildersMap.computeIfAbsent(type, ActionsMapping::createInstance);
+	public WebScriptBuilder getWebScriptBuilder() {
+		if (this.webScriptBuilder == null) {
+			synchronized (this) {
+				if (this.webScriptBuilder == null) {
+					this.webScriptBuilder = new WebScriptBuilder();
+				}
+			}
+		}
+		return this.webScriptBuilder;
 	}
-
-	protected BaseBuilder<?> getBuilder(RhAction action) {
-		return getBuilder(action.getActionCase());
-	}
+	
 }

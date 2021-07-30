@@ -21,8 +21,8 @@ import com.exactpro.remotehand.requests.ExecutionRequest;
 import com.exactpro.remotehand.rhdata.RhResponseCode;
 import com.exactpro.remotehand.rhdata.RhScriptResult;
 import com.exactpro.th2.act.grpc.hand.ResultDetails;
-import com.exactpro.th2.act.grpc.hand.RhAction;
-import com.exactpro.th2.act.grpc.hand.RhActionsList;
+import com.exactpro.th2.act.grpc.hand.RhActionList;
+import com.exactpro.th2.act.grpc.hand.RhActionsBatch;
 import com.exactpro.th2.act.grpc.hand.RhBatchResponse;
 import com.exactpro.th2.common.grpc.Event;
 import com.exactpro.th2.common.grpc.MessageID;
@@ -41,7 +41,8 @@ import java.util.List;
 
 import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 
-public class ActionsBatchExecutor implements RequestExecutor<RhActionsList, ActionsBatchExecutorResponse> {
+public class ActionsBatchExecutor implements RequestExecutor<RhActionsBatch, ActionsBatchExecutorResponse> {
+	
 	private final Logger logger = LoggerFactory.getLogger(ActionsBatchExecutor.class);
 
 	private String sessionId;
@@ -59,14 +60,14 @@ public class ActionsBatchExecutor implements RequestExecutor<RhActionsList, Acti
 
 
 	@Override
-	public ActionsBatchExecutorResponse execute(RhActionsList request) {
+	public ActionsBatchExecutorResponse execute(RhActionsBatch request) {
 		Instant executionStartTime = Instant.now();
 		RhScriptResult scriptResult;
 		String sessionId = "th2_hand";
 		try {
 			HandSessionHandler sessionHandler = getSessionHandler(request);
 			messageIDs.addAll(messageHandler.getMessageStoreHandler().onRequest(request, sessionAlias));
-			List<RhAction> actions = request.getRhActionList();
+			RhActionList actions = request.getRhAction();
 			String script = messageHandler.getScriptBuilder().buildScript(actions);
 			sessionHandler.handle(new ExecutionRequest(script), HandSessionExchange.getStub());
 			scriptResult = sessionHandler.waitAndGet(messageHandler.getConfig().getResponseTimeout());
@@ -87,7 +88,7 @@ public class ActionsBatchExecutor implements RequestExecutor<RhActionsList, Acti
 	}
 
 
-	private HandSessionHandler getSessionHandler(RhActionsList request) {
+	private HandSessionHandler getSessionHandler(RhActionsBatch request) {
 		sessionId = request.getSessionId().getId();
 		return messageHandler.getRhConnectionManager().getSessionHandler(sessionId);
 	}
@@ -139,7 +140,7 @@ public class ActionsBatchExecutor implements RequestExecutor<RhActionsList, Acti
 		return details;
 	}
 
-	private void buildAndSendEvent(Instant startTime, RhActionsList request, ActionsBatchExecutorResponse executorResponse) {
+	private void buildAndSendEvent(Instant startTime, RhActionsBatch request, ActionsBatchExecutorResponse executorResponse) {
 		EventStoreHandler eventStoreHandler = messageHandler.getEventStoreHandler();
 		Event event = eventStoreHandler.getEventBuilder().buildEvent(startTime, request, executorResponse);
 		eventStoreHandler.getEventStoreSender().storeEvent(event);

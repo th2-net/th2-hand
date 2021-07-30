@@ -17,7 +17,7 @@
 package com.exactpro.th2.hand.builders.script.web;
 
 import com.exactpro.remotehand.web.actions.WaitForElement;
-import com.exactpro.th2.act.grpc.hand.RhAction;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.RhWebActions;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages;
 
 import java.util.List;
@@ -25,7 +25,7 @@ import java.util.List;
 public class WebWaitForElementBuilder extends WebBaseBuilder<RhActionsMessages.WaitForElement> {
 	
 	@Override
-	protected RhActionsMessages.WaitForElement getMessage(RhAction action) {
+	protected RhActionsMessages.WaitForElement getMessage(RhWebActions action) {
 		return action.getWaitForElement();
 	}
 

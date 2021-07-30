@@ -16,14 +16,14 @@
 
 package com.exactpro.th2.hand.builders.script.web;
 
-import com.exactpro.th2.act.grpc.hand.RhAction;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages.RhWebActions;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhActionsMessages;
 
 import java.util.List;
 
 public class WebOpenBuilder extends WebBaseBuilder<RhActionsMessages.Open> {
 	@Override
-	protected RhActionsMessages.Open getMessage(RhAction action) {
+	protected RhActionsMessages.Open getMessage(RhWebActions action) {
 		return action.getOpen();
 	}
 

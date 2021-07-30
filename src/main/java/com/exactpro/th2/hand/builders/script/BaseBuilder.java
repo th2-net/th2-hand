@@ -16,7 +16,6 @@
 
 package com.exactpro.th2.hand.builders.script;
 
-import com.exactpro.th2.act.grpc.hand.RhAction;
 import com.google.protobuf.GeneratedMessageV3;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.lang3.StringUtils;
@@ -25,11 +24,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class BaseBuilder<T extends GeneratedMessageV3> {
+public abstract class BaseBuilder<T extends GeneratedMessageV3, K> {
 	protected static final String ACTION = "#action";
 
 
-	public void buildScript(CSVPrinter printer, RhAction action) throws IOException {
+	public void buildScript(CSVPrinter printer, K action) throws IOException {
 		List<String> headers = new ArrayList<>(), values = new ArrayList<>();
 
 		headers.add(ACTION);
@@ -41,13 +40,13 @@ public abstract class BaseBuilder<T extends GeneratedMessageV3> {
 		printer.printRecord(values);
 	}
 
-	protected abstract T getMessage(RhAction action);
+	protected abstract T getMessage(K action);
 
 	protected abstract String getActionName();
 
 	protected abstract void createActionDetails(T message, List<String> headers, List<String> values);
 
-	protected abstract void buildPayLoad(RhAction action, List<String> headers, List<String> values);
+	protected abstract void buildPayLoad(K action, List<String> headers, List<String> values);
 
 	protected static void addIfNotEmpty(String headerName, boolean value, List<String> headers, List<String> values) {
 		addIfNotEmpty(headerName, String.valueOf(value), headers, values);

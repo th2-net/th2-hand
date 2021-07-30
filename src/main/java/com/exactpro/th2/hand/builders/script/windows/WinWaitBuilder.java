@@ -16,14 +16,14 @@
 
 package com.exactpro.th2.hand.builders.script.windows;
 
-import com.exactpro.th2.act.grpc.hand.RhAction;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.RhWinActions;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 
 import java.util.List;
 
 public class WinWaitBuilder extends WinBaseBuilder<RhWinActionsMessages.WinWait> {
 	@Override
-	protected RhWinActionsMessages.WinWait getMessage(RhAction action) {
+	protected RhWinActionsMessages.WinWait getMessage(RhWinActions action) {
 		return action.getWinWait();
 	}
 

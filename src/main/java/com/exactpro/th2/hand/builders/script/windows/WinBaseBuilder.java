@@ -17,14 +17,14 @@
 package com.exactpro.th2.hand.builders.script.windows;
 
 import com.exactpro.remotehand.windows.SearchParams;
-import com.exactpro.th2.act.grpc.hand.RhAction;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.RhWinActions;
 import com.exactpro.th2.hand.builders.script.BaseBuilder;
 import com.google.protobuf.GeneratedMessageV3;
 
 import java.util.List;
 
-public abstract class WinBaseBuilder<T extends GeneratedMessageV3> extends BaseBuilder<T> {
+public abstract class WinBaseBuilder<T extends GeneratedMessageV3> extends BaseBuilder<T, RhWinActions> {
 	protected static final String WINDOWNAME = "#windowname", ACCESSIBILITY_ID = "#accessibilityid";
 	protected static final SearchParams.HeaderKeys locatorPair = SearchParams.HeaderKeys.DEFAULT;
 	protected static final SearchParams.HeaderKeys textLocatorPair
@@ -36,7 +36,7 @@ public abstract class WinBaseBuilder<T extends GeneratedMessageV3> extends BaseB
 
 
 	@Override
-	protected void buildPayLoad(RhAction action, List<String> headers, List<String> values) {
+	protected void buildPayLoad(RhWinActions action, List<String> headers, List<String> values) {
 		T message = getMessage(action);
 		addDefaults(getBaseParams(message), headers, values);
 		createActionDetails(message, headers, values);

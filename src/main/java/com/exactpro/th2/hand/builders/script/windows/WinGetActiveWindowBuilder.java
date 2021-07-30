@@ -17,7 +17,7 @@
 package com.exactpro.th2.hand.builders.script.windows;
 
 
-import com.exactpro.th2.act.grpc.hand.RhAction;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.RhWinActions;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 import org.apache.commons.lang3.StringUtils;
 
@@ -25,7 +25,7 @@ import java.util.List;
 
 public class WinGetActiveWindowBuilder extends WinBaseBuilder<RhWinActionsMessages.WinGetActiveWindow> {
 	@Override
-	protected RhWinActionsMessages.WinGetActiveWindow getMessage(RhAction action) {
+	protected RhWinActionsMessages.WinGetActiveWindow getMessage(RhWinActions action) {
 		return action.getWinGetActiveWindow();
 	}
 

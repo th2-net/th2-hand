@@ -17,7 +17,7 @@
 package com.exactpro.th2.hand.builders.script.windows;
 
 import com.exactpro.remotehand.windows.actions.ScrollToElement;
-import com.exactpro.th2.act.grpc.hand.RhAction;
+import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages.RhWinActions;
 import com.exactpro.th2.act.grpc.hand.rhactions.RhWinActionsMessages;
 import org.apache.commons.lang3.StringUtils;
 
@@ -25,7 +25,7 @@ import java.util.List;
 
 public class WinScrollToElementBuilder extends WinBaseBuilder<RhWinActionsMessages.WinScrollToElement> {
 	@Override
-	protected RhWinActionsMessages.WinScrollToElement getMessage(RhAction action) {
+	protected RhWinActionsMessages.WinScrollToElement getMessage(RhWinActions action) {
 		return action.getWinScrollToElement();
 	}
 
