@@ -76,7 +76,7 @@ dependencies {
 	compile "com.rabbitmq:amqp-client"
 
 	compile "com.exactpro.remotehand:remotehand:1.7.0"
-	implementation "com.exactpro.th2:grpc-hand:2.8.0-th2_2175-1079853370-SNAPSHOT"
+	implementation "com.exactpro.th2:grpc-hand:2.8.0"
 	implementation "com.exactpro.th2:grpc-common:3.1.2"
 	implementation "com.exactpro.th2:common:3.13.4"
 

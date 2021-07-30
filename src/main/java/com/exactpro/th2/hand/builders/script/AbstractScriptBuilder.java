@@ -41,7 +41,7 @@ public abstract class AbstractScriptBuilder<T> {
 			}
 			
 		} catch (IOException e) {
-			logger.error("An error occurred while script building", e);
+			logger.error("An error occurred while building script", e);
 		}
 
 		return script.toString();

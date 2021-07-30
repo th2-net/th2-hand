@@ -58,7 +58,7 @@ public class MessageStoreHandler implements AutoCloseable {
 			case WEB:
 				return rhActionList.getWeb().getWebActionListList();
 			default:
-				logger.warn("Actions is not set");
+				logger.warn("Actions list is not set");
 				return Collections.emptyList();
 		}
 	}
