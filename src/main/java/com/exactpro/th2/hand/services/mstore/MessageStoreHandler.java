@@ -18,14 +18,13 @@ package com.exactpro.th2.hand.services.mstore;
 
 import com.exactpro.remotehand.ActionResult;
 import com.exactpro.remotehand.Configuration;
-import com.exactpro.remotehand.rhdata.RhScriptResult;
 import com.exactpro.th2.act.grpc.hand.RhActionList;
 import com.exactpro.th2.act.grpc.hand.RhActionsBatch;
 import com.exactpro.th2.common.grpc.Direction;
 import com.exactpro.th2.common.grpc.MessageID;
 import com.exactpro.th2.common.grpc.RawMessage;
 import com.exactpro.th2.hand.builders.mstore.DefaultMessageStoreBuilder;
-import com.exactpro.th2.hand.messages.RhResponseMessageBody;
+import com.exactpro.th2.hand.messages.ResponseParams;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Int32Value;
@@ -36,7 +35,11 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MessageStoreHandler implements AutoCloseable {
 	private static final Logger logger = LoggerFactory.getLogger(MessageStoreSender.class);
@@ -127,10 +130,9 @@ public class MessageStoreHandler implements AutoCloseable {
 		return messageIDS;
 	}
 
-	public MessageID onResponse(RhScriptResult response, String sessionId, String rhSessionId) {
-		RhResponseMessageBody body = RhResponseMessageBody.fromRhScriptResult(response).setRhSessionId(rhSessionId);
+	public MessageID onResponse(ResponseParams responseParams) {
 		try {
-			RawMessage message = messageStoreBuilder.buildMessage(body.getFields(), Direction.FIRST, sessionId);
+			RawMessage message = messageStoreBuilder.buildMessage(responseParams.getParams(), Direction.FIRST, responseParams.getSessionAlias());
 			messageStoreSender.sendMessages(message);
 			return message.getMetadata().getId();
 		} catch (Exception e) {

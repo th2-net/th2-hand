@@ -26,6 +26,7 @@ import com.exactpro.th2.act.grpc.hand.RhActionsBatch;
 import com.exactpro.th2.act.grpc.hand.RhBatchResponse;
 import com.exactpro.th2.common.grpc.Event;
 import com.exactpro.th2.common.grpc.MessageID;
+import com.exactpro.th2.hand.messages.ResponseParams;
 import com.exactpro.th2.hand.messages.responseexecutor.ActionsBatchExecutorResponse;
 import com.exactpro.th2.hand.services.HandSessionExchange;
 import com.exactpro.th2.hand.services.HandSessionHandler;
@@ -63,7 +64,6 @@ public class ActionsBatchExecutor implements RequestExecutor<RhActionsBatch, Act
 	public ActionsBatchExecutorResponse execute(RhActionsBatch request) {
 		Instant executionStartTime = Instant.now();
 		RhScriptResult scriptResult;
-		String sessionId = "th2_hand";
 		try {
 			HandSessionHandler sessionHandler = getSessionHandler(request);
 			messageIDs.addAll(messageHandler.getMessageStoreHandler().onRequest(request, sessionAlias));
@@ -79,10 +79,16 @@ public class ActionsBatchExecutor implements RequestExecutor<RhActionsBatch, Act
 			logger.warn(errMsg, e);
 		}
 
-		messageIDs.add(messageHandler.getMessageStoreHandler().onResponse(scriptResult, sessionAlias, sessionId));
+		ResponseParams responseParams = ResponseParams.builder()
+				.setMessageType(request.getMessageType())
+				.setExecutionId(request.getExecutionId())
+				.setSessionAlias(sessionAlias)
+				.setScriptResult(scriptResult)
+				.build();
+		messageIDs.add(messageHandler.getMessageStoreHandler().onResponse(responseParams));
 		messageIDs.addAll(messageHandler.getMessageStoreHandler().storeScreenshots(scriptResult.getScreenshotIds(), screenshotSessionAlias));
 
-		ActionsBatchExecutorResponse executorResponse = createResponse(scriptResult);
+		ActionsBatchExecutorResponse executorResponse = createResponse(scriptResult, request);
 		buildAndSendEvent(executionStartTime, request, executorResponse);
 		return executorResponse;
 	}
@@ -93,16 +99,18 @@ public class ActionsBatchExecutor implements RequestExecutor<RhActionsBatch, Act
 		return messageHandler.getRhConnectionManager().getSessionHandler(sessionId);
 	}
 
-	private ActionsBatchExecutorResponse createResponse(RhScriptResult scriptResult) {
-		RhBatchResponse handResponse = createHandResponse(scriptResult);
+	private ActionsBatchExecutorResponse createResponse(RhScriptResult scriptResult, RhActionsBatch request) {
+		RhBatchResponse handResponse = createHandResponse(scriptResult, request);
 		return new ActionsBatchExecutorResponse(handResponse, scriptResult, messageIDs);
 	}
 
-	private RhBatchResponse createHandResponse(RhScriptResult result) {
+	private RhBatchResponse createHandResponse(RhScriptResult result, RhActionsBatch request) {
 		return RhBatchResponse.newBuilder()
 				.setScriptStatus(convertToScriptExecutionStatus(RhResponseCode.byCode(result.getCode())))
 				.setErrorMessage(defaultIfEmpty(result.getErrorMessage(), ""))
 				.setSessionId(sessionId)
+				.setExecutionId(request.getExecutionId())
+				.setMessageType(request.getMessageType())
 				.addAllResult(parseResultDetails(result.getActionResults()))
 				.build();
 	}
