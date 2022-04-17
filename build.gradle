@@ -76,9 +76,9 @@ dependencies {
 	compile "com.rabbitmq:amqp-client"
 
 	compile "com.exactpro.remotehand:remotehand:1.7.1"
-	implementation "com.exactpro.th2:grpc-hand:2.8.0"
-	implementation "com.exactpro.th2:grpc-common:3.1.2"
-	implementation "com.exactpro.th2:common:3.13.4"
+	implementation "com.exactpro.th2:grpc-hand:2.10.0"
+	implementation "com.exactpro.th2:grpc-common:3.8.0"
+	implementation "com.exactpro.th2:common:3.31.1"
 
 	compile 'org.apache.commons:commons-lang3'
 	compile 'com.fasterxml.jackson.core:jackson-databind'

@@ -17,7 +17,11 @@
 package com.exactpro.th2.hand.builders.mstore;
 
 import com.exactpro.remotehand.Configuration;
-import com.exactpro.th2.common.grpc.*;
+import com.exactpro.th2.common.grpc.ConnectionID;
+import com.exactpro.th2.common.grpc.Direction;
+import com.exactpro.th2.common.grpc.MessageID;
+import com.exactpro.th2.common.grpc.RawMessage;
+import com.exactpro.th2.common.grpc.RawMessageMetadata;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
@@ -47,10 +51,10 @@ public final class DefaultMessageStoreBuilder implements MessageStoreBuilder<Raw
 
 
 	@Override
-	public RawMessage buildMessage(Map<String, Object> fields, Direction direction, String sessionId) {
+	public RawMessage buildMessage(Map<String, Object> fields, Direction direction, String sessionAlias) {
 		try {
 			byte[] bytes = mapper.writeValueAsBytes(fields);
-			return buildMessage(bytes, direction, sessionId);
+			return buildMessage(bytes, direction, sessionAlias);
 		} catch (JsonProcessingException e) {
 			logger.error("Could not encode message as JSON", e);
 			return null;
@@ -58,8 +62,8 @@ public final class DefaultMessageStoreBuilder implements MessageStoreBuilder<Raw
 	}
 
 	@Override
-	public RawMessage buildMessage(byte[] bytes, Direction direction, String sessionId) {
-		RawMessageMetadata messageMetadata = buildMetaData(direction, sessionId, null);
+	public RawMessage buildMessage(byte[] bytes, Direction direction, String sessionAlias) {
+		RawMessageMetadata messageMetadata = buildMetaData(direction, sessionAlias, null);
 		return RawMessage.newBuilder().setMetadata(messageMetadata).setBody(ByteString.copyFrom(bytes)).build();
 	}
 
@@ -77,8 +81,8 @@ public final class DefaultMessageStoreBuilder implements MessageStoreBuilder<Raw
 	}
 
 
-	private RawMessageMetadata buildMetaData(Direction direction, String sessionId, String protocol) {
-		ConnectionID connectionID = ConnectionID.newBuilder().setSessionAlias(sessionId).build();
+	private RawMessageMetadata buildMetaData(Direction direction, String sessionAlias, String protocol) {
+		ConnectionID connectionID = ConnectionID.newBuilder().setSessionAlias(sessionAlias).build();
 		MessageID messageID = MessageID.newBuilder().setConnectionId(connectionID).setDirection(direction)
 				.setSequence(seqNum.incrementAndGet()).build();
 		RawMessageMetadata.Builder builder = RawMessageMetadata.newBuilder();
