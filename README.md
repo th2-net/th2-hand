@@ -1,6 +1,6 @@
-# th2 hand (3.1.0)
+# th2 hand (3.8.1)
 
-th2-hand is used to interpret and transmit commands from th2-act to Selenium or Windown Application Driver and vice versa.
+th2-hand is used to interpret and transmit commands from th2-act to Selenium or Windows Application Driver and vice versa.
 All incoming and outgoing data is stored in Cradle as messages.
 
 ## Requirements
@@ -59,9 +59,9 @@ th2-hand gRPC server port to run is configured in `grpc.json`:
 
 The `mq.json` file must have two configured queues. 
 
-The first queue configured in Message storage is for raw messages. It must nave "publish" and "raw" mandatory attributes. 
+The first queue configured in Message storage is for raw messages. It must have "publish" and "raw" mandatory attributes. 
 
-The second queue configured in Message storage is for parsed messages. It must nave "publish" and "parsed" mandatory attributes.
+The second queue configured in Message storage is for parsed messages. It must have "publish" and "parsed" mandatory attributes.
 
 Example of `mq.json`:
 ```
@@ -91,6 +91,10 @@ Example of `rabbitMQ.json`:
 ```
 
 ## Release Notes
+
+### 3.8.1
+
++ fixed SwitchActiveWindow action
 
 ### 3.1.0
 
