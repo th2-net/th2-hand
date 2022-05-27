@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
+ *  Copyright 2020-2022 Exactpro (Exactpro Systems Limited)
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -53,6 +53,9 @@ public class RhConnectionManager {
 
 	public HandSessionHandler createSessionHandler(String targetServer) throws RhConfigurationException {
 		Config.DriverMapping driverSettings = config.getDriversMapping().get(targetServer);
+		if (driverSettings == null)
+			throw new RhConfigurationException("Driver settings for '" + targetServer + "' not found.");
+
 		RemoteManagerType remoteManagerType = RemoteManagerType.getByLabel(driverSettings.type);
 		if (remoteManagerType == null)
 			throw new RhConfigurationException("Unrecognized driver manager type '"+driverSettings.type+"'");
