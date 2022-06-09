@@ -91,7 +91,9 @@ public class MessageStoreHandler implements AutoCloseable {
 			}
 		}
 
-		RawMessage message = messageStoreBuilder.buildMessage(Collections.singletonMap("messages", allMessages),
+		RawMessage message = messageStoreBuilder.buildMessage(
+                Map.of("messages", allMessages,
+                        ResponseParams.MESSAGE_TYPE_FIELD, actionsList.getMessageType().toString()),
 				Direction.SECOND, sessionId);
 
 		if (message != null) {

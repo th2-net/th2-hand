@@ -24,7 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ResponseParams {
-	private String sessionAlias;
+    public static final String MESSAGE_TYPE_FIELD = "MessageType";
+    private String sessionAlias;
 	private String rhSessionId = "th2_hand";
 	private String executionId;
 	private Map<String, Object> params;
@@ -103,7 +104,7 @@ public class ResponseParams {
 			params.put("ErrorText", scriptResult.getErrorMessage());
 			params.put("ActionResults", scriptResult.getActionResults());
 			params.put("RhSessionId", this.responseParams.rhSessionId);
-			params.put("MessageType", this.responseParams.messageType);
+			params.put(MESSAGE_TYPE_FIELD, this.responseParams.messageType);
 			params.put("ExecutionId", this.responseParams.executionId);
 			return params;
 		}
