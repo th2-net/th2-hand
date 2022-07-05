@@ -94,11 +94,7 @@ Example of `rabbitMQ.json`:
 
 ### 3.9.0
 
-+ added SelectFrame web action builder
-
-### 3.8.2
-
-+ fixed zero offset Click action in Chrome
++ added 'SelectFrame' web action
 
 ### 3.8.1
 
