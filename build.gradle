@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 2009-2022 Exactpro (Exactpro Systems Limited)
+ * Copyright 2009-2023 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,7 @@ group 'com.exactpro.th2'
 version = release_version
 
 ext {
-	version_slf4j = '1.7.36'
-	grpcVersion = '1.39.0'
-	protobufVersion = '3.21.2'
+	grpcVersion = '1.52.1'
 
 	mainRsrcDir = 'src/main/resources'
 	sharedDir = file("${projectDir}/shared")
@@ -57,17 +55,14 @@ repositories {
 
 	mavenCentral()
 
-	configurations.all {
+	configurations.configureEach {
 		resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 		resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
 	}
 }
 
 dependencies {
-	api platform('com.exactpro.th2:bom:3.2.0')
-
-	compile "org.slf4j:slf4j-api"
-	compile "org.slf4j:slf4j-log4j12"
+	api platform('com.exactpro.th2:bom:4.0.2')
 
 	compile "io.grpc:grpc-protobuf"
 	compile "io.grpc:grpc-stub"
@@ -80,10 +75,10 @@ dependencies {
 	implementation("com.exactpro.th2:grpc-hand:2.11.0") {
 		exclude group: "com.google.guava", module: "guava" // for compatibility with Selenium 3.141.59
 	}
-	implementation("com.exactpro.th2:grpc-common:3.11.1") {
+/*	implementation("com.exactpro.th2:grpc-common:3.12.0") {
 		exclude group: "com.google.guava", module: "guava" // for compatibility with Selenium 3.141.59
-	}
-	implementation(group: "com.exactpro.th2", name: "common", version: "3.39.2") {
+	}*/
+	implementation("com.exactpro.th2:common:5.0.0-dev-version-5-3838510969-SNAPSHOT") {
 		exclude group: "com.google.guava", module: "guava" // for compatibility with Selenium 3.141.59
 	}
 
@@ -123,7 +118,7 @@ dockerPrepare {
 }
 
 application {
-	mainClassName = "com.exactpro.th2.hand.Application"
+	mainClass.set("com.exactpro.th2.hand.Application")
 }
 
 jar {

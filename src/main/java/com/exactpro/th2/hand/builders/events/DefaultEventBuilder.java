@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,17 +23,28 @@ import com.exactpro.th2.act.grpc.hand.RhBatchResponse;
 import com.exactpro.th2.common.grpc.Event;
 import com.exactpro.th2.common.grpc.EventID;
 import com.exactpro.th2.common.grpc.EventStatus;
+import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.hand.messages.responseexecutor.ActionsBatchExecutorResponse;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Iterator;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.exactpro.th2.hand.utils.Utils.getTimestamp;
 
 public final class DefaultEventBuilder implements EventBuilder<Event, RhActionsBatch, ActionsBatchExecutorResponse> {
-	
+
+	private final CommonFactory factory;
+
+	public DefaultEventBuilder(CommonFactory factory) {
+		this.factory = factory;
+	}
+
 	@Override
 	public Event buildEvent(RhActionsBatch request, ActionsBatchExecutorResponse executorResponse) {
 		return buildEvent(Instant.now(), request, executorResponse);
@@ -41,15 +52,18 @@ public final class DefaultEventBuilder implements EventBuilder<Event, RhActionsB
 
 	@Override
 	public Event buildEvent(Instant startTime, RhActionsBatch request, ActionsBatchExecutorResponse executorResponse) {
-		EventID eventId = EventID.newBuilder().setId(UUID.randomUUID().toString()).build();
-
-		Event.Builder eventBuilder = Event.newBuilder()
-				.setId(eventId)
-				.setName(request.getEventName())
+		EventID.Builder eventId = factory.newEventIDBuilder()
+				.setId(UUID.randomUUID().toString())
 				.setStartTimestamp(getTimestamp(startTime));
 
-		if (request.hasParentEventId())
+		Event.Builder eventBuilder = Event.newBuilder().setName(request.getEventName());
+
+		if (request.hasParentEventId()) {
+			eventId.setScope(request.getParentEventId().getScope());
 			eventBuilder.setParentId(request.getParentEventId());
+		}
+
+		eventBuilder.setId(eventId);
 
 		RhScriptResult scriptResult = executorResponse.getScriptResult();
 		RhBatchResponse response = executorResponse.getHandResponse();
@@ -66,7 +80,6 @@ public final class DefaultEventBuilder implements EventBuilder<Event, RhActionsB
 
 		return eventBuilder.build();
 	}
-
 
 	private void createResultPayload(EventPayloadBuilder payloadBuilder, RhScriptResult scriptResult, String sessionId,
 	                                 RhBatchResponse.ScriptExecutionStatus scriptStatus) {
@@ -94,14 +107,17 @@ public final class DefaultEventBuilder implements EventBuilder<Event, RhActionsB
 		if (!description.isEmpty()) {
 			payloadBuilder.printText("Description: \n" + description);
 		}
-		
+
 		if (info.getPrintTable()) {
 			Map<String, String> table = new LinkedHashMap<>(info.getKeysCount());
-			for (Iterator<String> keysIt = info.getKeysList().iterator(), valuesIt = info.getValuesList().iterator();
-				 keysIt.hasNext() && valuesIt.hasNext();
-				 table.put(keysIt.next(), valuesIt.next()));
+
+			Iterator<String> keys = info.getKeysList().iterator();
+			Iterator<String> values = info.getValuesList().iterator();
+			while (keys.hasNext() && values.hasNext()) {
+				table.put(keys.next(), values.next());
+			}
+
 			payloadBuilder.printTable(info.getRequestParamsTableTitle(), table);
 		}
 	}
-	
 }

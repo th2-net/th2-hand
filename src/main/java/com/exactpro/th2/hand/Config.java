@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class Config {
 	public Map<String, DriverMapping> getDriversMapping() {
 		return driversMapping;
 	}
-	
+
 	public Map<String, String> getRhOptions() {
 		Map<String, String> rhOptions = this.customConfiguration.getRhOptions();
 		if (rhOptions == null) {
@@ -71,14 +71,18 @@ public class Config {
 		}
 		return rhOptions;
 	}
-	
+
 	public int getResponseTimeout() {
 		return customConfiguration.getResponseTimeout();
 	}
-	
+
 	public String getSessionAlias()
 	{
 		return customConfiguration.getSessionAlias();
+	}
+
+	public String getSessionGroup() {
+		return customConfiguration.getSessionGroup();
 	}
 
 	public String getScreenshotSessionAlias()
@@ -87,7 +91,6 @@ public class Config {
 	}
 
 	public static class DriverMapping {
-		
 		public final String type;
 		public final String url;
 
@@ -95,6 +98,5 @@ public class Config {
 			this.type = type;
 			this.url = url;
 		}
-	} 
-	
+	}
 }
