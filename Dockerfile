@@ -13,7 +13,7 @@ RUN apk add --no-cache make git gcc musl-dev swig \
     && gcc -shared -fPIC -fno-strict-aliasing -O2 -I/opt/java/openjdk/include/ -I/opt/java/openjdk/include/linux \
         -I../src -L../src libwebp_java_wrap.c -lwebp -o libwebp.so
 
-FROM gradle:6.6-jdk11 AS build
+FROM gradle:7.6-jdk11 AS build
 ARG app_version=0.0.0
 COPY ./ .
 RUN gradle dockerPrepare -Prelease_version=${app_version}
