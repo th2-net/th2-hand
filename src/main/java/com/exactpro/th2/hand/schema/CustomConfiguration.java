@@ -16,8 +16,10 @@
 
 package com.exactpro.th2.hand.schema;
 
+import java.util.Collections;
 import java.util.Map;
 
+import com.exactpro.th2.hand.Config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
@@ -35,17 +37,17 @@ public class CustomConfiguration {
 
 	@JsonProperty(value="message-batch-limit")
 	private long messageBatchLimit = DEFAULT_MESSAGE_BATCH_LIMIT;
-	
-	@JsonProperty(value="driversMapping")
-	private Map<String, Map<String, String>> driversMapping;
-	
+
+	@JsonProperty(value="driversMapping", required = true)
+	private Map<String, Config.DriverMapping> driversMapping;
+
 	@JsonProperty(value="rhOptions")
-	private Map<String, String> rhOptions;
-	
+	private Map<String, String> rhOptions = Collections.emptyMap();;
+
 	@JsonProperty(value="responseTimeoutSec")
 	private int responseTimeout = DEFAULT_RESPONSE_TIMEOUT;
 
-	public Map<String, Map<String, String>> getDriversMapping() {
+	public Map<String, Config.DriverMapping> getDriversMapping() {
 		return driversMapping;
 	}
 
