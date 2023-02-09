@@ -35,6 +35,10 @@ public class Config {
 		if (customConfiguration == null) {
 			throw new ConfigurationException("Custom configuration is not found");
 		}
+
+		if (customConfiguration.getDriversMapping().isEmpty()) {
+			throw new ConfigurationException("Drivers mapping should be provided in custom config.");
+		}
 	}
 
 	public CommonFactory getFactory() {
