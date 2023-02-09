@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
+ *  Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.exactpro.th2.hand;
 
 import com.exactpro.remotehand.IRemoteHandManager;
-import com.exactpro.remotehand.RemoteManagerType;
 import com.exactpro.remotehand.RhConfigurationException;
 import com.exactpro.remotehand.grid.GridRemoteHandManager;
 import com.exactpro.th2.hand.services.HandBaseService;
@@ -32,17 +31,15 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RhConnectionManager {
 	private static final Logger logger = LoggerFactory.getLogger(RhConnectionManager.class);
 
-	private final Map<String, HandSessionHandler> sessions = new ConcurrentHashMap<String, HandSessionHandler>();
+	private final Map<String, HandSessionHandler> sessions = new ConcurrentHashMap<>();
 	private final GridRemoteHandManager gridRemoteHandManager;
 	private final Config config;
-
 
 	public RhConnectionManager(Config config) {
 		this.config = config;
 		gridRemoteHandManager = new GridRemoteHandManager();
 		gridRemoteHandManager.createConfigurations(null, config.getRhOptions());
 	}
-
 
 	public HandSessionHandler getSessionHandler(String sessionId) throws IllegalArgumentException {
 		HandSessionHandler sessionHandler = sessions.get(sessionId);
@@ -53,12 +50,12 @@ public class RhConnectionManager {
 
 	public HandSessionHandler createSessionHandler(String targetServer) throws RhConfigurationException {
 		Config.DriverMapping driverSettings = config.getDriversMapping().get(targetServer);
-		RemoteManagerType remoteManagerType = RemoteManagerType.getByLabel(driverSettings.type);
-		if (remoteManagerType == null)
-			throw new RhConfigurationException("Unrecognized driver manager type '"+driverSettings.type+"'");
+		if (driverSettings == null) {
+			throw new RhConfigurationException("Unrecognized targetServer: " + targetServer);
+		}
 
 		String sessionId = generateSessionId();
-		IRemoteHandManager remoteHandManager = gridRemoteHandManager.getRemoteHandManager(remoteManagerType);
+		IRemoteHandManager remoteHandManager = gridRemoteHandManager.getRemoteHandManager(driverSettings.type);
 		HandSessionHandler handSessionHandler = new HandSessionHandler(sessionId, remoteHandManager, this);
 		gridRemoteHandManager.saveSession(sessionId, driverSettings.url);
 		sessions.put(sessionId, handSessionHandler);
@@ -68,8 +65,7 @@ public class RhConnectionManager {
 
 	public void closeSessionHandler(String sessionId) {
 		HandSessionHandler sessionHandler = sessions.remove(sessionId);
-		if (sessionHandler == null)
-		{
+		if (sessionHandler == null) {
 			logger.warn("Session handler for session '{}', requested to close, is not registered", sessionId);
 			return;
 		}
@@ -84,7 +80,6 @@ public class RhConnectionManager {
 		}
 		gridRemoteHandManager.clearDriverPool();
 	}
-
 
 	private String generateSessionId() {
 		return HandBaseService.RH_SESSION_PREFIX + UUID.randomUUID();

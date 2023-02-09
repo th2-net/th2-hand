@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,38 @@
 
 package com.exactpro.th2.hand.schema;
 
+import java.util.Collections;
 import java.util.Map;
 
+import com.exactpro.th2.hand.Config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 public class CustomConfiguration {
 	private static final String DEFAULT_SESSION_ALIAS = "th2-hand";
 	private static final int DEFAULT_RESPONSE_TIMEOUT = 120;
-	private static final long DEFAULT_MESSAGE_BATCH_LIMIT = 1048576; //1MB = 1 * 1024 * 1024
+	private static final long DEFAULT_MESSAGE_BATCH_LIMIT = 1024 * 1024; // 1 MB
 
 	@JsonProperty(value="session-alias", required = true, defaultValue = DEFAULT_SESSION_ALIAS)
 	private String sessionAlias = DEFAULT_SESSION_ALIAS;
 	private String screenshotSessionAlias = null;
 
+	@JsonProperty(value="sessionGroup")
+	private String sessionGroup = null;
+
 	@JsonProperty(value="message-batch-limit")
 	private long messageBatchLimit = DEFAULT_MESSAGE_BATCH_LIMIT;
-	
-	@JsonProperty(value="driversMapping")
-	private Map<String, Map<String, String>> driversMapping;
-	
+
+	@JsonProperty(value="driversMapping", required = true)
+	private Map<String, Config.DriverMapping> driversMapping;
+
 	@JsonProperty(value="rhOptions")
-	private Map<String, String> rhOptions;
-	
+	private Map<String, String> rhOptions = Collections.emptyMap();;
+
 	@JsonProperty(value="responseTimeoutSec")
 	private int responseTimeout = DEFAULT_RESPONSE_TIMEOUT;
 
-	public Map<String, Map<String, String>> getDriversMapping() {
+	public Map<String, Config.DriverMapping> getDriversMapping() {
 		return driversMapping;
 	}
 
@@ -50,9 +55,12 @@ public class CustomConfiguration {
 		return rhOptions;
 	}
 
-	public String getSessionAlias()
-	{
+	public String getSessionAlias() {
 		return sessionAlias;
+	}
+
+	public String getSessionGroup() {
+		return sessionGroup;
 	}
 
 	public int getResponseTimeout() {

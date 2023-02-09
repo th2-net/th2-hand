@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,16 +36,21 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 public class MessageStoreHandler implements AutoCloseable {
 	private static final Logger logger = LoggerFactory.getLogger(MessageStoreSender.class);
 
+	private final String sessionGroup;
 	private final MessageStoreSender messageStoreSender;
 	private final DefaultMessageStoreBuilder messageStoreBuilder;
 
-
-	public MessageStoreHandler(MessageStoreSender messageStoreSender, DefaultMessageStoreBuilder defaultMessageStoreBuilder) {
+	public MessageStoreHandler(String sessionGroup, MessageStoreSender messageStoreSender, DefaultMessageStoreBuilder defaultMessageStoreBuilder) {
+		this.sessionGroup = sessionGroup;
 		this.messageStoreSender = messageStoreSender;
 		this.messageStoreBuilder = defaultMessageStoreBuilder;
 	}
@@ -89,7 +94,7 @@ public class MessageStoreHandler implements AutoCloseable {
 		}
 
 		RawMessage message = messageStoreBuilder.buildMessage(Collections.singletonMap("messages", allMessages),
-				Direction.SECOND, sessionId);
+				Direction.SECOND, sessionId, sessionGroup);
 
 		if (message != null) {
 			messageStoreSender.sendMessages(message);
@@ -115,7 +120,7 @@ public class MessageStoreHandler implements AutoCloseable {
 				logger.warn("Screenshot with id {} does not exists", screenshotId);
 				continue;
 			}
-			RawMessage rawMessage = messageStoreBuilder.buildMessageFromFile(screenPath, Direction.FIRST, sessionAlias);
+			RawMessage rawMessage = messageStoreBuilder.buildMessageFromFile(screenPath, Direction.FIRST, sessionAlias, sessionGroup);
 			if (rawMessage != null) {
 				messageIDS.add(rawMessage.getMetadata().getId());
 				rawMessages.add(rawMessage);
@@ -130,7 +135,7 @@ public class MessageStoreHandler implements AutoCloseable {
 	public MessageID onResponse(RhScriptResult response, String sessionId, String rhSessionId) {
 		RhResponseMessageBody body = RhResponseMessageBody.fromRhScriptResult(response).setRhSessionId(rhSessionId);
 		try {
-			RawMessage message = messageStoreBuilder.buildMessage(body.getFields(), Direction.FIRST, sessionId);
+			RawMessage message = messageStoreBuilder.buildMessage(body.getFields(), Direction.FIRST, sessionId, sessionGroup);
 			messageStoreSender.sendMessages(message);
 			return message.getMetadata().getId();
 		} catch (Exception e) {

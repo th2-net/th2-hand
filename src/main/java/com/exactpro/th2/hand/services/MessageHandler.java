@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
+ *  Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -39,13 +39,16 @@ public class MessageHandler implements AutoCloseable {
 	private final RhConnectionManager rhConnectionManager;
 	private final ScriptBuilder scriptBuilder = new ScriptBuilder();
 
-
 	public MessageHandler(Config config, AtomicLong seqNum) {
 		this.config = config;
 		rhConnectionManager = new RhConnectionManager(config);
 		CommonFactory factory = config.getFactory();
-		this.messageStoreHandler = new MessageStoreHandler(new MessageStoreSender(factory), new DefaultMessageStoreBuilder(seqNum));
-		this.eventStoreHandler = new EventStoreHandler(new EventStoreSender(factory), new DefaultEventBuilder());
+		this.messageStoreHandler = new MessageStoreHandler(
+				config.getSessionGroup(),
+				new MessageStoreSender(factory),
+				new DefaultMessageStoreBuilder(config.getFactory(), seqNum)
+		);
+		this.eventStoreHandler = new EventStoreHandler(new EventStoreSender(factory.getEventBatchRouter()), new DefaultEventBuilder(factory));
 	}
 
 	public MessageStoreHandler getMessageStoreHandler() {
