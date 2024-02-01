@@ -1,4 +1,4 @@
-# th2 hand (4.0.0)
+# th2 hand (5.0.0)
 
 th2-hand is used to interpret and transmit commands from th2-act to Selenium or Windows Application Driver and vice versa.
 All incoming and outgoing data is stored in Cradle as messages.
@@ -91,6 +91,21 @@ Example of `rabbitMQ.json`:
 ```
 
 ## Release Notes
+
+### 5.0.0
+
++ Added th2 transport support
+
+#### Updated lib:
++ bom: `4.5.0`
++ common: 5.8.0-dev
++ grpc-hand: 3.0.0-dev
+
+#### Added plugin:
++ org.owasp.dependencycheck: `9.0.9`
++ com.gorylenko.gradle-git-properties: `2.4.1`
++ com.github.jk1.dependency-license-report: `2.5`
++ de.undercouch.download: `5.4.0`
 
 ### 4.0.0
 

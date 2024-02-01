@@ -112,6 +112,7 @@ public class MessageStoreSender implements AutoCloseable {
 		return message.getBody().size();
 	}
 
+	// TODO: redundant method, because common already prints data into log
 	private void writeToLogAboutConnection(CommonFactory factory) {
 		if (!logger.isInfoEnabled())
 			return;

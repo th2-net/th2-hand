@@ -29,6 +29,7 @@ import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+// FIXME: implements auto closable
 public class HandServer {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -56,6 +57,7 @@ public class HandServer {
 
 	/** Start serving requests. */
 	public void start() throws IOException {
+		// FIXME: close resource
 		new Thread(SessionWatcher.getWatcher()).start();
 		server.start();
 		logger.info("Server started, listening on port {}", server.getPort());

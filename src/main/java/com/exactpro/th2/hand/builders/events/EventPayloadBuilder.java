@@ -59,6 +59,7 @@ public class EventPayloadBuilder {
 
 	public byte[] toByteArray() {
 		try {
+			//FIXME: use MAPPER from AbstractCommonFactory
 			return new ObjectMapper().writeValueAsBytes(this.data);
 		} catch (JsonProcessingException e) {
 			logger.error("Error while creating body", e);

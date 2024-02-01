@@ -42,6 +42,7 @@ import static com.exactpro.th2.hand.utils.Utils.getTimestamp;
 public final class DefaultMessageStoreBuilder implements MessageStoreBuilder<RawMessage> {
 	private static final Logger logger = LoggerFactory.getLogger(DefaultMessageStoreBuilder.class);
 
+	// FIXME: use MAPPER from common
 	private final ObjectMapper mapper = new ObjectMapper();
 	private final AtomicLong seqNum;
 	private final CommonFactory factory;
