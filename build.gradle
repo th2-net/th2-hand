@@ -21,11 +21,15 @@ plugins {
 	id 'java'
 	id 'java-library'
 	id 'application'
+	id 'maven-publish'
+	id "io.github.gradle-nexus.publish-plugin" version "1.3.0"
 	id 'com.palantir.docker' version '0.34.0'
 	id "org.owasp.dependencycheck" version "9.0.9"
 	id "com.gorylenko.gradle-git-properties" version "2.4.1"
 	id 'com.github.jk1.dependency-license-report' version '2.5'
 	id "de.undercouch.download" version "5.4.0"
+	id 'signing'
+	id "com.google.protobuf" version "0.9.3"
 }
 
 group 'com.exactpro.th2'
@@ -75,6 +79,98 @@ dependencies {
 
 	implementation 'org.apache.commons:commons-lang3'
 	implementation "org.apache.commons:commons-csv:1.9.0"
+}
+
+java {
+	withJavadocJar()
+	withSourcesJar()
+}
+
+// conditionals for publications
+tasks.withType(PublishToMavenRepository).configureEach {
+	onlyIf {
+		(repository == publishing.repositories.nexusRepository &&
+				project.hasProperty('nexus_user') &&
+				project.hasProperty('nexus_password') &&
+				project.hasProperty('nexus_url')) ||
+				(repository == publishing.repositories.sonatype &&
+						project.hasProperty('sonatypeUsername') &&
+						project.hasProperty('sonatypePassword'))
+	}
+}
+tasks.withType(Sign).configureEach {
+	onlyIf {
+		project.hasProperty('signingKey') &&
+				project.hasProperty('signingPassword')
+	}
+}
+// disable running task 'initializeSonatypeStagingRepository' on a gitlab
+tasks.configureEach { task ->
+	if (task.name == 'initializeSonatypeStagingRepository' &&
+			!(project.hasProperty('sonatypeUsername') && project.hasProperty('sonatypePassword'))
+	) {
+		task.enabled = false
+	}
+}
+
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			from(components.java)
+			pom {
+				name = rootProject.name
+				packaging = 'jar'
+				description = rootProject.description
+				url = vcs_url
+				scm {
+					url = vcs_url
+				}
+				licenses {
+					license {
+						name = 'The Apache License, Version 2.0'
+						url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+				developers {
+					developer {
+						id = 'developer'
+						name = 'developer'
+						email = 'developer@exactpro.com'
+					}
+				}
+				scm {
+					url = vcs_url
+				}
+			}
+		}
+	}
+	repositories {
+		//Nexus repo to publish from gitlab
+		maven {
+			name = 'nexusRepository'
+			credentials {
+				username = project.findProperty('nexus_user')
+				password = project.findProperty('nexus_password')
+			}
+			url = project.findProperty('nexus_url')
+		}
+	}
+}
+
+nexusPublishing {
+	repositories {
+		sonatype {
+			nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+			snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+		}
+	}
+}
+
+signing {
+	String signingKey = findProperty("signingKey")
+	String signingPassword = findProperty("signingPassword")
+	useInMemoryPgpKeys(signingKey, signingPassword)
+	sign publishing.publications.mavenJava
 }
 
 applicationName = 'service'
