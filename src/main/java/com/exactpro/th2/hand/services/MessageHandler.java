@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
+ *  Copyright 2020-2024 Exactpro (Exactpro Systems Limited)
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,22 +19,25 @@ package com.exactpro.th2.hand.services;
 import com.exactpro.th2.act.grpc.hand.RhActionsBatch;
 import com.exactpro.th2.act.grpc.hand.RhBatchResponse;
 import com.exactpro.th2.common.schema.factory.CommonFactory;
+import com.exactpro.th2.common.utils.message.transport.MessageUtilsKt;
 import com.exactpro.th2.hand.Config;
 import com.exactpro.th2.hand.RhConnectionManager;
 import com.exactpro.th2.hand.builders.events.DefaultEventBuilder;
-import com.exactpro.th2.hand.builders.mstore.DefaultMessageStoreBuilder;
+import com.exactpro.th2.hand.builders.mstore.ProtobufMessageStoreBuilder;
+import com.exactpro.th2.hand.builders.mstore.TransportMessageStoreBuilder;
 import com.exactpro.th2.hand.builders.script.ScriptBuilder;
 import com.exactpro.th2.hand.requestexecutors.ActionsBatchExecutor;
 import com.exactpro.th2.hand.services.estore.EventStoreHandler;
 import com.exactpro.th2.hand.services.estore.EventStoreSender;
 import com.exactpro.th2.hand.services.mstore.MessageStoreHandler;
-import com.exactpro.th2.hand.services.mstore.MessageStoreSender;
+import com.exactpro.th2.hand.services.mstore.ProtobufMessageStoreSender;
+import com.exactpro.th2.hand.services.mstore.TransportMessageStoreSender;
 
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MessageHandler implements AutoCloseable {
 	private final Config config;
-	private final MessageStoreHandler messageStoreHandler;
+	private final MessageStoreHandler<?> messageStoreHandler;
 	private final EventStoreHandler eventStoreHandler;
 	private final RhConnectionManager rhConnectionManager;
 	private final ScriptBuilder scriptBuilder = new ScriptBuilder();
@@ -43,15 +46,27 @@ public class MessageHandler implements AutoCloseable {
 		this.config = config;
 		rhConnectionManager = new RhConnectionManager(config);
 		CommonFactory factory = config.getFactory();
-		this.messageStoreHandler = new MessageStoreHandler(
-				config.getSessionGroup(),
-				new MessageStoreSender(factory),
-				new DefaultMessageStoreBuilder(config.getFactory(), seqNum)
-		);
+		if (config.isUseTransport()) {
+			this.messageStoreHandler = new MessageStoreHandler<>(
+                    config.getSessionGroup(),
+                    new TransportMessageStoreSender(factory),
+                    new TransportMessageStoreBuilder(seqNum),
+                    message -> MessageUtilsKt.toProto(message.getId(), config.getBook(), config.getSessionGroup())
+            );
+		} else {
+			this.messageStoreHandler = new MessageStoreHandler<>(
+                    config.getSessionGroup(),
+                    new ProtobufMessageStoreSender(factory),
+                    new ProtobufMessageStoreBuilder(config.getFactory(), seqNum),
+                    message -> message.getMetadata().getId()
+            );
+		}
+
+
 		this.eventStoreHandler = new EventStoreHandler(new EventStoreSender(factory.getEventBatchRouter()), new DefaultEventBuilder(factory));
 	}
 
-	public MessageStoreHandler getMessageStoreHandler() {
+	public MessageStoreHandler<?> getMessageStoreHandler() {
 		return messageStoreHandler;
 	}
 

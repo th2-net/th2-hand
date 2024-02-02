@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2024 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,32 +20,47 @@ import java.util.Collections;
 import java.util.Map;
 
 import com.exactpro.th2.hand.Config;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 public class CustomConfiguration {
+	private static final String DEFAULT_SESSION_GROUP = "th2-hand-group";
 	private static final String DEFAULT_SESSION_ALIAS = "th2-hand";
+	private static final String DEFAULT_SCREENSHOT_SESSION_ALIAS = "th2-hand-screenshot";
 	private static final int DEFAULT_RESPONSE_TIMEOUT = 120;
 	private static final long DEFAULT_MESSAGE_BATCH_LIMIT = 1024 * 1024; // 1 MB
 
 	@JsonProperty(value="session-alias", required = true, defaultValue = DEFAULT_SESSION_ALIAS)
+	@JsonAlias("sessionAlias")
 	private String sessionAlias = DEFAULT_SESSION_ALIAS;
-	private String screenshotSessionAlias = null;
+	@JsonProperty(value="screenshot-session-alias", required = true, defaultValue = DEFAULT_SCREENSHOT_SESSION_ALIAS)
+	@JsonAlias("screenshotSessionAlias")
+	private String screenshotSessionAlias = DEFAULT_SCREENSHOT_SESSION_ALIAS;
 
-	@JsonProperty(value="sessionGroup")
-	private String sessionGroup = null;
+	@JsonProperty(value="session-group", defaultValue = DEFAULT_SESSION_GROUP)
+	@JsonAlias("sessionGroup")
+	private String sessionGroup = DEFAULT_SESSION_GROUP;
 
 	@JsonProperty(value="message-batch-limit")
+	@JsonAlias("messageBatchLimit")
 	private long messageBatchLimit = DEFAULT_MESSAGE_BATCH_LIMIT;
 
-	@JsonProperty(value="driversMapping", required = true)
+	@JsonProperty(value="drivers-mapping", required = true)
+	@JsonAlias("driversMapping")
 	private Map<String, Config.DriverMapping> driversMapping;
 
-	@JsonProperty(value="rhOptions")
-	private Map<String, String> rhOptions = Collections.emptyMap();;
+	@JsonProperty(value="rh-options")
+	@JsonAlias("rhOptions")
+	private Map<String, String> rhOptions = Collections.emptyMap();
 
-	@JsonProperty(value="responseTimeoutSec")
+	@JsonProperty(value="response-timeout-sec")
+	@JsonAlias("responseTimeoutSec")
 	private int responseTimeout = DEFAULT_RESPONSE_TIMEOUT;
+
+	@JsonProperty(value="use-transport")
+	@JsonAlias("responseTimeoutSec")
+	private boolean useTransport = true;
 
 	public Map<String, Config.DriverMapping> getDriversMapping() {
 		return driversMapping;
@@ -76,5 +91,9 @@ public class CustomConfiguration {
 
 	public long getMessageBatchLimit() {
 		return messageBatchLimit;
+	}
+
+	public boolean isUseTransport() {
+		return useTransport;
 	}
 }

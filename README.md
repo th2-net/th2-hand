@@ -28,7 +28,15 @@ This project uses the Schema API to get its settings.
 For local run it needs `custom.json`, `grpc.json`, `rabbitMQ.json` and `mq.json` files.
 
 The `custom.json` file contains RemoteHand URLs map and has the following format:
-- **session-alias == "th2-hand" by default**
+
+- **session-alias / sessionAlias == "th2-hand" by default** - hand publishes messages related to UI command under this session alias
+- **screenshot-session-alias / screenshotSessionAlias = "th2-hand-screenshot" by default** - hand publishes messages with a screenshot under this session alias
+- **session-group / sessionGroup = "th2-hand-group" by default** - hand publishes all messages under this session group.
+- **message-batch-limit / messageBatchLimit = 1048576 by default** - limit size for batching messages.
+- **drivers-mapping / driversMapping** - UI drivers settings.
+- **rh-options / rhOptions** - remote hand options settings.
+- **response-timeout-sec / responseTimeoutSec = 120 by default** - timeout for waiting result form remote hand.
+- **use-transport / useTransport = true by default** - if true, hand used th2 transport protocol to publish messages via MQ.
 ```
 {
     "session-alias": "aliasName",
@@ -98,8 +106,11 @@ Example of `rabbitMQ.json`:
 
 #### Updated lib:
 + bom: `4.5.0`
-+ common: 5.8.0-dev
-+ grpc-hand: 3.0.0-dev
++ common: `5.8.0-dev`
++ grpc-hand: `3.0.0-dev`
+
+#### Added lib:
++ common-utils: `2.2.2-dev`
 
 #### Added plugin:
 + org.owasp.dependencycheck: `9.0.9`

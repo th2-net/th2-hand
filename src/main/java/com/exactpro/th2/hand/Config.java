@@ -65,9 +65,15 @@ public class Config {
 		return customConfiguration.getSessionGroup();
 	}
 
+	public String getBook() {
+		return factory.getBoxConfiguration().getBookName();
+	}
+
 	public String getScreenshotSessionAlias() {
 		return customConfiguration.getScreenshotSessionAlias();
 	}
+
+	public boolean isUseTransport() { return customConfiguration.isUseTransport(); }
 
 	public static class DriverMapping {
 		public final RemoteManagerType type;

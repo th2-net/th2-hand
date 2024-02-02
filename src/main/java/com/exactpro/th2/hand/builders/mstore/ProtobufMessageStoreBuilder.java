@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2024 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,12 @@ package com.exactpro.th2.hand.builders.mstore;
 
 import com.exactpro.remotehand.Configuration;
 import com.exactpro.th2.common.grpc.ConnectionID;
+import com.exactpro.th2.common.grpc.Direction;
 import com.exactpro.th2.common.grpc.MessageID;
 import com.exactpro.th2.common.grpc.RawMessage;
 import com.exactpro.th2.common.grpc.RawMessageMetadata;
-import com.exactpro.th2.common.grpc.Direction;
 import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,15 +38,13 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.exactpro.th2.hand.utils.Utils.getTimestamp;
 
-public final class DefaultMessageStoreBuilder implements MessageStoreBuilder<RawMessage> {
-	private static final Logger logger = LoggerFactory.getLogger(DefaultMessageStoreBuilder.class);
+public final class ProtobufMessageStoreBuilder implements MessageStoreBuilder<RawMessage> {
+	private static final Logger logger = LoggerFactory.getLogger(ProtobufMessageStoreBuilder.class);
 
-	// FIXME: use MAPPER from common
-	private final ObjectMapper mapper = new ObjectMapper();
 	private final AtomicLong seqNum;
 	private final CommonFactory factory;
 
-	public DefaultMessageStoreBuilder(CommonFactory factory, AtomicLong seqNum) {
+	public ProtobufMessageStoreBuilder(CommonFactory factory, AtomicLong seqNum) {
 		this.factory = factory;
 		this.seqNum = seqNum;
 	}
@@ -55,7 +52,7 @@ public final class DefaultMessageStoreBuilder implements MessageStoreBuilder<Raw
 	@Override
 	public RawMessage buildMessage(Map<String, Object> fields, Direction direction, String sessionId, String sessionGroup) {
 		try {
-			byte[] bytes = mapper.writeValueAsBytes(fields);
+			byte[] bytes = CommonFactory.MAPPER.writeValueAsBytes(fields);
 			return buildMessage(bytes, direction, sessionId, sessionGroup);
 		} catch (JsonProcessingException e) {
 			logger.error("Could not encode message as JSON", e);

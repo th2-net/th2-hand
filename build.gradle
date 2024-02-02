@@ -63,6 +63,9 @@ dependencies {
 	implementation("com.exactpro.th2:common:5.8.0-dev") {
 		exclude group: "com.google.guava", module: "guava" // for compatibility with Selenium 3.141.59
 	}
+	implementation("com.exactpro.th2:common-utils:2.2.2-dev") {
+		exclude group: "com.google.guava", module: "guava" // for compatibility with Selenium 3.141.59
+	}
 
 	implementation 'org.slf4j:slf4j-api'
 
