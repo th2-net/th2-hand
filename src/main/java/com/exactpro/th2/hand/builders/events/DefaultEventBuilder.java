@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2024 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,104 +20,116 @@ import com.exactpro.remotehand.rhdata.RhScriptResult;
 import com.exactpro.th2.act.grpc.hand.ResultDetails;
 import com.exactpro.th2.act.grpc.hand.RhActionsBatch;
 import com.exactpro.th2.act.grpc.hand.RhBatchResponse;
-import com.exactpro.th2.common.grpc.Event;
-import com.exactpro.th2.common.grpc.EventID;
-import com.exactpro.th2.common.grpc.EventStatus;
+import com.exactpro.th2.common.event.bean.IRow;
+import com.exactpro.th2.common.event.bean.Message;
+import com.exactpro.th2.common.event.bean.Table;
+import com.exactpro.th2.common.event.Event;
+import com.exactpro.th2.common.schema.box.configuration.BoxConfiguration;
 import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.hand.messages.responseexecutor.ActionsBatchExecutorResponse;
-import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.UUID;
+import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.exactpro.th2.hand.utils.Utils.getTimestamp;
+import static com.exactpro.th2.common.event.Event.Status.FAILED;
+import static com.exactpro.th2.common.event.Event.Status.PASSED;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
-public final class DefaultEventBuilder implements EventBuilder<Event, RhActionsBatch, ActionsBatchExecutorResponse> {
+public final class DefaultEventBuilder implements EventBuilder<com.exactpro.th2.common.grpc.Event, RhActionsBatch, ActionsBatchExecutorResponse> {
+	public static final Message ACTION_MESSAGES_EVENT_MESSAGE = createMessage("Action messages");
+	public static final Message RESULT_EVENT_MESSAGE = createMessage("Result");
 
-	private final CommonFactory factory;
+	private final String book;
+	private final String scope;
 
 	public DefaultEventBuilder(CommonFactory factory) {
-		this.factory = factory;
+		BoxConfiguration boxConfiguration = factory.getBoxConfiguration();
+		this.book = boxConfiguration.getBookName();
+		this.scope = boxConfiguration.getBoxName();
 	}
 
 	@Override
-	public Event buildEvent(RhActionsBatch request, ActionsBatchExecutorResponse executorResponse) {
-		return buildEvent(Instant.now(), request, executorResponse);
-	}
-
-	@Override
-	public Event buildEvent(Instant startTime, RhActionsBatch request, ActionsBatchExecutorResponse executorResponse) {
-		EventID.Builder eventId = factory.newEventIDBuilder()
-				.setId(UUID.randomUUID().toString())
-				.setStartTimestamp(getTimestamp(startTime));
-
-		Event.Builder eventBuilder = Event.newBuilder().setName(request.getEventName());
-
-		if (request.hasParentEventId()) {
-			eventId.setScope(request.getParentEventId().getScope());
-			eventBuilder.setParentId(request.getParentEventId());
-		}
-
-		eventBuilder.setId(eventId);
-
+	public com.exactpro.th2.common.grpc.Event buildEvent(Instant startTime, RhActionsBatch request, ActionsBatchExecutorResponse executorResponse) throws IOException {
 		RhScriptResult scriptResult = executorResponse.getScriptResult();
 		RhBatchResponse response = executorResponse.getHandResponse();
-		eventBuilder.setStatus(scriptResult.isSuccess() ? EventStatus.SUCCESS : EventStatus.FAILED);
-		
-		EventPayloadBuilder payloadBuilder = new EventPayloadBuilder();
-		createAdditionalEventInfo(payloadBuilder, request.getAdditionalEventInfo());
-		createResultPayload(payloadBuilder, scriptResult, response.getSessionId(), response.getScriptStatus());
-		createActionMessagesPayload(payloadBuilder, request.getStoreActionMessages(), response.getResultList());
-		eventBuilder.setBody(payloadBuilder.toByteString());
-		
-		eventBuilder.addAllAttachedMessageIds(executorResponse.getMessageIds());
-		eventBuilder.setEndTimestamp(getTimestamp(Instant.now()));
 
-		return eventBuilder.build();
-	}
+		Event builder = Event.from(startTime)
+				.name(request.getEventName())
+				.status(scriptResult.isSuccess() ? PASSED : FAILED);
 
-	private void createResultPayload(EventPayloadBuilder payloadBuilder, RhScriptResult scriptResult, String sessionId,
-	                                 RhBatchResponse.ScriptExecutionStatus scriptStatus) {
-		Map<String, String> responseMap = new LinkedHashMap<>();
-		responseMap.put("Action status", scriptStatus.name());
-		String errorMessage;
-		if (StringUtils.isNotEmpty(errorMessage = scriptResult.getErrorMessage()))
-			responseMap.put("Errors", errorMessage);
-		responseMap.put("SessionId", sessionId);
+		createAdditionalEventInfo(builder, request.getAdditionalEventInfo());
+		createResultPayload(builder, scriptResult, response.getSessionId(), response.getScriptStatus());
+		createActionMessagesPayload(builder, request.getStoreActionMessages(), response.getResultList());
 
-		payloadBuilder.printTable("Result", responseMap);
-	}
+		executorResponse.getMessageIds().forEach(builder::messageID);
 
-	private void createActionMessagesPayload(EventPayloadBuilder payloadBuilder, boolean storeActionMessages, 
-									 List<ResultDetails> resultDetails) {
-		if (storeActionMessages && !resultDetails.isEmpty()) {
-			Map<String, String> actionMessages = resultDetails.stream().collect(
-					Collectors.toMap(ResultDetails::getActionId, ResultDetails::getResult));
-			payloadBuilder.printTable("Action messages", actionMessages);
+		if (request.hasParentEventId()) {
+			return builder.toProto(request.getParentEventId());
+		} else {
+			return builder.toProto(book, scope);
 		}
 	}
 
-	private void createAdditionalEventInfo(EventPayloadBuilder payloadBuilder, RhActionsBatch.AdditionalEventInfo info) {
+	private void createResultPayload(com.exactpro.th2.common.event.Event builder, RhScriptResult scriptResult, String sessionId,
+									 RhBatchResponse.ScriptExecutionStatus scriptStatus) {
+		List<IRow> rows = new ArrayList<>();
+		rows.add(new TableRow("Action status", scriptStatus.name()));
+
+		String errorMessage = scriptResult.getErrorMessage();
+		if (isNotEmpty(errorMessage)) {
+			rows.add(new TableRow("Errors", errorMessage));
+		}
+		rows.add(new TableRow("SessionId", sessionId));
+
+		builder.bodyData(RESULT_EVENT_MESSAGE);
+		builder.bodyData(createTable(rows));
+	}
+
+	private void createActionMessagesPayload(com.exactpro.th2.common.event.Event builder, boolean storeActionMessages,
+											 List<ResultDetails> resultDetails) {
+		if (storeActionMessages && !resultDetails.isEmpty()) {
+			List<IRow> rows = resultDetails.stream()
+					.map(result -> new TableRow(result.getActionId(), result.getResult()))
+					.collect(Collectors.toList());
+			builder.bodyData(ACTION_MESSAGES_EVENT_MESSAGE);
+			builder.bodyData(createTable(rows));
+		}
+	}
+
+	private void createAdditionalEventInfo(com.exactpro.th2.common.event.Event builder, RhActionsBatch.AdditionalEventInfo info) {
 		String description = info.getDescription();
 		if (!description.isEmpty()) {
-			payloadBuilder.printText("Description: \n" + description);
+			builder.bodyData(createMessage("Description: \n" + description));
 		}
 
 		if (info.getPrintTable()) {
-			Map<String, String> table = new LinkedHashMap<>(info.getKeysCount());
+			List<IRow> rows = new ArrayList<>();
 
 			Iterator<String> keys = info.getKeysList().iterator();
 			Iterator<String> values = info.getValuesList().iterator();
 			while (keys.hasNext() && values.hasNext()) {
-				table.put(keys.next(), values.next());
+				rows.add(new TableRow(keys.next(), values.next()));
 			}
 
-			payloadBuilder.printTable(info.getRequestParamsTableTitle(), table);
+			builder.bodyData(createMessage(info.getRequestParamsTableTitle()));
+			builder.bodyData(createTable(rows));
 		}
 	}
+
+	private static Message createMessage(String text) {
+		Message message = new Message();
+		message.setData(text);
+		return message;
+	}
+
+	private static Table createTable(List<IRow> rows) {
+		Table table = new Table();
+		table.setFields(rows);
+		return table;
+	}
+
 }

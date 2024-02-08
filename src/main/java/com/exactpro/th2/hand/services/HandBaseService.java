@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2024 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,13 @@ import com.exactpro.th2.act.grpc.hand.RhTargetServer;
 import com.exactpro.th2.hand.HandException;
 import com.exactpro.th2.hand.IHandService;
 import com.google.protobuf.Empty;
-import com.google.protobuf.TextFormat;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+
+import static com.exactpro.th2.common.message.MessageUtils.toJson;
 
 public class HandBaseService extends RhBatchImplBase implements IHandService {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -37,7 +40,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService {
 	private MessageHandler messageHandler;
 
 	@Override
-	public void init(MessageHandler messageHandler) throws Exception {
+	public void init(MessageHandler messageHandler) {
 		this.messageHandler = messageHandler;
 	}
 
@@ -64,9 +67,14 @@ public class HandBaseService extends RhBatchImplBase implements IHandService {
 
 	@Override
 	public void executeRhActionsBatch(RhActionsBatch request, StreamObserver<RhBatchResponse> responseObserver) {
-		logger.trace("Action: '{}', request: '{}'", "executeRhActionsBatch", TextFormat.shortDebugString(request));
-		responseObserver.onNext(messageHandler.handleActionsBatchRequest(request));
-		responseObserver.onCompleted();
+		logger.trace("Action: '{}', request: '{}'", "executeRhActionsBatch", toJson(request));
+        try {
+            responseObserver.onNext(messageHandler.handleActionsBatchRequest(request));
+			responseObserver.onCompleted();
+        } catch (IOException e) {
+			logger.error("Action: '{}', request: '{}'", "executeRhActionsBatch", toJson(request), e);
+            responseObserver.onError(e);
+        }
 	}
 
 	@Override

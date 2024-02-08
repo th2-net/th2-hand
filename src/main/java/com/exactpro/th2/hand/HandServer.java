@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2024 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,10 @@ public class HandServer {
 		return config.getFactory().getGrpcRouter().startServer(services.toArray(new IHandService[0]));
 	}
 
-	/** Start serving requests. */
+	/**
+	 * Start serving requests.
+	 * @throws IOException - if unable to bind
+	 */
 	public void start() throws IOException {
 		// FIXME: close resource
 		new Thread(SessionWatcher.getWatcher()).start();
@@ -72,7 +75,10 @@ public class HandServer {
 		}));
 	}
 
-	/** Stop serving requests and shutdown resources. */
+	/**
+	 * Stop serving requests and shutdown resources.
+	 * @throws InterruptedException - if server can't be shutdown
+	 */
 	public void stop() throws InterruptedException {
 		if (server != null) {
 			server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
@@ -82,6 +88,7 @@ public class HandServer {
 	/**
 	 * Await termination on the main thread since the grpc library uses daemon
 	 * threads.
+	 * @throws InterruptedException - if current thread is interrupted
 	 */
 	public void blockUntilShutdown() throws InterruptedException {
 		if (server != null) {

@@ -33,6 +33,7 @@ import com.exactpro.th2.hand.services.mstore.MessageStoreHandler;
 import com.exactpro.th2.hand.services.mstore.ProtobufMessageStoreSender;
 import com.exactpro.th2.hand.services.mstore.TransportMessageStoreSender;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MessageHandler implements AutoCloseable {
@@ -86,7 +87,7 @@ public class MessageHandler implements AutoCloseable {
 		return rhConnectionManager;
 	}
 
-	public RhBatchResponse handleActionsBatchRequest(RhActionsBatch request) {
+	public RhBatchResponse handleActionsBatchRequest(RhActionsBatch request) throws IOException {
 		ActionsBatchExecutor actionsBatchExecutor = new ActionsBatchExecutor(this);
 		return actionsBatchExecutor.execute(request).getHandResponse();
 	}

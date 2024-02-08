@@ -23,20 +23,26 @@ import com.exactpro.th2.act.grpc.hand.RhBatchResponse
 import com.exactpro.th2.common.grpc.EventID
 import com.exactpro.th2.common.grpc.EventStatus
 import com.exactpro.th2.common.grpc.MessageID
+import com.exactpro.th2.common.message.toJson
+import com.exactpro.th2.common.schema.box.configuration.BoxConfiguration
 import com.exactpro.th2.common.schema.factory.CommonFactory
 import com.exactpro.th2.common.utils.message.toTimestamp
 import com.exactpro.th2.hand.messages.responseexecutor.ActionsBatchExecutorResponse
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import strikt.api.expectThat
+import strikt.api.expectThrows
 import strikt.assertions.isEqualTo
 import strikt.assertions.isNotBlank
 import strikt.assertions.isSameInstanceAs
 import strikt.assertions.isTrue
 import java.time.Instant
+import kotlin.test.assertEquals
 
 internal class DefaultEventBuilderTest {
 
@@ -44,8 +50,20 @@ internal class DefaultEventBuilderTest {
         on { newEventIDBuilder() }.thenAnswer {
             EventID.newBuilder().setBookName(BOOK).setScope(SCOPE)
         }
+        on { boxConfiguration }.thenReturn(
+            BoxConfiguration().apply {
+                bookName = BOOK
+                boxName = BOX_NAME
+            }
+        )
     }
     private val builder = DefaultEventBuilder(factory)
+
+    @BeforeEach
+    fun beforeEach() {
+        verify(factory).boxConfiguration
+        clearInvocations(factory)
+    }
 
     @AfterEach
     fun afterEach() {
@@ -78,7 +96,12 @@ internal class DefaultEventBuilderTest {
             errorMessage = "test-error-message"
         }
         val messageIDs = listOf<MessageID>(
-            MessageID.newBuilder().setBookName("$BOOK-2").build()
+            MessageID.newBuilder().apply {
+                bookName = "$BOOK-1"
+                sequence = 1
+                timestamp = Instant.now().toTimestamp()
+                connectionIdBuilder.setSessionAlias("test-session-alias")
+            }.build()
         )
         val actionsBatchExecutorResponse = ActionsBatchExecutorResponse(
             rhBatchResponse,
@@ -87,16 +110,15 @@ internal class DefaultEventBuilderTest {
         )
 
         val event = builder.buildEvent(now, rhActionsBatch, actionsBatchExecutorResponse)
-        verify(factory).newEventIDBuilder()
 
         expectThat(event) {
             get { id }.and {
                 get { id }.isNotBlank()
                 get { startTimestamp }.isEqualTo(now.toTimestamp())
                 get { scope }.isSameInstanceAs(rhActionsBatch.parentEventId.scope)
-                get { bookName }.isSameInstanceAs(BOOK)
+                get { bookName }.isSameInstanceAs(rhActionsBatch.parentEventId.bookName)
             }
-            get { name }.isSameInstanceAs(rhActionsBatch.eventName)
+            get { name }.isEqualTo(rhActionsBatch.eventName)
             get { parentId }.isSameInstanceAs(rhActionsBatch.parentEventId)
             get { status }.isEqualTo(EventStatus.FAILED)
             get { attachedMessageIdsList }.isEqualTo(messageIDs)
@@ -106,39 +128,109 @@ internal class DefaultEventBuilderTest {
                 |[
                   |{"data":"Description: \ntest-description","type":"message"},
                   |{"data":"test-title","type":"message"},
-                  |{"rows":
-                    |[
-                      |{
-                        |"Name":"test-key",
-                        |"Value":"test-value"
-                      |}
-                    |],
-                    |"type":"table"
+                  |{
+                    |"type":"table",
+                    |"rows":
+                      |[
+                        |{
+                          |"Name":"test-key",
+                          |"Value":"test-value"
+                        |}
+                      |]
                   |},
                   |{"data":"Result","type":"message"},
-                  |{"rows":
-                    |[
-                      |{"Name":"Action status","Value":"EXECUTION_ERROR"},
-                      |{"Name":"Errors","Value":"test-error-message"},
-                      |{"Name":"SessionId","Value":"test-session-id"}
-                    |],
-                    |"type":"table"
+                  |{
+                    |"type":"table",
+                    |"rows":
+                      |[
+                        |{"Name":"Action status","Value":"EXECUTION_ERROR"},
+                        |{"Name":"Errors","Value":"test-error-message"},
+                        |{"Name":"SessionId","Value":"test-session-id"}
+                      |]
                   |},
                   |{"data":"Action messages","type":"message"},
                   |{
+                    |"type":"table",
                     |"rows":
                       |[
                         |{"Name":"test-action-id","Value":"test-result"}
-                      |],
-                    |"type":"table"
+                      |]
                   |}
                 |]
             """.trimMargin().replace("\n", ""))
         }
     }
 
+    @Test
+    fun `build event when message book doesn't mismatch to default book test`() {
+        val now = Instant.now()
+
+        val messageId = MessageID.newBuilder().apply {
+            bookName = "$BOOK-2"
+            sequence = 1
+            timestamp = Instant.now().toTimestamp()
+            connectionIdBuilder.setSessionAlias("test-session-alias")
+        }.build()
+        val messageIDs = listOf<MessageID>(messageId)
+
+        expectThrows<IllegalStateException> {
+            builder.buildEvent(
+                now,
+                RhActionsBatch.getDefaultInstance(),
+                ActionsBatchExecutorResponse(
+                    RhBatchResponse.getDefaultInstance(),
+                    RhScriptResult(),
+                    messageIDs
+                )
+            )
+        }.assert("Message") {
+            assertEquals(
+                """
+                    |Build event failure, book: '$BOOK', scope: '$SCOPE', 
+                    |name: 'Unknown event name', type: 'Unknown event type', 
+                    |problems: [Book name mismatch in '${messageId.toJson()}' message id]
+                """.trimMargin().replace("\n", ""),
+                it.message)
+        }
+    }
+
+    @Test
+    fun `build event when message book doesn't mismatch to parent event book test`() {
+        val now = Instant.now()
+
+        val messageId = MessageID.newBuilder().apply {
+            bookName = "$BOOK-2"
+            sequence = 1
+            timestamp = Instant.now().toTimestamp()
+            connectionIdBuilder.setSessionAlias("test-session-alias")
+        }.build()
+        val eventId = EventID.newBuilder().setBookName("$BOOK-1").setScope("$SCOPE-1").build()
+        val messageIDs = listOf<MessageID>(messageId)
+
+        expectThrows<IllegalStateException> {
+            builder.buildEvent(
+                now,
+                RhActionsBatch.newBuilder().setParentEventId(eventId).build(),
+                ActionsBatchExecutorResponse(
+                    RhBatchResponse.getDefaultInstance(),
+                    RhScriptResult(),
+                    messageIDs
+                )
+            )
+        }.assert("Message") {
+            assertEquals(
+                """
+                    |Build event failure, book: '${eventId.bookName}', scope: '${eventId.scope}', 
+                    |name: 'Unknown event name', type: 'Unknown event type', 
+                    |problems: [Book name mismatch in '${messageId.toJson()}' message id]
+                """.trimMargin().replace("\n", ""),
+                it.message)
+        }
+    }
+
     companion object {
+        const val BOX_NAME = "test-box-name"
         const val BOOK = "test-book"
-        const val SCOPE = "test-scope"
+        const val SCOPE = BOX_NAME
     }
 }
