@@ -40,18 +40,19 @@ public class Application
 	public void run(String[] args) {
 		try (CommonFactory factory = CommonFactory.createFromArguments(args)) {
 			Config config = getConfig(factory);
-			final HandServer handServer = new HandServer(config, getCurrentTime());
-			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-				LOGGER.info("*** Closing hand server because JVM is shutting down");
-				try {
-					handServer.close();
-				} catch (InterruptedException e) {
-					LOGGER.warn("Server termination await was interrupted", e);
-				}
-				LOGGER.info("*** hand server closed");
-			}));
-			handServer.start();
-			handServer.blockUntilShutdown();
+			try (HandServer handServer = new HandServer(config, getCurrentTime())) {
+				Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+					LOGGER.info("*** Closing hand server because JVM is shutting down");
+					try {
+						handServer.close();
+					} catch (InterruptedException e) {
+						LOGGER.warn("Server termination await was interrupted", e);
+					}
+					LOGGER.info("*** hand server closed");
+				}));
+				handServer.start();
+				handServer.blockUntilShutdown();
+			}
 		} catch (Exception e) {
 			LOGGER.error("Could not to start Hand server", e);
 			closeApp();
