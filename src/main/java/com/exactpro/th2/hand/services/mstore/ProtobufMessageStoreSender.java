@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 public class ProtobufMessageStoreSender implements MessageStoreSender<RawMessage> {
-	private static final Logger logger = LoggerFactory.getLogger(ProtobufMessageStoreSender.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ProtobufMessageStoreSender.class);
 	private final MessageRouter<MessageGroupBatch> messageRouterGroupBatch;
 	private final long batchLimit;
 
@@ -49,15 +49,9 @@ public class ProtobufMessageStoreSender implements MessageStoreSender<RawMessage
 		try {
 			sendRawMessages(messages);
 		} catch (Exception e) {
-			logger.error("Cannot store to mstore", e);
+			LOGGER.error("Cannot store to mstore", e);
 		}
 	}
-
-	@Override
-	public void close() throws Exception {
-		messageRouterGroupBatch.close();
-	}
-
 
 	private void sendRawMessages(Collection<RawMessage> messages) throws Exception {
 		MessageGroupBatch.Builder currentBatchBuilder = MessageGroupBatch.newBuilder();
@@ -94,11 +88,11 @@ public class ProtobufMessageStoreSender implements MessageStoreSender<RawMessage
 		}
 
 		if (count == 0) {
-			logger.debug("There are no valid messages to send");
+			LOGGER.debug("There are no valid messages to send");
 			return;
 		}
 		
-		logger.debug("Group with {} message(s) separated by {} batches to mstore was sent ({} bytes)", 
+		LOGGER.debug("Group with {} message(s) separated by {} batches to mstore was sent ({} bytes)",
 				count, batchesCount, totalLength);
 	}
 

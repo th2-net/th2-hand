@@ -93,9 +93,7 @@ public class MessageHandler implements AutoCloseable {
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close() {
 		rhConnectionManager.dispose();
-		messageStoreHandler.close();
-		eventStoreHandler.close();
 	}
 }

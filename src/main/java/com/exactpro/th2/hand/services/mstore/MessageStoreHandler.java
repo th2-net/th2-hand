@@ -41,8 +41,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MessageStoreHandler<T> implements AutoCloseable {
-	private static final Logger logger = LoggerFactory.getLogger(ProtobufMessageStoreSender.class);
+public class MessageStoreHandler<T> {
+	private static final Logger LOGGER = LoggerFactory.getLogger(MessageStoreHandler.class);
 
 	private final String sessionGroup;
 	private final MessageStoreSender<T> messageStoreSender;
@@ -67,7 +67,7 @@ public class MessageStoreHandler<T> implements AutoCloseable {
 			case WEB:
 				return rhActionList.getWeb().getWebActionListList();
 			default:
-				logger.warn("Actions list is not set");
+				LOGGER.warn("Actions list is not set");
 				return Collections.emptyList();
 		}
 	}
@@ -104,24 +104,24 @@ public class MessageStoreHandler<T> implements AutoCloseable {
 			messageStoreSender.sendMessages(message);
 			return Collections.singletonList(messageIdExtractor.getId(message));
 		} else {
-			logger.debug("Nothing to store to mstore");
+			LOGGER.debug("Nothing to store to mstore");
 			return Collections.emptyList();
 		}
 	}
 
 	public List<MessageID> storeScreenshots(List<ActionResult> screenshotIds, String sessionAlias) {
 		if (screenshotIds == null || screenshotIds.isEmpty()) {
-			logger.debug("No screenshots to store");
+			LOGGER.debug("No screenshots to store");
 			return Collections.emptyList();
 		}
 
 		List<MessageID> messageIDS = new ArrayList<>();
 		List<T> rawMessages = new ArrayList<>();
 		for (ActionResult screenshotId : screenshotIds) {
-			logger.debug("Storing screenshot id {}", screenshotId);
+			LOGGER.debug("Storing screenshot id {}", screenshotId);
 			Path screenPath = Configuration.SCREENSHOTS_DIR_PATH.resolve(screenshotId.getData());
 			if (!Files.exists(screenPath)) {
-				logger.warn("Screenshot with id {} does not exists", screenshotId);
+				LOGGER.warn("Screenshot with id {} does not exists", screenshotId);
 				continue;
 			}
 			T rawMessage = messageStoreBuilder.buildMessageFromFile(screenPath, Direction.FIRST, sessionAlias, sessionGroup);
@@ -143,7 +143,7 @@ public class MessageStoreHandler<T> implements AutoCloseable {
 			messageStoreSender.sendMessages(message);
 			return messageIdExtractor.getId(message);
 		} catch (Exception e) {
-			logger.error("Cannot send message to message-storage", e);
+			LOGGER.error("Cannot send message to message-storage", e);
 		}
 
 		return null;
@@ -153,7 +153,7 @@ public class MessageStoreHandler<T> implements AutoCloseable {
 		try {
 			Files.delete(file);
 		} catch (IOException e) {
-			logger.warn("Error deleting file: " + file.toAbsolutePath(), e);
+			LOGGER.warn("Error deleting file: " + file.toAbsolutePath(), e);
 		}
 	}
 
@@ -181,11 +181,6 @@ public class MessageStoreHandler<T> implements AutoCloseable {
 			}
 		}
 		return processed;
-	}
-
-	@Override
-	public void close() throws Exception {
-		this.messageStoreSender.close();
 	}
 
 	@FunctionalInterface

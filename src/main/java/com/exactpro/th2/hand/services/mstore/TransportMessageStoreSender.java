@@ -29,12 +29,11 @@ import java.util.Collection;
 import java.util.Collections;
 
 public class TransportMessageStoreSender implements MessageStoreSender<RawMessage> {
-	private static final Logger logger = LoggerFactory.getLogger(TransportMessageStoreSender.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(TransportMessageStoreSender.class);
 	private final MessageRouter<GroupBatch> messageRouter;
 	private final long batchLimit;
 	private final String book;
 	private final String sessionGroup;
-
 
 	public TransportMessageStoreSender(CommonFactory factory) {
 		messageRouter = factory.getTransportGroupBatchRouter();
@@ -52,15 +51,9 @@ public class TransportMessageStoreSender implements MessageStoreSender<RawMessag
 		try {
 			sendRawMessages(messages);
 		} catch (Exception e) {
-			logger.error("Cannot store to mstore", e);
+			LOGGER.error("Cannot store to mstore", e);
 		}
 	}
-
-	@Override
-	public void close() throws Exception {
-		messageRouter.close();
-	}
-
 
 	private void sendRawMessages(Collection<RawMessage> messages) throws Exception {
 		GroupBatch.Builder currentBatchBuilder = createBatchBuilder();
@@ -95,11 +88,11 @@ public class TransportMessageStoreSender implements MessageStoreSender<RawMessag
 		}
 
 		if (count == 0) {
-			logger.debug("There are no valid messages to send");
+			LOGGER.debug("There are no valid messages to send");
 			return;
 		}
 		
-		logger.debug("Group with {} message(s) separated by {} batches to mstore was sent ({} bytes)", 
+		LOGGER.debug("Group with {} message(s) separated by {} batches to mstore was sent ({} bytes)",
 				count, batchesCount, totalLength);
 	}
 

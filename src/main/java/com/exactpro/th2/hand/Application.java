@@ -42,18 +42,17 @@ public class Application
 			Config config = getConfig(factory);
 			final HandServer handServer = new HandServer(config, getCurrentTime());
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+				LOGGER.info("*** Closing hand server because JVM is shutting down");
 				try {
-					LOGGER.info("Disposing Hand server");
-					handServer.dispose();
+					handServer.close();
+				} catch (InterruptedException e) {
+					LOGGER.warn("Server termination await was interrupted", e);
 				}
-				catch (Exception e) {
-					LOGGER.error("Error while disposing Hand server", e);
-				}
+				LOGGER.info("*** hand server closed");
 			}));
 			handServer.start();
 			handServer.blockUntilShutdown();
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			LOGGER.error("Could not to start Hand server", e);
 			closeApp();
 		}

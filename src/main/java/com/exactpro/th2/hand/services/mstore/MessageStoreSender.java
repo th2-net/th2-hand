@@ -18,7 +18,7 @@ package com.exactpro.th2.hand.services.mstore;
 
 import java.util.Collection;
 
-public interface MessageStoreSender<T> extends AutoCloseable {
+public interface MessageStoreSender<T> {
 	String RAW_MESSAGE_ATTRIBUTE = "raw";
 
     void sendMessages(T messages);

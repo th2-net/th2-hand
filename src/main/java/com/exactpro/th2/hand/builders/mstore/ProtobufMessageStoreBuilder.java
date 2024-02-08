@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.exactpro.th2.hand.utils.Utils.getTimestamp;
 
 public final class ProtobufMessageStoreBuilder implements MessageStoreBuilder<RawMessage> {
-	private static final Logger logger = LoggerFactory.getLogger(ProtobufMessageStoreBuilder.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ProtobufMessageStoreBuilder.class);
 
 	private final AtomicLong seqNum;
 	private final CommonFactory factory;
@@ -52,10 +52,10 @@ public final class ProtobufMessageStoreBuilder implements MessageStoreBuilder<Ra
 	@Override
 	public RawMessage buildMessage(Map<String, Object> fields, Direction direction, String sessionId, String sessionGroup) {
 		try {
-			byte[] bytes = CommonFactory.MAPPER.writeValueAsBytes(fields);
+			byte[] bytes = MAPPER.writeValueAsBytes(fields);
 			return buildMessage(bytes, direction, sessionId, sessionGroup);
 		} catch (JsonProcessingException e) {
-			logger.error("Could not encode message as JSON", e);
+			LOGGER.error("Could not encode message as JSON", e);
 			return null;
 		}
 	}
@@ -74,7 +74,7 @@ public final class ProtobufMessageStoreBuilder implements MessageStoreBuilder<Ra
 		try (InputStream is = Files.newInputStream(path)) {
 			return RawMessage.newBuilder().setMetadata(messageMetadata).setBody(ByteString.readFrom(is, 0x1000)).build();
 		} catch (IOException e) {
-			logger.error("Cannot encode screenshot", e);
+			LOGGER.error("Cannot encode screenshot", e);
 			return null;
 		}
 	}

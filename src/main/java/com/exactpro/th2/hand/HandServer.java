@@ -28,15 +28,16 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
-// FIXME: implements auto closable
-public class HandServer {
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+public class HandServer implements AutoCloseable {
+	private static final Logger LOGGER = LoggerFactory.getLogger(HandServer.class);
 
 	private final Config config;
 	private final MessageHandler messageHandler;
 	private final Server server;
 	private final List<IHandService> services;
+	private final AtomicReference<Thread> watcher = new AtomicReference<>();
 
 	public HandServer(Config config, long startSequences) throws Exception {
 		this.config = config;
@@ -49,7 +50,7 @@ public class HandServer {
 		for (IHandService rhService : ServiceLoader.load(IHandService.class)) {
 			services.add(rhService);
 			rhService.init(messageHandler);
-			logger.info("Service '{}' loaded", rhService.getClass().getName());
+			LOGGER.info("Service '{}' loaded", rhService.getClass().getName());
 		}
 		
 		return config.getFactory().getGrpcRouter().startServer(services.toArray(new IHandService[0]));
@@ -60,28 +61,13 @@ public class HandServer {
 	 * @throws IOException - if unable to bind
 	 */
 	public void start() throws IOException {
-		// FIXME: close resource
-		new Thread(SessionWatcher.getWatcher()).start();
-		server.start();
-		logger.info("Server started, listening on port {}", server.getPort());
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-			logger.info("*** shutting down gRPC server because JVM is shutting down");
-			try {
-				stop();
-			} catch (InterruptedException e) {
-				logger.warn("Server termination await was interrupted", e);
-			}
-			logger.info("*** server shut down");
-		}));
-	}
-
-	/**
-	 * Stop serving requests and shutdown resources.
-	 * @throws InterruptedException - if server can't be shutdown
-	 */
-	public void stop() throws InterruptedException {
-		if (server != null) {
-			server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+		Thread thread = new Thread(SessionWatcher.getWatcher());
+		if (watcher.compareAndSet(null, thread)) {
+			thread.start();
+			server.start();
+			LOGGER.info("Server started, listening on port {}", server.getPort());
+		} else {
+			throw new IllegalStateException(getClass().getSimpleName() + " was started once");
 		}
 	}
 
@@ -96,9 +82,19 @@ public class HandServer {
 		}
 	}
 
-	public void dispose() {
+	@Override
+	public void close() throws InterruptedException {
+		if (!server.isShutdown()) {
+			server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+		}
+
 		for (IHandService service : this.services) {
 			service.dispose();
+		}
+
+		Thread thread = watcher.get();
+		if (thread != null && !thread.isInterrupted()) {
+			thread.interrupt();
 		}
 	}
 }

@@ -28,12 +28,10 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-
 import static com.exactpro.th2.common.message.MessageUtils.toJson;
 
 public class HandBaseService extends RhBatchImplBase implements IHandService {
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private final static Logger LOGGER = LoggerFactory.getLogger(HandBaseService.class);
 
 	public static final String RH_SESSION_PREFIX = "/Ses";
 
@@ -50,29 +48,35 @@ public class HandBaseService extends RhBatchImplBase implements IHandService {
 			String sessionId = messageHandler.getRhConnectionManager().createSessionHandler(targetServer.getTarget()).getId();
 			RhSessionID result = RhSessionID.newBuilder().setId(sessionId).setSessionAlias(messageHandler.getConfig().getSessionAlias()).build();
 			responseObserver.onNext(result);
+			responseObserver.onCompleted();
 		} catch (Exception e) {
-			logger.error("Error while creating session", e);
+			LOGGER.error("Error while creating session", e);
 			Exception responseException = new HandException("Error while creating session", e);
 			responseObserver.onError(responseException);
 		}
-		responseObserver.onCompleted();
 	}
 
 	@Override
 	public void unregister(RhSessionID request, StreamObserver<Empty> responseObserver) {
-		messageHandler.getRhConnectionManager().closeSessionHandler(request.getId());
-		responseObserver.onNext(Empty.getDefaultInstance());
-		responseObserver.onCompleted();
+		try {
+			messageHandler.getRhConnectionManager().closeSessionHandler(request.getId());
+			responseObserver.onNext(Empty.getDefaultInstance());
+			responseObserver.onCompleted();
+		} catch (Exception e) {
+			LOGGER.error("Action failure, request: '{}'", toJson(request), e);
+			responseObserver.onError(e);
+		}
+
 	}
 
 	@Override
 	public void executeRhActionsBatch(RhActionsBatch request, StreamObserver<RhBatchResponse> responseObserver) {
-		logger.trace("Action: '{}', request: '{}'", "executeRhActionsBatch", toJson(request));
+		LOGGER.trace("Action: 'executeRhActionsBatch', request: '{}'", toJson(request));
         try {
             responseObserver.onNext(messageHandler.handleActionsBatchRequest(request));
 			responseObserver.onCompleted();
-        } catch (IOException e) {
-			logger.error("Action: '{}', request: '{}'", "executeRhActionsBatch", toJson(request), e);
+        } catch (Exception e) {
+			LOGGER.error("Action failure, request: '{}'", toJson(request), e);
             responseObserver.onError(e);
         }
 	}
@@ -82,7 +86,7 @@ public class HandBaseService extends RhBatchImplBase implements IHandService {
 		try {
 			this.messageHandler.close();
 		} catch (Exception e) {
-			logger.error("Error while disposing message handler", e);
+			LOGGER.error("Error while disposing message handler", e);
 		}
 	}
 }

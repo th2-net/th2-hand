@@ -18,7 +18,6 @@ package com.exactpro.th2.hand.builders.mstore;
 
 import com.exactpro.remotehand.Configuration;
 import com.exactpro.th2.common.grpc.Direction;
-import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.MessageId;
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.RawMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -38,7 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.TransportUtilsKt.getTransport;
 
 public final class TransportMessageStoreBuilder implements MessageStoreBuilder<RawMessage> {
-	private static final Logger logger = LoggerFactory.getLogger(TransportMessageStoreBuilder.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(TransportMessageStoreBuilder.class);
 
 	private final AtomicLong seqNum;
 
@@ -49,10 +48,10 @@ public final class TransportMessageStoreBuilder implements MessageStoreBuilder<R
 	@Override
 	public RawMessage buildMessage(Map<String, Object> fields, Direction direction, String sessionId, String sessionGroup) {
 		try {
-			byte[] bytes = CommonFactory.MAPPER.writeValueAsBytes(fields);
+			byte[] bytes = MAPPER.writeValueAsBytes(fields);
 			return buildMessage(bytes, direction, sessionId, sessionGroup);
 		} catch (JsonProcessingException e) {
-			logger.error("Could not encode message as JSON", e);
+			LOGGER.error("Could not encode message as JSON", e);
 			return null;
 		}
 	}
@@ -90,7 +89,7 @@ public final class TransportMessageStoreBuilder implements MessageStoreBuilder<R
 					.setBody(buffer)
 					.build();
 		} catch (IOException e) {
-			logger.error("Cannot encode screenshot", e);
+			LOGGER.error("Cannot encode screenshot", e);
 			return null;
 		}
 	}
