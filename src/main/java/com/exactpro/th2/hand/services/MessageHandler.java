@@ -34,6 +34,8 @@ import com.exactpro.th2.hand.services.mstore.ProtobufMessageStoreSender;
 import com.exactpro.th2.hand.services.mstore.TransportMessageStoreSender;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MessageHandler implements AutoCloseable {
@@ -43,10 +45,11 @@ public class MessageHandler implements AutoCloseable {
 	private final RhConnectionManager rhConnectionManager;
 	private final ScriptBuilder scriptBuilder = new ScriptBuilder();
 
-	public MessageHandler(Config config, AtomicLong seqNum) {
+	public MessageHandler(Config config) {
 		this.config = config;
 		rhConnectionManager = new RhConnectionManager(config);
 		CommonFactory factory = config.getFactory();
+		AtomicLong seqNum = new AtomicLong(getCurrentTime());
 		if (config.isUseTransport()) {
 			this.messageStoreHandler = new MessageStoreHandler<>(
                     config.getSessionGroup(),
@@ -95,5 +98,10 @@ public class MessageHandler implements AutoCloseable {
 	@Override
 	public void close() {
 		rhConnectionManager.dispose();
+	}
+
+	private static long getCurrentTime() {
+		Instant now = Instant.now();
+		return TimeUnit.SECONDS.toNanos(now.getEpochSecond()) + now.getNano();
 	}
 }

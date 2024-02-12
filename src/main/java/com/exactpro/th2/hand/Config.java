@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2024 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,7 @@ public class Config {
 	protected final CommonFactory factory;
 	protected final CustomConfiguration customConfiguration;
 
-	public Config(CommonFactory factory) throws ConfigurationException {
-		this.factory = factory;
-		this.customConfiguration = factory.getCustomConfiguration(CustomConfiguration.class);
+	public Config(CommonFactory factory, CustomConfiguration customConfiguration) throws ConfigurationException {
 		if (customConfiguration == null) {
 			throw new ConfigurationException("Custom configuration is not found");
 		}
@@ -39,6 +37,13 @@ public class Config {
 		if (customConfiguration.getDriversMapping().isEmpty()) {
 			throw new ConfigurationException("Drivers mapping should be provided in custom config.");
 		}
+
+		this.factory = factory;
+		this.customConfiguration = customConfiguration;
+	}
+
+	public Config(CommonFactory factory) throws ConfigurationException {
+		this(factory, factory.getCustomConfiguration(CustomConfiguration.class));
 	}
 
 	public CommonFactory getFactory() {

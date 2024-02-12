@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class HandServer implements AutoCloseable {
@@ -39,9 +38,9 @@ public class HandServer implements AutoCloseable {
 	private final List<IHandService> services;
 	private final AtomicReference<Thread> watcher = new AtomicReference<>();
 
-	public HandServer(Config config, long startSequences) throws Exception {
+	public HandServer(Config config) throws Exception {
 		this.config = config;
-		this.messageHandler = new MessageHandler(config, new AtomicLong(startSequences));
+		this.messageHandler = new MessageHandler(config);
 		this.services = new ArrayList<>();
 		this.server = buildServer();
 	}

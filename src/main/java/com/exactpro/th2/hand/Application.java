@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2024 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,9 @@
 
 package com.exactpro.th2.hand;
 
+import com.exactpro.th2.common.schema.factory.CommonFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.exactpro.th2.common.schema.factory.CommonFactory;
-
-import java.time.Instant;
-import java.util.concurrent.TimeUnit;
 
 public class Application
 {
@@ -32,15 +28,10 @@ public class Application
 		new Application().run(args);
 	}
 
-	public long getCurrentTime() {
-		Instant now = Instant.now();
-		return TimeUnit.SECONDS.toNanos(now.getEpochSecond()) + now.getNano();
-	}
-	
 	public void run(String[] args) {
 		try (CommonFactory factory = CommonFactory.createFromArguments(args)) {
 			Config config = getConfig(factory);
-			try (HandServer handServer = new HandServer(config, getCurrentTime())) {
+			try (HandServer handServer = new HandServer(config)) {
 				Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 					LOGGER.info("*** Closing hand server because JVM is shutting down");
 					try {
