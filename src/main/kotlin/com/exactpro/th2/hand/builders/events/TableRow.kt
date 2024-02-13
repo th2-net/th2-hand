@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2024 Exactpro (Exactpro Systems Limited)
+ * Copyright 2024 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.hand.builders.events;
+package com.exactpro.th2.hand.builders.events
 
-import com.exactpro.th2.hand.messages.responseexecutor.BaseExecutorResponse;
+import com.exactpro.th2.common.event.bean.IRow
+import com.fasterxml.jackson.annotation.JsonProperty
 
-import java.io.IOException;
-import java.time.Instant;
-
-public interface EventBuilder<T, R, E extends BaseExecutorResponse<?>> {
-	T buildEvent(Instant startTime, R request, E executorResponse) throws IOException;
-}
+class TableRow(
+    @JsonProperty("Name")
+    val name: String,
+    @JsonProperty("Value")
+    val value: String,
+): IRow

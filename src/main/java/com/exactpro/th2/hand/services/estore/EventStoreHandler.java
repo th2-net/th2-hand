@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2024 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.exactpro.th2.hand.services.estore;
 
 import com.exactpro.th2.hand.builders.events.DefaultEventBuilder;
 
-public class EventStoreHandler implements AutoCloseable {
+public class EventStoreHandler {
 	private final EventStoreSender eventStoreSender;
 	private final DefaultEventBuilder eventBuilder;
 
@@ -34,10 +34,5 @@ public class EventStoreHandler implements AutoCloseable {
 
 	public DefaultEventBuilder getEventBuilder() {
 		return eventBuilder;
-	}
-
-	@Override
-	public void close() throws Exception {
-		this.eventStoreSender.close();
 	}
 }

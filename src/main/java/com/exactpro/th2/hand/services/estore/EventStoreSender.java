@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2024 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-public class EventStoreSender implements AutoCloseable {
+public class EventStoreSender {
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventStoreSender.class);
 
 	private final MessageRouter<EventBatch> eventBatchRouter;
@@ -40,10 +40,5 @@ public class EventStoreSender implements AutoCloseable {
 		} catch (IOException e) {
 			LOGGER.error("Could not store event with id: " + event.getId(), e);
 		}
-	}
-
-	@Override
-	public void close() throws Exception {
-		eventBatchRouter.close();
 	}
 }

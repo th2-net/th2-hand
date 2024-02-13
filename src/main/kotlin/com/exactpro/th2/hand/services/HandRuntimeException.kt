@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2024 Exactpro (Exactpro Systems Limited)
+ * Copyright 2024 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 
-package com.exactpro.th2.hand.builders.events;
+package com.exactpro.th2.hand.services
 
-import com.exactpro.th2.hand.messages.responseexecutor.BaseExecutorResponse;
-
-import java.io.IOException;
-import java.time.Instant;
-
-public interface EventBuilder<T, R, E extends BaseExecutorResponse<?>> {
-	T buildEvent(Instant startTime, R request, E executorResponse) throws IOException;
-}
+class HandRuntimeException(message: String, cause: Throwable) : RuntimeException(message, cause)

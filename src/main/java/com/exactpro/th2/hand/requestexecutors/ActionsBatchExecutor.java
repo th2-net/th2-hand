@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2024 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import com.exactpro.th2.hand.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +61,7 @@ public class ActionsBatchExecutor implements RequestExecutor<RhActionsBatch, Act
 
 
 	@Override
-	public ActionsBatchExecutorResponse execute(RhActionsBatch request) {
+	public ActionsBatchExecutorResponse execute(RhActionsBatch request) throws IOException {
 		Instant executionStartTime = Instant.now();
 		RhScriptResult scriptResult;
 		String sessionId = "th2_hand";
@@ -140,7 +141,7 @@ public class ActionsBatchExecutor implements RequestExecutor<RhActionsBatch, Act
 		return details;
 	}
 
-	private void buildAndSendEvent(Instant startTime, RhActionsBatch request, ActionsBatchExecutorResponse executorResponse) {
+	private void buildAndSendEvent(Instant startTime, RhActionsBatch request, ActionsBatchExecutorResponse executorResponse) throws IOException {
 		EventStoreHandler eventStoreHandler = messageHandler.getEventStoreHandler();
 		Event event = eventStoreHandler.getEventBuilder().buildEvent(startTime, request, executorResponse);
 		eventStoreHandler.getEventStoreSender().storeEvent(event);

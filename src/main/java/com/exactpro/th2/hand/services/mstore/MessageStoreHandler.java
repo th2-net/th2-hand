@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2024 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,7 @@ import com.exactpro.th2.act.grpc.hand.RhActionList;
 import com.exactpro.th2.act.grpc.hand.RhActionsBatch;
 import com.exactpro.th2.common.grpc.Direction;
 import com.exactpro.th2.common.grpc.MessageID;
-import com.exactpro.th2.common.grpc.RawMessage;
-import com.exactpro.th2.hand.builders.mstore.DefaultMessageStoreBuilder;
+import com.exactpro.th2.hand.builders.mstore.MessageStoreBuilder;
 import com.exactpro.th2.hand.messages.RhResponseMessageBody;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.GeneratedMessageV3;
@@ -36,23 +35,28 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 
-public class MessageStoreHandler implements AutoCloseable {
-	private static final Logger logger = LoggerFactory.getLogger(MessageStoreSender.class);
+public class MessageStoreHandler<T> {
+	private static final Logger LOGGER = LoggerFactory.getLogger(MessageStoreHandler.class);
 
 	private final String sessionGroup;
-	private final MessageStoreSender messageStoreSender;
-	private final DefaultMessageStoreBuilder messageStoreBuilder;
+	private final MessageStoreSender<T> messageStoreSender;
+	private final MessageStoreBuilder<T> messageStoreBuilder;
+	private final MessageIdExtractor<T> messageIdExtractor;
 
-	public MessageStoreHandler(String sessionGroup, MessageStoreSender messageStoreSender, DefaultMessageStoreBuilder defaultMessageStoreBuilder) {
+	public MessageStoreHandler(String sessionGroup,
+							   MessageStoreSender<T> messageStoreSender,
+							   MessageStoreBuilder<T> defaultMessageStoreBuilder,
+							   MessageIdExtractor<T> messageIdExtractor) {
 		this.sessionGroup = sessionGroup;
 		this.messageStoreSender = messageStoreSender;
 		this.messageStoreBuilder = defaultMessageStoreBuilder;
+		this.messageIdExtractor = messageIdExtractor;
 	}
 	
 	private List<? extends GeneratedMessageV3> getActionsList (RhActionsBatch actionsList) {
@@ -63,7 +67,7 @@ public class MessageStoreHandler implements AutoCloseable {
 			case WEB:
 				return rhActionList.getWeb().getWebActionListList();
 			default:
-				logger.warn("Actions list is not set");
+				LOGGER.warn("Actions list is not set");
 				return Collections.emptyList();
 		}
 	}
@@ -93,36 +97,36 @@ public class MessageStoreHandler implements AutoCloseable {
 			}
 		}
 
-		RawMessage message = messageStoreBuilder.buildMessage(Collections.singletonMap("messages", allMessages),
+		T message = messageStoreBuilder.buildMessage(Collections.singletonMap("messages", allMessages),
 				Direction.SECOND, sessionId, sessionGroup);
 
 		if (message != null) {
 			messageStoreSender.sendMessages(message);
-			return Collections.singletonList(message.getMetadata().getId());
+			return Collections.singletonList(messageIdExtractor.getId(message));
 		} else {
-			logger.debug("Nothing to store to mstore");
+			LOGGER.debug("Nothing to store to mstore");
 			return Collections.emptyList();
 		}
 	}
 
 	public List<MessageID> storeScreenshots(List<ActionResult> screenshotIds, String sessionAlias) {
 		if (screenshotIds == null || screenshotIds.isEmpty()) {
-			logger.debug("No screenshots to store");
+			LOGGER.debug("No screenshots to store");
 			return Collections.emptyList();
 		}
 
 		List<MessageID> messageIDS = new ArrayList<>();
-		List<RawMessage> rawMessages = new ArrayList<>();
+		List<T> rawMessages = new ArrayList<>();
 		for (ActionResult screenshotId : screenshotIds) {
-			logger.debug("Storing screenshot id {}", screenshotId);
+			LOGGER.debug("Storing screenshot id {}", screenshotId);
 			Path screenPath = Configuration.SCREENSHOTS_DIR_PATH.resolve(screenshotId.getData());
 			if (!Files.exists(screenPath)) {
-				logger.warn("Screenshot with id {} does not exists", screenshotId);
+				LOGGER.warn("Screenshot with id {} does not exists", screenshotId);
 				continue;
 			}
-			RawMessage rawMessage = messageStoreBuilder.buildMessageFromFile(screenPath, Direction.FIRST, sessionAlias, sessionGroup);
+			T rawMessage = messageStoreBuilder.buildMessageFromFile(screenPath, Direction.FIRST, sessionAlias, sessionGroup);
 			if (rawMessage != null) {
-				messageIDS.add(rawMessage.getMetadata().getId());
+				messageIDS.add(messageIdExtractor.getId(rawMessage));
 				rawMessages.add(rawMessage);
 			}
 			removeScreenshot(screenPath);
@@ -135,11 +139,11 @@ public class MessageStoreHandler implements AutoCloseable {
 	public MessageID onResponse(RhScriptResult response, String sessionId, String rhSessionId) {
 		RhResponseMessageBody body = RhResponseMessageBody.fromRhScriptResult(response).setRhSessionId(rhSessionId);
 		try {
-			RawMessage message = messageStoreBuilder.buildMessage(body.getFields(), Direction.FIRST, sessionId, sessionGroup);
+			T message = messageStoreBuilder.buildMessage(body.getFields(), Direction.FIRST, sessionId, sessionGroup);
 			messageStoreSender.sendMessages(message);
-			return message.getMetadata().getId();
+			return messageIdExtractor.getId(message);
 		} catch (Exception e) {
-			logger.error("Cannot send message to message-storage", e);
+			LOGGER.error("Cannot send message to message-storage", e);
 		}
 
 		return null;
@@ -149,7 +153,7 @@ public class MessageStoreHandler implements AutoCloseable {
 		try {
 			Files.delete(file);
 		} catch (IOException e) {
-			logger.warn("Error deleting file: " + file.toAbsolutePath(), e);
+			LOGGER.warn("Error deleting file: " + file.toAbsolutePath(), e);
 		}
 	}
 
@@ -179,8 +183,8 @@ public class MessageStoreHandler implements AutoCloseable {
 		return processed;
 	}
 
-	@Override
-	public void close() throws Exception {
-		this.messageStoreSender.close();
+	@FunctionalInterface
+	public interface MessageIdExtractor<T> {
+		MessageID getId(T message);
 	}
 }

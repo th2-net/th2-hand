@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2024 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,14 @@
 package com.exactpro.th2.hand.builders.mstore;
 
 import com.exactpro.th2.common.grpc.Direction;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.nio.file.Path;
 import java.util.Map;
 
 public interface MessageStoreBuilder<T> {
+	ObjectMapper MAPPER = new ObjectMapper();
+
 	T buildMessage(Map<String, Object> fields, Direction direction, String sessionId, String sessionGroup);
 
 	T buildMessage(byte[] bytes, Direction direction, String sessionId, String sessionGroup);

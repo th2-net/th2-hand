@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2024 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,57 +16,71 @@
 
 package com.exactpro.th2.hand.services;
 
+import com.exactpro.remotehand.RhConfigurationException;
 import com.exactpro.th2.act.grpc.hand.RhActionsBatch;
 import com.exactpro.th2.act.grpc.hand.RhBatchGrpc.RhBatchImplBase;
 import com.exactpro.th2.act.grpc.hand.RhBatchResponse;
+import com.exactpro.th2.act.grpc.hand.RhBatchService;
 import com.exactpro.th2.act.grpc.hand.RhSessionID;
 import com.exactpro.th2.act.grpc.hand.RhTargetServer;
 import com.exactpro.th2.hand.HandException;
 import com.exactpro.th2.hand.IHandService;
 import com.google.protobuf.Empty;
-import com.google.protobuf.TextFormat;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HandBaseService extends RhBatchImplBase implements IHandService {
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+import java.io.IOException;
+import java.util.Map;
+
+import static com.exactpro.th2.common.message.MessageUtils.toJson;
+
+public class HandBaseService extends RhBatchImplBase implements IHandService, RhBatchService {
+	private final static Logger LOGGER = LoggerFactory.getLogger(HandBaseService.class);
 
 	public static final String RH_SESSION_PREFIX = "/Ses";
 
 	private MessageHandler messageHandler;
 
 	@Override
-	public void init(MessageHandler messageHandler) throws Exception {
+	public void init(MessageHandler messageHandler) {
 		this.messageHandler = messageHandler;
 	}
 
 	@Override
 	public void register(RhTargetServer targetServer, StreamObserver<RhSessionID> responseObserver) {
 		try {
-			String sessionId = messageHandler.getRhConnectionManager().createSessionHandler(targetServer.getTarget()).getId();
-			RhSessionID result = RhSessionID.newBuilder().setId(sessionId).setSessionAlias(messageHandler.getConfig().getSessionAlias()).build();
-			responseObserver.onNext(result);
+			responseObserver.onNext(register(targetServer));
+			responseObserver.onCompleted();
 		} catch (Exception e) {
-			logger.error("Error while creating session", e);
+			LOGGER.error("Error while creating session", e);
 			Exception responseException = new HandException("Error while creating session", e);
 			responseObserver.onError(responseException);
 		}
-		responseObserver.onCompleted();
 	}
 
 	@Override
 	public void unregister(RhSessionID request, StreamObserver<Empty> responseObserver) {
-		messageHandler.getRhConnectionManager().closeSessionHandler(request.getId());
-		responseObserver.onNext(Empty.getDefaultInstance());
-		responseObserver.onCompleted();
+		try {
+			responseObserver.onNext(unregister(request));
+			responseObserver.onCompleted();
+		} catch (Exception e) {
+			LOGGER.error("Action failure, request: '{}'", toJson(request), e);
+			responseObserver.onError(e);
+		}
+
 	}
 
 	@Override
 	public void executeRhActionsBatch(RhActionsBatch request, StreamObserver<RhBatchResponse> responseObserver) {
-		logger.trace("Action: '{}', request: '{}'", "executeRhActionsBatch", TextFormat.shortDebugString(request));
-		responseObserver.onNext(messageHandler.handleActionsBatchRequest(request));
-		responseObserver.onCompleted();
+		LOGGER.trace("Action: 'executeRhActionsBatch', request: '{}'", toJson(request));
+        try {
+            responseObserver.onNext(executeRhActionsBatch(request));
+			responseObserver.onCompleted();
+        } catch (Exception e) {
+			LOGGER.error("Action failure, request: '{}'", toJson(request), e);
+            responseObserver.onError(e);
+        }
 	}
 
 	@Override
@@ -74,7 +88,47 @@ public class HandBaseService extends RhBatchImplBase implements IHandService {
 		try {
 			this.messageHandler.close();
 		} catch (Exception e) {
-			logger.error("Error while disposing message handler", e);
+			LOGGER.error("Error while disposing message handler", e);
 		}
+	}
+
+	@Override
+	public RhSessionID register(RhTargetServer targetServer) {
+        try {
+			String sessionId = messageHandler.getRhConnectionManager().createSessionHandler(targetServer.getTarget()).getId();
+			return RhSessionID.newBuilder().setId(sessionId).setSessionAlias(messageHandler.getConfig().getSessionAlias()).build();
+		} catch (RhConfigurationException e) {
+			throw new HandRuntimeException(e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public RhSessionID register(RhTargetServer input, Map<String, String> properties) {
+		return register(input);
+	}
+
+	@Override
+	public Empty unregister(RhSessionID request) {
+		messageHandler.getRhConnectionManager().closeSessionHandler(request.getId());
+		return Empty.getDefaultInstance();
+	}
+
+	@Override
+	public Empty unregister(RhSessionID input, Map<String, String> properties) {
+		return unregister(input);
+	}
+
+	@Override
+	public RhBatchResponse executeRhActionsBatch(RhActionsBatch request) {
+        try {
+            return messageHandler.handleActionsBatchRequest(request);
+        } catch (IOException e) {
+			throw new HandRuntimeException(e.getMessage(), e);
+        }
+    }
+
+	@Override
+	public RhBatchResponse executeRhActionsBatch(RhActionsBatch input, Map<String, String> properties) {
+		return executeRhActionsBatch(input);
 	}
 }
