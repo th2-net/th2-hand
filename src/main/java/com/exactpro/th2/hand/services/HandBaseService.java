@@ -92,18 +92,13 @@ public class HandBaseService extends RhBatchImplBase implements IHandService, Rh
 		}
 	}
 
-	/**
-	 * @throws RhConfigurationException
-	 */
-	@SuppressWarnings("JavadocDeclaration")
 	@Override
 	public RhSessionID register(RhTargetServer targetServer) {
         try {
 			String sessionId = messageHandler.getRhConnectionManager().createSessionHandler(targetServer.getTarget()).getId();
 			return RhSessionID.newBuilder().setId(sessionId).setSessionAlias(messageHandler.getConfig().getSessionAlias()).build();
 		} catch (RhConfigurationException e) {
-			sneakyThrow(e);
-			return null;
+			throw new HandRuntimeException(e.getMessage(), e);
 		}
 	}
 
@@ -123,28 +118,17 @@ public class HandBaseService extends RhBatchImplBase implements IHandService, Rh
 		return unregister(input);
 	}
 
-	/**
-	 * @throws IOException
-	 */
-	@SuppressWarnings("JavadocDeclaration")
 	@Override
 	public RhBatchResponse executeRhActionsBatch(RhActionsBatch request) {
         try {
             return messageHandler.handleActionsBatchRequest(request);
         } catch (IOException e) {
-			sneakyThrow(e);
-			return null;
+			throw new HandRuntimeException(e.getMessage(), e);
         }
     }
 
 	@Override
 	public RhBatchResponse executeRhActionsBatch(RhActionsBatch input, Map<String, String> properties) {
 		return executeRhActionsBatch(input);
-	}
-
-	// This hack is used to avoid wrapping cause error
-	private static <E extends Throwable> void sneakyThrow(Throwable e) throws E {
-		//noinspection unchecked
-		throw (E) e;
 	}
 }

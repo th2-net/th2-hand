@@ -66,7 +66,7 @@ public class HandServer implements AutoCloseable {
 			server.start();
 			LOGGER.info("Server started, listening on port {}", server.getPort());
 		} else {
-			throw new IllegalStateException(getClass().getSimpleName() + " was started once");
+			throw new IllegalStateException(getClass().getSimpleName() + " is already started");
 		}
 	}
 
@@ -94,6 +94,7 @@ public class HandServer implements AutoCloseable {
 		Thread thread = watcher.get();
 		if (thread != null && !thread.isInterrupted()) {
 			thread.interrupt();
+			thread.join(30_000);
 		}
 	}
 }

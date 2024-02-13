@@ -211,8 +211,6 @@ jar {
 	archivesBaseName = applicationName
 	manifest {
 		attributes('Specification-Title': 'TH2 Hand')
-		attributes('Main-Class': 'com.exactpro.th2.hand.Application')
-		attributes("Class-Path": configurations.compileClasspath.collect { "lib/" + it.getName() }.join(' '))
 		attributes(
 				'Created-By':               "${System.getProperty('java.version')} (${System.getProperty('java.vendor')})",
 				'Specification-Title':      '',
