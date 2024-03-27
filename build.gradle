@@ -59,9 +59,7 @@ repositories {
 dependencies {
 	api platform('com.exactpro.th2:bom:4.5.0')
 
-	implementation('com.exactpro.remotehand:remotehand:1.7.3-TH2-4662-4046816762-SNAPSHOT') {
-		exclude group: "org.slf4j", module: "slf4j-log4j12"
-	}
+	implementation('com.exactpro.remotehand:remotehand:1.7.3-TH2-4662-no-log4j-8448098275-SNAPSHOT')
 	implementation("com.exactpro.th2:grpc-hand:3.0.0-RM-84612-+") {
 		exclude group: "com.google.guava", module: "guava" // for compatibility with Selenium 3.141.59
 	}

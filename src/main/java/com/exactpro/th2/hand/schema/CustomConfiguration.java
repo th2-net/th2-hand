@@ -59,7 +59,7 @@ public class CustomConfiguration {
 	private int responseTimeout = DEFAULT_RESPONSE_TIMEOUT;
 
 	@JsonProperty(value="use-transport")
-	@JsonAlias("responseTimeoutSec")
+	@JsonAlias("useTransport")
 	private boolean useTransport = true;
 
 	public Map<String, Config.DriverMapping> getDriversMapping() {
